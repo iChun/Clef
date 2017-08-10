@@ -4,14 +4,14 @@ import me.ichun.mods.clef.common.util.abc.construct.Accidental;
 import me.ichun.mods.clef.common.util.abc.construct.Construct;
 import me.ichun.mods.clef.common.util.abc.construct.Octave;
 import me.ichun.mods.clef.common.util.abc.play.PlayedNote;
-import me.ichun.mods.clef.common.util.abc.play.Trackk;
+import me.ichun.mods.clef.common.util.abc.play.Track;
 
 import java.util.ArrayList;
 
 public class SingleNote extends Note
 {
     @Override
-    public boolean playNote(Trackk track, ArrayList<PlayedNote> playing, int currentProg)
+    public boolean playNote(Track track, ArrayList<PlayedNote> playing, int currentProg)
     {
         return true;
     }

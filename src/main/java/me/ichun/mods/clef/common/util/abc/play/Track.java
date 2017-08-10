@@ -4,7 +4,7 @@ import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
 
 import java.util.ArrayList;
 
-public class Trackk
+public class Track
 {
     public int beatOffset = 0;
     public int ticksPerBeat;
@@ -19,7 +19,7 @@ public class Trackk
 
     public ArrayList<PlayedNote> playingNotes = new ArrayList<>();
 
-    public Trackk(TrackInfo track)
+    public Track(TrackInfo track)
     {
         this.track = track;
     }
