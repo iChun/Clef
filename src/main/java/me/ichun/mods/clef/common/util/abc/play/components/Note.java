@@ -2,7 +2,7 @@ package me.ichun.mods.clef.common.util.abc.play.components;
 
 import me.ichun.mods.clef.common.util.abc.construct.Construct;
 import me.ichun.mods.clef.common.util.abc.play.PlayedNote;
-import me.ichun.mods.clef.common.util.abc.play.Track;
+import me.ichun.mods.clef.common.util.abc.play.Trackk;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,7 +32,7 @@ public abstract class Note
 
     public ArrayList<Construct> constructs = new ArrayList<>();
 
-    public abstract boolean playNote(Track track, ArrayList<PlayedNote> playedNotes, int currentProg); //returns false if it's a special "note"
+    public abstract boolean playNote(Trackk track, ArrayList<PlayedNote> playedNotes, int currentProg); //returns false if it's a special "note"
 
     public abstract void setup(TrackInfo info);
 

@@ -1,60 +1,32 @@
-package me.ichun.mods.clef.common.util.abc.play;
+package me.ichun.mods.clef.common.util.abc.play.components;
 
 import me.ichun.mods.clef.common.util.abc.AbcObject;
 import me.ichun.mods.clef.common.util.abc.construct.Construct;
 import me.ichun.mods.clef.common.util.abc.construct.Number;
-import me.ichun.mods.clef.common.util.abc.play.components.Chord;
-import me.ichun.mods.clef.common.util.abc.play.components.Note;
-import me.ichun.mods.clef.common.util.abc.play.components.SingleNote;
-import me.ichun.mods.clef.common.util.abc.play.components.Special;
 
 import java.util.ArrayList;
 
-public class Track
+public class TrackInfo
 {
     public String title = ""; //T
     public String composer = ""; //C
     public String transcriber = ""; //Z
 
-    public int beatOffset = 0;
-    public int ticksPerBeat;
-    public double currentMeter;
-    public double unitNoteLength;
-
-    public int playProg;
-    public boolean playing = true;
-
     public ArrayList<Note> notes = new ArrayList<>();
     public int trackLength = 0;
 
-    public ArrayList<PlayedNote> playingNotes = new ArrayList<>();
+    public int lastMeter = 1; //for setup
 
-    public Track()
+    private TrackInfo(String title, String composer, String transcriber)
     {
+        this.title = title;
+        this.composer = composer;
+        this.transcriber = transcriber;
     }
 
-    public boolean update() //returns false if it's time to stop laying.
+    public static TrackInfo buildTrack(AbcObject abc)
     {
-        if(!playing || playProg > trackLength)
-        {
-            return false;
-        }
-        return true;
-    }
-
-    public void stop()
-    {
-        playing = false;
-    }
-
-    public void playAtProgress(int i)
-    {
-        playProg = i;
-    }
-
-    public static Track buildTrack(AbcObject abc)
-    {
-        Track track = new Track();
+        TrackInfo trackInfo = new TrackInfo(abc.title, abc.composer, abc.transcriber);
 
         boolean discard = false;
         Chord chord = null;
@@ -64,6 +36,7 @@ public class Track
         int numberDen = -1;
         int chordNum = -1;
         int chordDen = -1;
+        boolean hasNotes = false;
         for(int i = 0; i < abc.constructs.size(); i++)
         {
             Construct construct = abc.constructs.get(i);
@@ -79,7 +52,7 @@ public class Track
 
             if(construct.getType() == Construct.EnumConstructType.SPECIAL)
             {
-                track.notes.add(new Special(construct));
+                trackInfo.notes.add(new Special(construct));
                 lastId = 0;
                 numberNum = numberDen = chordNum = chordDen = -1;
                 continue;
@@ -158,7 +131,7 @@ public class Track
                                 }
                                 else
                                 {
-                                    track.notes.add(currentNote);
+                                    trackInfo.notes.add(currentNote);
                                     currentNote = null;
                                 }
                                 numberNum = numberDen = -1;
@@ -192,7 +165,7 @@ public class Track
                                     }
                                     else
                                     {
-                                        track.notes.add(currentNote);
+                                        trackInfo.notes.add(currentNote);
                                         currentNote = null;
                                     }
                                     numberNum = numberDen = -1;
@@ -216,7 +189,7 @@ public class Track
                                 currentNote = null;
                                 numberNum = numberDen = -1;
                             }
-                            track.notes.add(chord);
+                            trackInfo.notes.add(chord);
                             chord = null;
                             break;
                         }
@@ -275,32 +248,40 @@ public class Track
                         }
                         else
                         {
-                            track.notes.add(currentNote);
+                            trackInfo.notes.add(currentNote);
                             currentNote = null;
                         }
                     }
                     else if(chord == null) // we ended a note and a chord at the same time.
                     {
-                        if(chordNum > 0 && track.notes.get(track.notes.size() - 1) instanceof Chord)
+                        if(chordNum > 0 && trackInfo.notes.get(trackInfo.notes.size() - 1) instanceof Chord)
                         {
                             if(chordDen > 0)
                             {
-                                ((Chord)track.notes.get(track.notes.size() - 1)).duration = chordNum / (double)chordDen;
+                                ((Chord)trackInfo.notes.get(trackInfo.notes.size() - 1)).duration = chordNum / (double)chordDen;
                             }
                             else
                             {
-                                ((Chord)track.notes.get(track.notes.size() - 1)).duration = chordNum;
+                                ((Chord)trackInfo.notes.get(trackInfo.notes.size() - 1)).duration = chordNum;
                             }
                         }
                     }
                     numberNum = numberDen = chordNum = chordDen = -1;
                 }
             }
+            hasNotes = true;
             lastId++;
         }
 
+        if(!hasNotes)
+        {
+            return null; //If the track has no notes, don't bother creating an "empty track".
+        }
+
+        //TODO setup the notes. Do I need to setup with the key first?
+
         //TODO calculate the length of the track.
 
-        return track;
+        return trackInfo;
     }
 }

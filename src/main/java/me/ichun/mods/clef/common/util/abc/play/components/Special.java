@@ -6,7 +6,7 @@ import me.ichun.mods.clef.common.util.abc.construct.special.Meter;
 import me.ichun.mods.clef.common.util.abc.construct.special.Tempo;
 import me.ichun.mods.clef.common.util.abc.construct.special.UnitNoteLength;
 import me.ichun.mods.clef.common.util.abc.play.PlayedNote;
-import me.ichun.mods.clef.common.util.abc.play.Track;
+import me.ichun.mods.clef.common.util.abc.play.Trackk;
 
 import java.util.ArrayList;
 
@@ -18,7 +18,7 @@ public class Special extends Note
     }
 
     @Override
-    public boolean playNote(Track track, ArrayList<PlayedNote> playedNotes, int currentProg)
+    public boolean playNote(Trackk track, ArrayList<PlayedNote> playedNotes, int currentProg)
     {
         Construct construct = constructs.get(0); //This shouldn't be empty, ever.
         if(construct instanceof Meter)
