@@ -44,5 +44,5 @@ public class Special extends Note
     }
 
     @Override
-    public void setup(){} //No setup required.
+    public void setup(TrackInfo info){} //No setup required.
 }

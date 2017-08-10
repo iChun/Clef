@@ -20,11 +20,11 @@ public class Chord extends Note
     }
 
     @Override
-    public void setup()
+    public void setup(TrackInfo info)
     {
         for(Note note : notes)
         {
-            note.setup();
+            note.setup(info);
         }
     }
 }

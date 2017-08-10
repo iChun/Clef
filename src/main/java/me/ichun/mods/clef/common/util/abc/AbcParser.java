@@ -2,15 +2,12 @@ package me.ichun.mods.clef.common.util.abc;
 
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.util.abc.construct.*;
-import me.ichun.mods.clef.common.util.abc.construct.Chord;
-import me.ichun.mods.clef.common.util.abc.construct.Note;
 import me.ichun.mods.clef.common.util.abc.construct.Number;
 import me.ichun.mods.clef.common.util.abc.construct.special.Key;
 import me.ichun.mods.clef.common.util.abc.construct.special.Meter;
-import me.ichun.mods.clef.common.util.abc.construct.special.UnitNoteLength;
 import me.ichun.mods.clef.common.util.abc.construct.special.Tempo;
-import me.ichun.mods.clef.common.util.abc.play.Track;
-import me.ichun.mods.clef.common.util.abc.play.components.*;
+import me.ichun.mods.clef.common.util.abc.construct.special.UnitNoteLength;
+import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
 import org.apache.commons.io.IOUtils;
 
 import java.io.File;
@@ -38,7 +35,7 @@ public class AbcParser
 
     public static String[] ignoredStarts = new String[] { "%", "[r:" };//TODO ignore remarks in ABC where when looking for chords
 
-    public static AbcObject parse(File file)
+    public static TrackInfo parse(File file)
     {
         Clef.LOGGER.info("Parsing - " + file.getName());
         try(FileInputStream stream = new FileInputStream(file))
@@ -274,10 +271,8 @@ public class AbcParser
             }
 
             //Finish reading the file
-            Track track = Track.buildTrack(abc);
-            System.out.println("SIZEEE");
-            System.out.println(track.notes.size());
-         }
+            return TrackInfo.buildTrack(abc);
+        }
         catch(IOException | NumberFormatException e)
         {
 
