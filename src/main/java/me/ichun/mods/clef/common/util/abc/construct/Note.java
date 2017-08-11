@@ -14,4 +14,14 @@ public class Note extends Construct
     {
         return EnumConstructType.NOTE;
     }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if(o instanceof Note)
+        {
+            return ((Note)o).type == type;
+        }
+        return false;
+    }
 }

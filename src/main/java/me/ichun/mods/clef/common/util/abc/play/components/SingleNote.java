@@ -7,18 +7,24 @@ import me.ichun.mods.clef.common.util.abc.play.PlayedNote;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class SingleNote extends Note
 {
     @Override
     public boolean playNote(Track track, ArrayList<PlayedNote> playing, int currentProg)
     {
+        if(notePitch != Note.NOTE_REST)
+        {
+            playing.add(new PlayedNote((float)notePitch, currentProg, durationInTicks).start());
+        }
         return true;
     }
 
     @Override
-    public void setup(TrackInfo info)
+    public boolean setup(double[] info, HashMap<Integer, Integer> keyAccidentals)
     {
+        int accidental = -2;
         int key = 0; //middle
         boolean rest = false;
         for(Construct construct : constructs)
@@ -31,13 +37,17 @@ public class SingleNote extends Note
                 {
                     case '^':
                     {
-                        key++;
+                        accidental = 1;
                         break;
                     }
-                    case '=': {break;} //do nothing
+                    case '=':
+                    {
+                        accidental = 0;
+                        break;
+                    } //do nothing
                     case '_':
                     {
-                        key--;
+                        accidental = -1;
                     }
                 }
             }
@@ -74,7 +84,21 @@ public class SingleNote extends Note
 
         if(!rest)
         {
-            notePitch = (float)Math.pow(2.0D, (double)(key - 12) / 12.0D);
+            if(keyAccidentals.containsKey(key) && accidental == -2)
+            {
+                accidental = keyAccidentals.get(key);
+            }
+            else if(accidental != -2)
+            {
+                keyAccidentals.put(key, accidental);
+            }
+            if(accidental == -2)
+            {
+                accidental = 0;
+            }
+            durationInTicks = (int)Math.round(info[0] * duration * (info[4] / info[1]));
+            notePitch = (float)Math.pow(2.0D, (double)((key + accidental) - 12) / 12.0D);
         }
+        return true;
     }
 }

@@ -29,7 +29,7 @@ public class AbcParser
     public static final char operator = '/';
     public static final char space = ' ';
 
-    public static final char[] toBeHandled = new char[] { '|', ':' };
+    public static final char[] barLines = new char[] { '|', ':' };
 
     public static final char[] ignored = new char[] { '-', '(', ')', '~', 'H', 'L', 'M', 'O', 'P', 'S', 'T', 'u', 'v', '\\' }; //ties = 3, decorations = 10, continue on next line = 1
 
@@ -72,7 +72,15 @@ public class AbcParser
                 }
                 else if(line.startsWith("M:"))
                 {
-                    abc.constructs.add(new Meter(line.substring(2).trim()));
+                    String[] s = line.substring(2).split("/");
+                    if(s.length == 1)
+                    {
+                        abc.constructs.add(new Meter(Integer.parseInt(s[0].trim())));
+                    }
+                    else if(s.length == 2)
+                    {
+                        abc.constructs.add(new Meter(Integer.parseInt(s[0].trim()) / (double)Integer.parseInt(s[1].trim())));
+                    }
                     handledLine = true;
                 }
                 else if(line.startsWith("K:"))
@@ -157,6 +165,8 @@ public class AbcParser
                                         handled = true;
                                         if(key == '[' && i < line.length() - 1 && line.charAt(i + 1) == '|' || key == ']' && i > 0 && line.charAt(i - 1) == '|')
                                         {
+                                            abc.constructs.add(new BarLine());
+                                            handled = true;
                                             break;
                                         }
                                         if(key == '[' && i < line.length() - 1 && line.charAt(i + 1) == 'r')//remark
@@ -165,6 +175,19 @@ public class AbcParser
                                         }
                                         //TODO fields in within [];
                                         abc.constructs.add(new Chord());
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if(!handled)
+                            {
+                                for(char c : barLines) //TODO repeat sections?
+                                {
+                                    if(c == key)
+                                    {
+                                        abc.constructs.add(new BarLine());
+                                        handled = true;
                                         break;
                                     }
                                 }
@@ -243,15 +266,6 @@ public class AbcParser
 
                             if(!handled)
                             {
-                                if(key == '|') handled = true;
-                                for(char c : toBeHandled)
-                                {
-                                    if(c == key)
-                                    {
-                                        handled = true;
-                                        break;
-                                    }
-                                }
                                 for(char c : ignored)
                                 {
                                     if(c == key)

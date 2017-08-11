@@ -5,6 +5,7 @@ import me.ichun.mods.clef.common.util.abc.construct.Construct;
 import me.ichun.mods.clef.common.util.abc.construct.Number;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class TrackInfo
 {
@@ -12,10 +13,8 @@ public class TrackInfo
     public String composer = ""; //C
     public String transcriber = ""; //Z
 
-    public ArrayList<Note> notes = new ArrayList<>();
+    public HashMap<Integer, ArrayList<Note>> notes = new HashMap<>();
     public int trackLength = 0;
-
-    public int lastMeter = 1; //for setup
 
     private TrackInfo(String title, String composer, String transcriber)
     {
@@ -28,6 +27,7 @@ public class TrackInfo
     {
         TrackInfo trackInfo = new TrackInfo(abc.title, abc.composer, abc.transcriber);
 
+        ArrayList<Note> notes = new ArrayList<>();
         boolean discard = false;
         Chord chord = null;
         Note currentNote = null;
@@ -52,7 +52,7 @@ public class TrackInfo
 
             if(construct.getType() == Construct.EnumConstructType.SPECIAL)
             {
-                trackInfo.notes.add(new Special(construct));
+                notes.add(new Special(construct));
                 lastId = 0;
                 numberNum = numberDen = chordNum = chordDen = -1;
                 continue;
@@ -131,7 +131,7 @@ public class TrackInfo
                                 }
                                 else
                                 {
-                                    trackInfo.notes.add(currentNote);
+                                    notes.add(currentNote);
                                     currentNote = null;
                                 }
                                 numberNum = numberDen = -1;
@@ -165,7 +165,7 @@ public class TrackInfo
                                     }
                                     else
                                     {
-                                        trackInfo.notes.add(currentNote);
+                                        notes.add(currentNote);
                                         currentNote = null;
                                     }
                                     numberNum = numberDen = -1;
@@ -189,7 +189,7 @@ public class TrackInfo
                                 currentNote = null;
                                 numberNum = numberDen = -1;
                             }
-                            trackInfo.notes.add(chord);
+                            notes.add(chord);
                             chord = null;
                             break;
                         }
@@ -212,7 +212,15 @@ public class TrackInfo
                             chordDen = ((Number)construct).number;
                             break;
                         }
-                        case GRACE_CLOSE:{break;} //nothing is done cause things hsould be discarded at this point.
+                        case GRACE_CLOSE:
+                        {
+                            break;
+                        } //nothing is done cause things hsould be discarded at this point.
+                        case BAR_LINE:
+                        {
+                            notes.add(new BarLine());
+                            break;
+                        }
                     }
 
 
@@ -248,21 +256,21 @@ public class TrackInfo
                         }
                         else
                         {
-                            trackInfo.notes.add(currentNote);
+                            notes.add(currentNote);
                             currentNote = null;
                         }
                     }
                     else if(chord == null) // we ended a note and a chord at the same time.
                     {
-                        if(chordNum > 0 && trackInfo.notes.get(trackInfo.notes.size() - 1) instanceof Chord)
+                        if(chordNum > 0 && notes.get(notes.size() - 1) instanceof Chord)
                         {
                             if(chordDen > 0)
                             {
-                                ((Chord)trackInfo.notes.get(trackInfo.notes.size() - 1)).duration = chordNum / (double)chordDen;
+                                ((Chord)notes.get(notes.size() - 1)).duration = chordNum / (double)chordDen;
                             }
                             else
                             {
-                                ((Chord)trackInfo.notes.get(trackInfo.notes.size() - 1)).duration = chordNum;
+                                ((Chord)notes.get(notes.size() - 1)).duration = chordNum;
                             }
                         }
                     }
@@ -278,9 +286,19 @@ public class TrackInfo
             return null; //If the track has no notes, don't bother creating an "empty track".
         }
 
-        //TODO setup the notes. Do I need to setup with the key first?
-
-        //TODO calculate the length of the track.
+        double[] info = new double[] { 20D, 0.125D, 1D, 0D, 0.125D }; //ticks per beat, unit note length, meter, key, tempo split
+        HashMap<Integer, Integer> keyAccidentals = new HashMap<>();
+        int currentTick = 0;
+        for(Note note : notes)
+        {
+            ArrayList<Note> noteAtTime = trackInfo.notes.computeIfAbsent(currentTick, v -> new ArrayList<>());
+            if(note.setup(info, keyAccidentals))//if true, not a special note, move to next spot.
+            {
+                noteAtTime.add(note); //only add the actual notes. No specials.
+                trackInfo.trackLength = currentTick + note.durationInTicks; // adds to the length of the note.
+                currentTick += info[0] * info[2];
+            }
+        }
 
         return trackInfo;
     }

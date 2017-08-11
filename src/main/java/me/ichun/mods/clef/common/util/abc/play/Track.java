@@ -1,5 +1,6 @@
 package me.ichun.mods.clef.common.util.abc.play;
 
+import me.ichun.mods.clef.common.util.abc.play.components.Note;
 import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
 
 import java.util.ArrayList;
@@ -28,7 +29,27 @@ public class Track
     {
         if(!playing || playProg > track.trackLength)
         {
+            stop();
             return false;
+        }
+
+        if(track.notes.containsKey(playProg))
+        {
+            ArrayList<Note> notes = track.notes.get(playProg);
+            for(Note note : notes)
+            {
+                note.playNote(this, playingNotes, playProg);
+            }
+        }
+
+        for(int i = playingNotes.size() - 1; i >= 0; i--)
+        {
+            PlayedNote note = playingNotes.get(i);
+            if(playProg > note.startTick + note.duration)
+            {
+                note.stop();
+                playingNotes.remove(i);
+            }
         }
 
         playProg++;
@@ -37,6 +58,12 @@ public class Track
 
     public void stop()
     {
+        for(PlayedNote note : playingNotes)
+        {
+            note.stop();
+        }
+        playingNotes.clear();
+
         playing = false;
     }
 

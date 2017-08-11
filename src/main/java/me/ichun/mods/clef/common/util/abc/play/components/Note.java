@@ -29,11 +29,12 @@ public abstract class Note
 
     public double notePitch = NOTE_REST; //key - abc....EFG
     public double duration = 1;
+    public int durationInTicks = 5;
 
     public ArrayList<Construct> constructs = new ArrayList<>();
 
     public abstract boolean playNote(Track track, ArrayList<PlayedNote> playedNotes, int currentProg); //returns false if it's a special "note"
 
-    public abstract void setup(TrackInfo info);
+    public abstract boolean setup(double[] info, HashMap<Integer, Integer> keyAccidentals); //returns false if it's a special "note"
 
 }

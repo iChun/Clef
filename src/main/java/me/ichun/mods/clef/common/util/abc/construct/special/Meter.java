@@ -4,16 +4,13 @@ import me.ichun.mods.clef.common.util.abc.construct.Construct;
 
 public class Meter extends Construct //apparently not import for PC reading
 {
-    public String meter; //default 4/4
+    public double meter = 1D; //default 4/4
 
-    public Meter()
-    {
-        meter = "C";
-    }
+    public Meter(){}
 
-    public Meter(String s)
+    public Meter(double d)
     {
-        meter = s;
+        meter = d;
     }
 
     @Override

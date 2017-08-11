@@ -9,6 +9,7 @@ import me.ichun.mods.clef.common.util.abc.play.PlayedNote;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Special extends Note
 {
@@ -20,10 +21,16 @@ public class Special extends Note
     @Override
     public boolean playNote(Track track, ArrayList<PlayedNote> playedNotes, int currentProg)
     {
+        return false;
+    }
+
+    @Override
+    public boolean setup(double[] info, HashMap<Integer, Integer> keyAccidentals)
+    {
         Construct construct = constructs.get(0); //This shouldn't be empty, ever.
         if(construct instanceof Meter)
         {
-            //TODO this
+            info[2] = ((Meter)construct).meter;
         }
         else if(construct instanceof Key)
         {
@@ -32,17 +39,17 @@ public class Special extends Note
         else if(construct instanceof Tempo)
         {
             Tempo tempo = (Tempo)construct;
-            track.ticksPerBeat = 1200 / tempo.bpm;
+
+            //1200 / bpm = ticks between beats.
+            info[0] = 1200 / (double)tempo.bpm;
+            info[4] = tempo.splits;
             //TODO tempo splits...??????
         }
         else if(construct instanceof UnitNoteLength)
         {
             UnitNoteLength length = (UnitNoteLength)construct;
-            track.unitNoteLength = length.length;
+            info[1] = length.length;
         }
         return false;
     }
-
-    @Override
-    public void setup(TrackInfo info){} //No setup required.
 }

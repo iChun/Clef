@@ -33,7 +33,7 @@ public class AbcLibrary
                 trackCount++;
             }
         }
-        Clef.LOGGER.info("Loaded " + trackCount + "abc files");
+        Clef.LOGGER.info("Loaded " + trackCount + " abc files");
     }
 
     public static boolean readAbc(File file)
@@ -41,7 +41,7 @@ public class AbcLibrary
         if(file.exists() && file.getName().endsWith(".abc"))
         {
             String md5 = IOUtil.getMD5Checksum(file);
-            if(!hasTrack(md5))
+//            if(!hasTrack(md5))
             {
                 TrackInfo track = AbcParser.parse(file);
                 if(track != null)

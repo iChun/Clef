@@ -14,4 +14,14 @@ public class Accidental extends Construct
     {
         return EnumConstructType.ACCIDENTAL;
     }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if(o instanceof Accidental)
+        {
+            return ((Accidental)o).type == type;
+        }
+        return false;
+    }
 }

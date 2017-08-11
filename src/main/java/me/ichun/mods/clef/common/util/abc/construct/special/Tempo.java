@@ -5,7 +5,7 @@ import me.ichun.mods.clef.common.util.abc.construct.Construct;
 public class Tempo extends Construct
 {
     public int bpm = 60;
-    public double splits = 0.25D;
+    public double splits = 0.125D;
 
     public Tempo()
     {
@@ -35,9 +35,16 @@ public class Tempo extends Construct
                     {
                         splits += Double.parseDouble(splitss[0].trim()) / Double.parseDouble(splitss[1].trim());
                     }
-                    else if(splitss.length == 1)//This should ideally never happen?
+                    else if(splitss.length == 1)
                     {
-                        splits += Double.parseDouble(splitss[0].trim());
+                        if(split.length == 1)
+                        {
+                            bpm = Integer.parseInt(splitss[0].trim());
+                        }
+                        else //This should ideally never happen?
+                        {
+                            splits += Double.parseDouble(splitss[0].trim());
+                        }
                     }
                 }
             }
@@ -48,7 +55,7 @@ public class Tempo extends Construct
         }
         if(splits == 0D)
         {
-            splits = 0.25D;
+            splits = 0.125D;
         }
     }
 

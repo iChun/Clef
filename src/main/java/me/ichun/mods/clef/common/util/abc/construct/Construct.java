@@ -15,6 +15,7 @@ public abstract class Construct
         OPERATOR(7),
         SPACE(8),
         SPECIAL(9),
+        BAR_LINE(10),
         NONE(-1);
 
         private final int id;
@@ -58,11 +59,12 @@ public abstract class Construct
         CHORD_OPERATOR(7),
         CHORD_NUMBER_DENOMINATOR(6),
         GRACE_CLOSE(0),
+        BAR_LINE(10),
         NONE(-1);
 
-        public static final int MAX_ID = 14;
+        public static final int MAX_ID = 15;
         public static final EnumConstructOrder[] ORDER = new EnumConstructOrder[] { GRACE_OPEN, CHORD_START, ANNOTATION, ACCIDENTAL, NOTE, OCTAVE,
-        NUMBER_NUMERATOR, OPERATOR, NUMBER_DENOMINATOR, SPACE, CHORD_END, CHORD_NUMBER_NUMERATOR, CHORD_OPERATOR, CHORD_NUMBER_DENOMINATOR, GRACE_CLOSE };
+        NUMBER_NUMERATOR, OPERATOR, NUMBER_DENOMINATOR, SPACE, CHORD_END, CHORD_NUMBER_NUMERATOR, CHORD_OPERATOR, CHORD_NUMBER_DENOMINATOR, GRACE_CLOSE, BAR_LINE };
 
         private final int type;
 

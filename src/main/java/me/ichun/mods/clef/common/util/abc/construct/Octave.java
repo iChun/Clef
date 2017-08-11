@@ -14,4 +14,14 @@ public class Octave extends Construct
     {
         return EnumConstructType.OCTAVE;
     }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if(o instanceof Octave)
+        {
+            return ((Octave)o).type == type;
+        }
+        return false;
+    }
 }
