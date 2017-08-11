@@ -46,7 +46,7 @@ public class InstrumentLibrary
     public static int readInstrumentPack(File file)
     {
         int instrumentCount = 0;
-        if(file.exists() && file.getName().endsWith(".cia")) //clef instrument archive
+        if(file.exists() && (file.getName().endsWith(".cia") || file.getName().endsWith(".zip"))) //clef instrument archive, or SB mod in zip, but not in *.pak or *.modpak
         {
             //            String md5 = IOUtil.getMD5Checksum(file);
             //            //            if(!hasInstrument(md5))
@@ -117,13 +117,11 @@ public class InstrumentLibrary
 
                         InstrumentTuning tuning2 = new InstrumentTuning(tuning1.fadeout);
 
-                        int offset = 0;
-                        InputStream[] streams = null;
                         for(Map.Entry<Integer, String[]> e : tuningInfo.entrySet())
                         {
+                            InputStream[] streams = null;
                             if(e.getValue() != null)
                             {
-                                offset = e.getKey();
                                 String[] files = e.getValue();
                                 streams = new InputStream[files.length];
                                 for(int i = 0; i < files.length; i++)
@@ -137,7 +135,10 @@ public class InstrumentLibrary
                             }
                             if(streams != null)
                             {
-                                tuning2.keyToTuningMap.put(e.getKey(), new InstrumentTuning.TuningInfo(streams, e.getKey() - offset));
+                                for(int i = -6; i <= 6; i++)
+                                {
+                                    tuning2.keyToTuningMap.put(e.getKey() + i, new InstrumentTuning.TuningInfo(streams, i));
+                                }
                             }
                         }
 

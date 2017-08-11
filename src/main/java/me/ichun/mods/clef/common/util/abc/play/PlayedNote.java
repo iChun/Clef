@@ -48,7 +48,6 @@ public class PlayedNote
     {
         //Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, (float)Math.pow(2.0D, (double)((key) - 12 - 48) / 12.0D)));
 //        Minecraft.getMinecraft().getSoundHandler().playSound(sound);
-
         Minecraft mc = Minecraft.getMinecraft();
         SoundManager soundManager = mc.getSoundHandler().sndManager;
         if (mc.gameSettings.getSoundLevel(SoundCategory.MASTER) > 0.0F && instrument.hasAvailableKey(key))
@@ -74,7 +73,7 @@ public class PlayedNote
 
             try
             {
-                SoundSystemReflect.ssNewSource.invoke(soundManager.sndSystem, false, uniqueId, getURLForSoundResource(instrument, key), "clef:" + instrument.info.itemName + ".ogg", false, instrumentSound.getXPosF(), instrumentSound.getYPosF(), instrumentSound.getZPosF(), instrumentSound.getAttenuationType().getTypeInt(), f);
+                SoundSystemReflect.ssNewSource.invoke(soundManager.sndSystem, false, uniqueId, getURLForSoundResource(instrument, key - tuning.keyOffset), "clef:" + instrument.info.itemName + ":" + (key - tuning.keyOffset) + ".ogg", false, instrumentSound.getXPosF(), instrumentSound.getYPosF(), instrumentSound.getZPosF(), instrumentSound.getAttenuationType().getTypeInt(), f);
                 net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.sound.PlaySoundSourceEvent(soundManager, instrumentSound, uniqueId));
 
                 SoundSystemReflect.ssSetPitch.invoke(soundManager.sndSystem, uniqueId, f2);
@@ -120,21 +119,25 @@ public class PlayedNote
 
     public void stop()
     {
-        try
+        //TODO pass this volume tapering over to the InstrumentSound later.
+        if(played)
         {
-            SoundSystemReflect.ssStop.invoke(Minecraft.getMinecraft().getSoundHandler().sndManager.sndSystem, uniqueId);
-        }
-        catch(InvocationTargetException | IllegalAccessException e)
-        {
-            Clef.LOGGER.warn("Error stopping instrument sound.");
-            e.printStackTrace();
+            try
+            {
+                SoundSystemReflect.ssStop.invoke(Minecraft.getMinecraft().getSoundHandler().sndManager.sndSystem, uniqueId);
+            }
+            catch(InvocationTargetException | IllegalAccessException e)
+            {
+                Clef.LOGGER.warn("Error stopping instrument sound.");
+                e.printStackTrace();
+            }
         }
         instrumentSound.donePlaying = true;
     }
 
     private static URL getURLForSoundResource(final Instrument instrument, final int key)
     {
-        String s = String.format("%s:%s", "clef", instrument.info.itemName + ".ogg");
+        String s = String.format("%s:%s:%s", "clef", instrument.info.itemName, key + ".ogg");
         URLStreamHandler urlstreamhandler = new URLStreamHandler()
         {
             protected URLConnection openConnection(final URL p_openConnection_1_)
