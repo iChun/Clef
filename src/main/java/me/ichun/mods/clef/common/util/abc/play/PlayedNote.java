@@ -39,7 +39,7 @@ public class PlayedNote
     {
         this.instrument = instrument;
         this.key = key;
-        this.instrumentSound = new InstrumentSound(SoundEvents.BLOCK_NOTE_HARP, SoundCategory.AMBIENT, 0.3F);
+        this.instrumentSound = new InstrumentSound(SoundEvents.BLOCK_NOTE_HARP, SoundCategory.AMBIENT, 1F);
         this.startTick = startTick;
         this.duration = duration;
     }
@@ -68,7 +68,7 @@ public class PlayedNote
             float f1 = soundManager.getClampedVolume(instrumentSound);
 
             InstrumentTuning.TuningInfo tuning = instrument.tuning.keyToTuningMap.get(key);
-            float f2 = 1F + (tuning.keyOffset / 12F);
+            float f2 = (float)Math.pow(2.0D, (double)tuning.keyOffset / 12.0D);
 
             uniqueId = MathHelper.getRandomUuid(ThreadLocalRandom.current()).toString();
 
@@ -115,12 +115,20 @@ public class PlayedNote
                 Clef.LOGGER.warn("Error playing instrument sound.");
                 e.printStackTrace();
             }
-
         }
     }
 
     public void stop()
     {
+        try
+        {
+            SoundSystemReflect.ssStop.invoke(Minecraft.getMinecraft().getSoundHandler().sndManager.sndSystem, uniqueId);
+        }
+        catch(InvocationTargetException | IllegalAccessException e)
+        {
+            Clef.LOGGER.warn("Error stopping instrument sound.");
+            e.printStackTrace();
+        }
         instrumentSound.donePlaying = true;
     }
 
