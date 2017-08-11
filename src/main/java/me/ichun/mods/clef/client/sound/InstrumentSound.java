@@ -9,17 +9,18 @@ public class InstrumentSound extends PositionedSound implements ITickableSound
 {
     public boolean donePlaying;
 
-    public InstrumentSound(SoundEvent soundIn, SoundCategory categoryIn, float volume, float pitch)
+    public InstrumentSound(SoundEvent soundIn, SoundCategory categoryIn, float volume)
     {
         super(soundIn, categoryIn);
         this.volume = volume;
-        this.pitch = pitch;
+        this.pitch = 1F;
         this.repeat = true;
         this.repeatDelay = 0;
         this.xPosF = (float)0;
         this.yPosF = (float)0;
         this.zPosF = (float)0;
     }
+
     @Override
     public void update()
     {

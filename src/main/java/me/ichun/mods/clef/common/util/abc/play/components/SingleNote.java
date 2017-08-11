@@ -5,6 +5,7 @@ import me.ichun.mods.clef.common.util.abc.construct.Construct;
 import me.ichun.mods.clef.common.util.abc.construct.Octave;
 import me.ichun.mods.clef.common.util.abc.play.PlayedNote;
 import me.ichun.mods.clef.common.util.abc.play.Track;
+import me.ichun.mods.clef.common.util.instrument.Instrument;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,11 +13,11 @@ import java.util.HashMap;
 public class SingleNote extends Note
 {
     @Override
-    public boolean playNote(Track track, ArrayList<PlayedNote> playing, int currentProg)
+    public boolean playNote(Track track, ArrayList<PlayedNote> playing, int currentProg, Instrument instrument)
     {
-        if(notePitch != Note.NOTE_REST)
+        if(key != Note.NOTE_REST)
         {
-            playing.add(new PlayedNote((float)notePitch, currentProg, durationInTicks).start());
+            playing.add(new PlayedNote(instrument, currentProg, durationInTicks, key).start());
         }
         return true;
     }
@@ -96,8 +97,9 @@ public class SingleNote extends Note
             {
                 accidental = 0;
             }
-            durationInTicks = (int)Math.round(info[0] * duration * (info[4] / info[1]));
-            notePitch = (float)Math.pow(2.0D, (double)((key + accidental) - 12) / 12.0D);
+            this.durationInTicks = (int)Math.round(info[0] * duration * (info[4] / info[1]));
+            this.key = (key + accidental) + 48; //MiddleC?
+            //notePitch = (float)Math.pow(2.0D, (double)((key + accidental) - 12) / 12.0D);
         }
         return true;
     }

@@ -7,7 +7,6 @@ import me.ichun.mods.ichunutil.common.core.util.IOUtil;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 
 public class AbcLibrary
 {
@@ -15,25 +14,25 @@ public class AbcLibrary
 
     public static void init()
     {
-        readAbcs(Clef.getResourceHelper().abcDir);
+        Clef.LOGGER.info("Loading abc files");
+        Clef.LOGGER.info("Loaded " + readAbcs(Clef.getResourceHelper().abcDir) + " abc files");
     }
 
-    private static void readAbcs(File dir)
+    private static int readAbcs(File dir)
     {
-        Clef.LOGGER.info("Loading abc files");
         int trackCount = 0;
         for(File file : dir.listFiles())
         {
             if(file.isDirectory())
             {
-                readAbcs(file);
+                trackCount += readAbcs(file);
             }
             else if(readAbc(file))
             {
                 trackCount++;
             }
         }
-        Clef.LOGGER.info("Loaded " + trackCount + " abc files");
+        return trackCount;
     }
 
     public static boolean readAbc(File file)

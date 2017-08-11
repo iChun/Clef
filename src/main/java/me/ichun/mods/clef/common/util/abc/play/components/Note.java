@@ -3,13 +3,14 @@ package me.ichun.mods.clef.common.util.abc.play.components;
 import me.ichun.mods.clef.common.util.abc.construct.Construct;
 import me.ichun.mods.clef.common.util.abc.play.PlayedNote;
 import me.ichun.mods.clef.common.util.abc.play.Track;
+import me.ichun.mods.clef.common.util.instrument.Instrument;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public abstract class Note
 {
-    public static final double NOTE_REST = -100000D;
+    public static final int NOTE_REST = -1;
     public static final HashMap<Character, Integer> NOTE_TO_KEY_MAP = new HashMap<Character, Integer>(){{
         put('C', 0);
         put('D', 2);
@@ -27,13 +28,13 @@ public abstract class Note
         put('b', 23);
     }};
 
-    public double notePitch = NOTE_REST; //key - abc....EFG
+    public int key = NOTE_REST; //key - abc....EFG
     public double duration = 1;
     public int durationInTicks = 5;
 
     public ArrayList<Construct> constructs = new ArrayList<>();
 
-    public abstract boolean playNote(Track track, ArrayList<PlayedNote> playedNotes, int currentProg); //returns false if it's a special "note"
+    public abstract boolean playNote(Track track, ArrayList<PlayedNote> playedNotes, int currentProg, Instrument instrument); //returns false if it's a special "note"
 
     public abstract boolean setup(double[] info, HashMap<Integer, Integer> keyAccidentals); //returns false if it's a special "note"
 

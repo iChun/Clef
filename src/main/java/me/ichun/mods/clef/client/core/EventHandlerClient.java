@@ -2,6 +2,8 @@ package me.ichun.mods.clef.client.core;
 
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
 import me.ichun.mods.clef.common.util.abc.play.Track;
+import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
+import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import org.lwjgl.input.Keyboard;
@@ -32,8 +34,16 @@ public class EventHandlerClient
             {
                 if(Keyboard.isKeyDown(Keyboard.KEY_LCONTROL))
                 {
-                    tracksPlaying.add(new Track(AbcLibrary.tracks.get((int)(Math.floor(Math.random() * AbcLibrary.tracks.size()))).track));
-                    System.out.println("PLAYING!");
+                    for(int i = tracksPlaying.size() - 1; i >= 0; i--)
+                    {
+                        Track track = tracksPlaying.get(i);
+                        track.stop();
+                    }
+                    tracksPlaying.clear();
+
+                    TrackInfo trackInfo = AbcLibrary.tracks.get((int)(Math.floor(Math.random() * AbcLibrary.tracks.size()))).track;
+                    tracksPlaying.add(new Track(trackInfo, InstrumentLibrary.instruments.get(8)));
+                    System.out.println("PLAYING: " + trackInfo.title);
                 }
                 else if(Keyboard.isKeyDown(Keyboard.KEY_LSHIFT))
                 {
@@ -47,7 +57,9 @@ public class EventHandlerClient
                 }
                 else
                 {
-                    AbcLibrary.init();
+                    //AbcLibrary.init();
+                    InstrumentLibrary.instruments.clear();
+                    InstrumentLibrary.init();
                 }
             }
             keyDown = Keyboard.isKeyDown(Keyboard.KEY_TAB);
