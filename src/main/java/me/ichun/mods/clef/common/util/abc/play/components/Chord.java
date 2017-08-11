@@ -25,6 +25,7 @@ public class Chord extends Note
         for(Note note : notes)
         {
             note.setup(info);
+            note.duration *= duration;
         }
     }
 }
