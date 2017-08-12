@@ -6,6 +6,7 @@ import me.ichun.mods.clef.common.util.abc.construct.Octave;
 import me.ichun.mods.clef.common.util.abc.play.PlayedNote;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
+import net.minecraft.util.SoundCategory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,11 +14,11 @@ import java.util.HashMap;
 public class SingleNote extends Note
 {
     @Override
-    public boolean playNote(Track track, ArrayList<PlayedNote> playing, int currentProg, Instrument instrument)
+    public boolean playNote(Track track, int currentProg, Instrument instrument)
     {
         if(key != Note.NOTE_REST)
         {
-            playing.add(new PlayedNote(instrument, currentProg, durationInTicks, key).start());
+            new PlayedNote(instrument, currentProg, durationInTicks, key, SoundCategory.AMBIENT).start();
         }
         return true;
     }

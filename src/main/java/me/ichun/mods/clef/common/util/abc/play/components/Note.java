@@ -34,7 +34,7 @@ public abstract class Note
 
     public ArrayList<Construct> constructs = new ArrayList<>();
 
-    public abstract boolean playNote(Track track, ArrayList<PlayedNote> playedNotes, int currentProg, Instrument instrument); //returns false if it's a special "note"
+    public abstract boolean playNote(Track track, int currentProg, Instrument instrument); //returns false if it's a special "note"
 
     public abstract boolean setup(double[] info, HashMap<Integer, Integer> keyAccidentals); //returns false if it's a special "note"
 

@@ -14,8 +14,6 @@ public class Track
     public final TrackInfo track;
     public ArrayList<Instrument> instruments = new ArrayList<>();
 
-    public ArrayList<PlayedNote> playingNotes = new ArrayList<>();
-
     public Track(TrackInfo track, Instrument instrument)
     {
         this.track = track;
@@ -41,17 +39,8 @@ public class Track
                 ArrayList<Note> notes = track.notes.get(playProg);
                 for(Note note : notes)
                 {
-                    note.playNote(this, playingNotes, playProg, i);
+                    note.playNote(this, playProg, i);
                 }
-            }
-        }
-
-        for(int i = playingNotes.size() - 1; i >= 0; i--)
-        {
-            PlayedNote note = playingNotes.get(i);
-            if(playProg > note.startTick + note.duration + (note.instrument.tuning.fadeout * 20D) + 5)
-            {
-                playingNotes.remove(i);
             }
         }
 
@@ -61,7 +50,6 @@ public class Track
 
     public void stop()
     {
-        playingNotes.clear();
         playing = false;
     }
 

@@ -85,7 +85,7 @@ public class EventHandlerClient
                         }
                         tracksPlaying.clear();
 
-                        Instrument instrument = InstrumentLibrary.getInstrumentByName("microphone");
+                        Instrument instrument = InstrumentLibrary.getInstrumentByName("piano");
                         if(instrument != null)
                         {
                             TrackInfo trackInfo = AbcLibrary.tracks.get((int)(Math.floor(Math.random() * AbcLibrary.tracks.size()))).track;

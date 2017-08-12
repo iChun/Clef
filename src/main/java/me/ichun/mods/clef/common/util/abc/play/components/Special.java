@@ -20,7 +20,7 @@ public class Special extends Note
     }
 
     @Override
-    public boolean playNote(Track track, ArrayList<PlayedNote> playedNotes, int currentProg, Instrument instrument)
+    public boolean playNote(Track track, int currentProg, Instrument instrument)
     {
         return false;
     }
