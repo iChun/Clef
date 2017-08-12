@@ -71,6 +71,10 @@ public class ItemInstrument extends Item
         if(tag != null)
         {
             Instrument instrument = InstrumentLibrary.getInstrumentByKind(tag.getString("kind"));
+            if(I18n.translateToLocal("item.clef.instrument." + instrument.info.kind + ".name").equalsIgnoreCase("item.clef.instrument." + instrument.info.kind + ".name"))
+            {
+                InstrumentLibrary.injectLocalization(instrument);
+            }
             return "item.clef.instrument." + instrument.info.kind;
         }
         else

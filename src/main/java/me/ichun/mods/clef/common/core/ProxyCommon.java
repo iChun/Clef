@@ -33,4 +33,8 @@ public class ProxyCommon
     }
 
     public void initMod(){}
+
+    public void postInitMod()
+    {
+    }
 }

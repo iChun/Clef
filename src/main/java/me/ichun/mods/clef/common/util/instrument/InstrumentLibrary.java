@@ -164,13 +164,6 @@ public class InstrumentLibrary
 
                         instrument.tuning = tuning1;
 
-                        String localName = "item.clef.instrument." + instrument.info.kind + ".name=" + instrument.info.shortdescription;
-                        String localDesc = "item.clef.instrument." + instrument.info.kind + ".desc=" + instrument.info.description;
-                        InputStream streamName = new ByteArrayInputStream(localName.getBytes(StandardCharsets.UTF_8));
-                        InputStream streamDesc = new ByteArrayInputStream(localDesc.getBytes(StandardCharsets.UTF_8));
-                        LanguageMap.inject(streamName);
-                        LanguageMap.inject(streamDesc);
-
                         instruments.add(instrument);
                     }
                     catch(Exception e)
@@ -189,6 +182,16 @@ public class InstrumentLibrary
             }
         }
         return instrumentCount;
+    }
+
+    public static void injectLocalization(Instrument instrument)
+    {
+        String localName = "item.clef.instrument." + instrument.info.kind + ".name=" + instrument.info.shortdescription;
+        String localDesc = "item.clef.instrument." + instrument.info.kind + ".desc=" + instrument.info.description;
+        InputStream streamName = new ByteArrayInputStream(localName.getBytes(StandardCharsets.UTF_8));
+        InputStream streamDesc = new ByteArrayInputStream(localDesc.getBytes(StandardCharsets.UTF_8));
+        LanguageMap.inject(streamName);
+        LanguageMap.inject(streamDesc);
     }
 
     public static Instrument getInstrumentByKind(String s)
