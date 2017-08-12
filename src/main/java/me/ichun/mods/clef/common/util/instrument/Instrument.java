@@ -141,25 +141,22 @@ public class Instrument
         public InstrumentTexture(ResourceLocation rl, BufferedImage image)
         {
             this.rl = rl;
-            if(image.getWidth() != image.getHeight())
+            int size = Math.max(image.getWidth(), image.getHeight());
+            BufferedImage image1 = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+            int halfX = (int)Math.floor((size - image.getWidth()) / 2D); //offsetX
+            int halfY = (int)Math.floor((size - image.getHeight()) / 2D); //offsetY
+            for(int x = 0; x < image.getWidth(); x++)
             {
-                int size = Math.max(image.getWidth(), image.getHeight());
-                BufferedImage image1 = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
-                int halfX = (int)Math.floor((size - image.getWidth()) / 2D); //offsetX
-                int halfY = (int)Math.floor((size - image.getHeight()) / 2D); //offsetY
-                for(int x = 0; x < image.getWidth(); x++)
+                for(int y = 0; y < image.getHeight(); y++)
                 {
-                    for(int y = 0; y < image.getHeight(); y++)
+                    int clr = image.getRGB(x, y);
+                    if(clr != 0xffffffff)
                     {
-                        image1.setRGB(halfX + x, halfY + y, image.getRGB(x, y));
+                        image1.setRGB(halfX + x, halfY + y, clr);
                     }
                 }
-                this.image = image1;
             }
-            else
-            {
-                this.image = image;
-            }
+            this.image = image1;
         }
 
         @Override
@@ -175,7 +172,7 @@ public class Instrument
         }
     }
 
-    @SideOnly(Side.CLIENT)
+    @SideOnly(Side.CLIENT) //TODO move to iChunUtil
     public class TextureAtlasSpriteInstrument extends TextureAtlasSprite
     {
         public BufferedImage image;
