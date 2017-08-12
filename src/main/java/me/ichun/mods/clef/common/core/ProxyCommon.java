@@ -2,8 +2,10 @@ package me.ichun.mods.clef.common.core;
 
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.item.ItemInstrument;
+import me.ichun.mods.clef.common.packet.PacketRequestInstrument;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
+import me.ichun.mods.ichunutil.common.core.network.PacketChannel;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraftforge.common.MinecraftForge;
@@ -30,6 +32,8 @@ public class ProxyCommon
 
         Clef.eventHandlerServer = new EventHandlerServer();
         MinecraftForge.EVENT_BUS.register(Clef.eventHandlerServer);
+
+        Clef.channel = new PacketChannel("Clef", PacketRequestInstrument.class);
     }
 
     public void initMod(){}

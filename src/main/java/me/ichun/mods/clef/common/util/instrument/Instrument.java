@@ -3,7 +3,9 @@ package me.ichun.mods.clef.common.util.instrument;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.gson.Gson;
 import me.ichun.mods.clef.client.render.BakedModelInstrument;
+import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentInfo;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentTuning;
 import net.minecraft.client.Minecraft;
@@ -18,9 +20,14 @@ import net.minecraftforge.client.model.ItemLayerModel;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public class Instrument
     implements Comparable<Instrument>
@@ -52,6 +59,53 @@ public class Instrument
     public int compareTo(Instrument o)
     {
         return info.shortdescription.compareTo(o.info.shortdescription);
+    }
+
+    public ByteArrayOutputStream getAsBAOS()
+    {
+        //TODO clef instrument info?
+        try
+        {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+            ZipOutputStream out = new ZipOutputStream(baos);
+            out.setLevel(9);
+            out.putNextEntry(new ZipEntry("items/instruments/" + info.itemName + ".instrument"));
+
+            byte[] data = (new Gson()).toJson(info).getBytes();
+            out.write(data, 0, data.length);
+            out.closeEntry();
+
+            out.putNextEntry(new ZipEntry("items/instruments/" + info.inventoryIcon));
+            ImageIO.write(iconImg, "png", out);
+            out.closeEntry();
+
+            out.putNextEntry(new ZipEntry("items/instruments/" + info.activeImage));
+            ImageIO.write(handImg, "png", out);
+            out.closeEntry();
+
+            out.putNextEntry(new ZipEntry("sfx/instruments/" + info.kind + "/tuning.config"));
+            data = (new Gson()).toJson(tuning).getBytes();
+            out.write(data, 0, data.length);
+            out.closeEntry();
+
+            for(Map.Entry<String, ByteArrayOutputStream> e : tuning.audioToOutputStream.entrySet())
+            {
+                out.putNextEntry(new ZipEntry("sfx/instruments/" + info.kind + "/" + e.getKey()));
+                out.write(e.getValue().toByteArray());
+                out.closeEntry();
+            }
+
+            out.close();
+
+            return baos;
+        }
+        catch(Exception e)
+        {
+            Clef.LOGGER.warn("Error creating instrument package: " + info.itemName);
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @SideOnly(Side.CLIENT)

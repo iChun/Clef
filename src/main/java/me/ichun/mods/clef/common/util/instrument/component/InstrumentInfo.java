@@ -2,8 +2,6 @@ package me.ichun.mods.clef.common.util.instrument.component;
 
 public class InstrumentInfo
 {
-    public transient String fileName;
-
     public String itemName;
     public double price;
     public String category;

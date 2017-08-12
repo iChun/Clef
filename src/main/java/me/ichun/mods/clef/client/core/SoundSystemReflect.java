@@ -13,7 +13,6 @@ public class SoundSystemReflect
     public static Method ssSetPitch;
     public static Method ssSetVolume;
     public static Method ssPlay;
-    public static Method ssStop;
 
     public static void init()
     {
@@ -28,8 +27,6 @@ public class SoundSystemReflect
             ssSetVolume.setAccessible(true);
             ssPlay = SoundSystem.class.getDeclaredMethod("play", String.class);
             ssPlay.setAccessible(true);
-            ssStop = SoundSystem.class.getDeclaredMethod("stop", String.class);
-            ssStop.setAccessible(true);
         }
         catch(NoSuchMethodException exception)
         {

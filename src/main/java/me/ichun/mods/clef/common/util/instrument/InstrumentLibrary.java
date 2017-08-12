@@ -3,9 +3,14 @@ package me.ichun.mods.clef.common.util.instrument;
 import com.google.common.collect.Ordering;
 import com.google.gson.Gson;
 import me.ichun.mods.clef.common.Clef;
+import me.ichun.mods.clef.common.packet.PacketRequestInstrument;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentInfo;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentTuning;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.text.translation.LanguageMap;
+import net.minecraftforge.fml.relauncher.Side;
 import org.apache.commons.io.IOUtils;
 
 import javax.imageio.ImageIO;
@@ -203,5 +208,40 @@ public class InstrumentLibrary
             }
         }
         return null;
+    }
+
+    public static HashSet<String> requestedInstrumentsFromPlayers = new HashSet<>();
+
+    public static void checkForInstrument(ItemStack is, EntityPlayer player)
+    {
+        NBTTagCompound tag = is.getTagCompound();
+        if(tag != null)
+        {
+            String instName = tag.getString("itemName");
+            Instrument inst = getInstrumentByName(instName);
+            if(inst == null)
+            {
+                requestInstrumentFromPlayer(instName, player);
+            }
+        }
+    }
+
+    public static void requestInstrumentFromPlayer(String name, EntityPlayer player)
+    {
+        requestedInstrumentsFromPlayers.add(name);
+        Clef.channel.sendTo(new PacketRequestInstrument(name), player);
+    }
+
+    public static boolean packageAndSendInstrument(String name, Side side) //side is the side receiving this request
+    {
+        Instrument instrument = getInstrumentByName(name);
+        if(instrument != null)
+        {
+            //Archive and send the instrument
+            ByteArrayOutputStream baos = instrument.getAsBAOS();
+            //TODO split this part up and send it to server/player
+            return true;
+        }
+        return false;
     }
 }
