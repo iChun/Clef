@@ -121,18 +121,6 @@ public class PlayedNote
     public void stop()
     {
         //TODO pass this volume tapering over to the InstrumentSound later.
-        if(played)
-        {
-            try
-            {
-                SoundSystemReflect.ssStop.invoke(Minecraft.getMinecraft().getSoundHandler().sndManager.sndSystem, uniqueId);
-            }
-            catch(InvocationTargetException | IllegalAccessException e)
-            {
-                Clef.LOGGER.warn("Error stopping instrument sound.");
-                e.printStackTrace();
-            }
-        }
         instrumentSound.donePlaying = true;
     }
 

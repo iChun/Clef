@@ -7,9 +7,9 @@ public class Instrument
 {
     public final InstrumentInfo info;
     public final BufferedImage iconImg;
-    public int iconImgId;
+    public int iconImgId = -1;
     public final BufferedImage handImg;
-    public int handImgId;
+    public int handImgId = -1;
     public InstrumentTuning tuning;
 
     public Instrument(InstrumentInfo info, BufferedImage iconImg, BufferedImage handImg)

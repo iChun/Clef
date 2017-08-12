@@ -10,6 +10,8 @@ import me.ichun.mods.ichunutil.common.core.config.ConfigHandler;
 import me.ichun.mods.ichunutil.common.core.network.PacketChannel;
 import me.ichun.mods.ichunutil.common.iChunUtil;
 import me.ichun.mods.ichunutil.common.module.update.UpdateChecker;
+import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.item.Item;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
@@ -45,6 +47,9 @@ public class Clef
     public static EventHandlerClient eventHandlerClient;
 
     private static ResourceHelper resourceHelper;
+
+    public static CreativeTabs creativeTabInstruments;
+    public static Item itemInstrument;
 
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event)

@@ -3,10 +3,14 @@ package me.ichun.mods.clef.common.util.instrument;
 import com.google.common.collect.Ordering;
 import com.google.gson.Gson;
 import me.ichun.mods.clef.common.Clef;
+import net.minecraft.util.text.translation.LanguageMap;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.commons.io.IOUtils;
 
 import javax.imageio.ImageIO;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Map;
@@ -160,6 +164,13 @@ public class InstrumentLibrary
 
                         instrument.tuning = tuning1;
 
+                        String localName = "item.clef.instrument." + instrument.info.kind + ".name=" + instrument.info.shortdescription;
+                        String localDesc = "item.clef.instrument." + instrument.info.kind + ".desc=" + instrument.info.description;
+                        InputStream streamName = new ByteArrayInputStream(localName.getBytes(StandardCharsets.UTF_8));
+                        InputStream streamDesc = new ByteArrayInputStream(localDesc.getBytes(StandardCharsets.UTF_8));
+                        LanguageMap.inject(streamName);
+                        LanguageMap.inject(streamDesc);
+
                         instruments.add(instrument);
                     }
                     catch(Exception e)
@@ -178,5 +189,17 @@ public class InstrumentLibrary
             }
         }
         return instrumentCount;
+    }
+
+    public static Instrument getInstrumentByKind(String s)
+    {
+        for(Instrument instrument : instruments)
+        {
+            if(instrument.info.kind.equalsIgnoreCase(s))
+            {
+                return instrument;
+            }
+        }
+        return null;
     }
 }
