@@ -1,31 +1,50 @@
 package me.ichun.mods.clef.client.core;
 
-import me.ichun.mods.clef.client.render.ItemRenderInstrument;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import me.ichun.mods.clef.client.render.BakedModelInstrument;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
-import me.ichun.mods.ichunutil.client.model.item.ModelBaseWrapper;
-import me.ichun.mods.ichunutil.client.model.item.ModelEmpty;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.event.ModelBakeEvent;
+import net.minecraftforge.client.event.TextureStitchEvent;
+import net.minecraftforge.client.model.ItemLayerModel;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import org.lwjgl.input.Keyboard;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class EventHandlerClient
 {
     public ArrayList<Track> tracksPlaying = new ArrayList<>();
 
+    public TextureAtlasSprite txInstrument;
+
     public boolean keyDown;
+
+    @SubscribeEvent
+    public void onTextureStitchedPre(TextureStitchEvent.Pre event)
+    {
+        txInstrument = Minecraft.getMinecraft().getTextureMapBlocks().registerSprite(new ResourceLocation("clef", "items/instrument"));
+    }
 
     @SubscribeEvent
     public void onModelBake(ModelBakeEvent event)
     {
-        event.getModelRegistry().putObject(new ModelResourceLocation("clef:instrument", "inventory"), new ModelBaseWrapper(new ItemRenderInstrument()).setItemDualHanded());
+        ImmutableList.Builder<BakedQuad> builder = ImmutableList.builder();
+        builder.addAll(ItemLayerModel.getQuadsForSprite(0, txInstrument, DefaultVertexFormats.ITEM, Optional.absent()));
+        event.getModelRegistry().putObject(new ModelResourceLocation("clef:instrument", "inventory"), new BakedModelInstrument(builder.build(), txInstrument, ImmutableMap.copyOf(new HashMap<>()), null));
     }
 
     @SubscribeEvent
@@ -50,10 +69,10 @@ public class EventHandlerClient
                     {
                         if(!tracksPlaying.isEmpty())
                         {
-//                            Instrument instrument = InstrumentLibrary.instruments.get((int)Math.floor(Math.random() * InstrumentLibrary.instruments.size()));
-                            Instrument instrument = InstrumentLibrary.getInstrumentByKind("koto");
+                            //                            Instrument instrument = InstrumentLibrary.instruments.get((int)Math.floor(Math.random() * InstrumentLibrary.instruments.size()));
+                            Instrument instrument = InstrumentLibrary.getInstrumentByName("koto");
 
-                            System.out.println("ADDING RANDOM INSTRUMENT: " + instrument.info.kind);
+                            System.out.println("ADDING RANDOM INSTRUMENT: " + instrument.info.itemName);
                             tracksPlaying.get(0).addInstrument(instrument);
                         }
                     }
@@ -66,7 +85,7 @@ public class EventHandlerClient
                         }
                         tracksPlaying.clear();
 
-                        Instrument instrument = InstrumentLibrary.getInstrumentByKind("microphone");
+                        Instrument instrument = InstrumentLibrary.getInstrumentByName("microphone");
                         if(instrument != null)
                         {
                             TrackInfo trackInfo = AbcLibrary.tracks.get((int)(Math.floor(Math.random() * AbcLibrary.tracks.size()))).track;

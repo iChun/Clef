@@ -186,19 +186,19 @@ public class InstrumentLibrary
 
     public static void injectLocalization(Instrument instrument)
     {
-        String localName = "item.clef.instrument." + instrument.info.kind + ".name=" + instrument.info.shortdescription;
-        String localDesc = "item.clef.instrument." + instrument.info.kind + ".desc=" + instrument.info.description;
+        String localName = "item.clef.instrument." + instrument.info.itemName + ".name=" + instrument.info.shortdescription;
+        String localDesc = "item.clef.instrument." + instrument.info.itemName + ".desc=" + instrument.info.description;
         InputStream streamName = new ByteArrayInputStream(localName.getBytes(StandardCharsets.UTF_8));
         InputStream streamDesc = new ByteArrayInputStream(localDesc.getBytes(StandardCharsets.UTF_8));
         LanguageMap.inject(streamName);
         LanguageMap.inject(streamDesc);
     }
 
-    public static Instrument getInstrumentByKind(String s)
+    public static Instrument getInstrumentByName(String s)
     {
         for(Instrument instrument : instruments)
         {
-            if(instrument.info.kind.equalsIgnoreCase(s))
+            if(instrument.info.itemName.equalsIgnoreCase(s))
             {
                 return instrument;
             }

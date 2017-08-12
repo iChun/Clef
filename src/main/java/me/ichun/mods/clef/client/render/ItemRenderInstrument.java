@@ -1,17 +1,14 @@
 package me.ichun.mods.clef.client.render;
 
 import me.ichun.mods.clef.common.util.instrument.Instrument;
-import me.ichun.mods.clef.common.util.instrument.InstrumentInfo;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import me.ichun.mods.ichunutil.client.model.item.IModelBase;
 import me.ichun.mods.ichunutil.client.model.item.ModelBaseWrapper;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.block.model.IBakedModel;
 import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
-import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.client.renderer.texture.TextureUtil;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.item.ItemStack;
@@ -48,17 +45,12 @@ public class ItemRenderInstrument implements IModelBase
         NBTTagCompound tag = heldStack.getTagCompound();
         if(tag != null)
         {
-            Instrument instrument = InstrumentLibrary.getInstrumentByKind(tag.getString("kind"));
+            Instrument instrument = InstrumentLibrary.getInstrumentByName(tag.getString("itemName"));
             if(instrument != null)
             {
                 if(ModelBaseWrapper.isItemRender(currentPerspective))
                 {
                     //item icon
-                    if(instrument.iconImgId == -1)
-                    {
-                        instrument.iconImgId = TextureUtil.uploadTextureImage(TextureUtil.glGenTextures(), instrument.iconImg);
-                    }
-                    GlStateManager.bindTexture(instrument.iconImgId);
                 }
                 else
                 {

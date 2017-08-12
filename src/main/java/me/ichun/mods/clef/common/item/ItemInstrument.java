@@ -34,7 +34,7 @@ public class ItemInstrument extends Item
             {
                 ItemStack stack = new ItemStack(itemIn, 1, 0);
                 NBTTagCompound stackTag = new NBTTagCompound();
-                stackTag.setString("kind", intrument.info.kind);
+                stackTag.setString("itemName", intrument.info.itemName);
                 stack.setTagCompound(stackTag);
                 subItems.add(stack);
             }
@@ -48,10 +48,10 @@ public class ItemInstrument extends Item
         NBTTagCompound tag = is.getTagCompound();
         if(tag != null)
         {
-            Instrument instrument = InstrumentLibrary.getInstrumentByKind(tag.getString("kind"));
+            Instrument instrument = InstrumentLibrary.getInstrumentByName(tag.getString("itemName"));
             if(instrument != null)
             {
-                list.add(I18n.translateToLocal("item.clef.instrument." + instrument.info.kind + ".desc"));
+                list.add(I18n.translateToLocal("item.clef.instrument." + instrument.info.itemName + ".desc"));
             }
             else
             {
@@ -70,17 +70,17 @@ public class ItemInstrument extends Item
         NBTTagCompound tag = is.getTagCompound();
         if(tag != null)
         {
-            Instrument instrument = InstrumentLibrary.getInstrumentByKind(tag.getString("kind"));
-            if(I18n.translateToLocal("item.clef.instrument." + instrument.info.kind + ".name").equalsIgnoreCase("item.clef.instrument." + instrument.info.kind + ".name"))
+            Instrument instrument = InstrumentLibrary.getInstrumentByName(tag.getString("itemName"));
+            if(instrument != null)
             {
-                InstrumentLibrary.injectLocalization(instrument);
+                if(I18n.translateToLocal("item.clef.instrument." + instrument.info.itemName + ".name").equalsIgnoreCase("item.clef.instrument." + instrument.info.itemName + ".name"))
+                {
+                    InstrumentLibrary.injectLocalization(instrument);
+                }
+                return "item.clef.instrument." + instrument.info.itemName;
             }
-            return "item.clef.instrument." + instrument.info.kind;
         }
-        else
-        {
-            return super.getUnlocalizedName(is);
-        }
+        return super.getUnlocalizedName(is);
     }
 
     @Override
