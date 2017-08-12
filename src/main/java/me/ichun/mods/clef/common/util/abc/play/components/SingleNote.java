@@ -28,6 +28,7 @@ public class SingleNote extends Note
         int accidental = -2;
         int key = 0; //middle
         boolean rest = false;
+        boolean hasNote = false;
         for(Construct construct : constructs)
         {
             //TODO take note of rests and BIG rests (multiply the meter?)
@@ -68,6 +69,7 @@ public class SingleNote extends Note
                 {
                     key += Note.NOTE_TO_KEY_MAP.get(c);
                 }
+                hasNote = true;
             }
             else if(construct.getType() == Construct.EnumConstructType.OCTAVE)
             {
@@ -83,23 +85,30 @@ public class SingleNote extends Note
             }
         }
 
-        if(!rest)
+        this.durationInTicks = (int)Math.round(info[0] * (duration));
+        if(hasNote)
         {
-            if(keyAccidentals.containsKey(key) && accidental == -2)
+            if(!rest)
             {
-                accidental = keyAccidentals.get(key);
+                if(keyAccidentals.containsKey(key) && accidental == -2)
+                {
+                    accidental = keyAccidentals.get(key);
+                }
+                else if(accidental != -2)
+                {
+                    keyAccidentals.put(key, accidental);
+                }
+                if(accidental == -2)
+                {
+                    accidental = 0;
+                }
+                this.key = (key + accidental) + 54; //MiddleC?
+                //notePitch = (float)Math.pow(2.0D, (double)((key + accidental) - 12) / 12.0D);
             }
-            else if(accidental != -2)
-            {
-                keyAccidentals.put(key, accidental);
-            }
-            if(accidental == -2)
-            {
-                accidental = 0;
-            }
-            this.durationInTicks = (int)Math.round(info[0] * duration * (info[4] / info[1]));
-            this.key = (key + accidental) + 48; //MiddleC?
-            //notePitch = (float)Math.pow(2.0D, (double)((key + accidental) - 12) / 12.0D);
+        }
+        else
+        {
+            this.durationInTicks = 0;
         }
         return true;
     }

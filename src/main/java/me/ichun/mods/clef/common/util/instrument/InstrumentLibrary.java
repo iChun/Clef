@@ -6,9 +6,7 @@ import me.ichun.mods.clef.common.Clef;
 import org.apache.commons.io.IOUtils;
 
 import javax.imageio.ImageIO;
-import java.io.File;
-import java.io.InputStream;
-import java.io.StringWriter;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Map;
@@ -98,10 +96,10 @@ public class InstrumentLibrary
                         IOUtils.copy(tuningStm, writer);
                         String jsonString = writer.toString();
 
-                        InstrumentTuningSB tuning1 = (new Gson()).fromJson(jsonString, InstrumentTuningSB.class);
+                        InstrumentTuning tuning1 = (new Gson()).fromJson(jsonString, InstrumentTuning.class);
 
                         TreeMap<Integer, String[]> tuningInfo = new TreeMap<>(Ordering.natural());
-                        for(Map.Entry<String, InstrumentTuningSB.TuningInt> e : tuning1.mapping.entrySet())
+                        for(Map.Entry<String, InstrumentTuning.TuningInt> e : tuning1.mapping.entrySet())
                         {
                             String[] files = null;
                             if(e.getValue().files != null)
@@ -115,8 +113,6 @@ public class InstrumentLibrary
                             tuningInfo.put(Integer.parseInt(e.getKey()), files);
                         }
 
-                        InstrumentTuning tuning2 = new InstrumentTuning(tuning1.fadeout);
-
                         for(Map.Entry<Integer, String[]> e : tuningInfo.entrySet())
                         {
                             InputStream[] streams = null;
@@ -129,20 +125,40 @@ public class InstrumentLibrary
                                     String s = files[i];
                                     String[] fileNameSplit = s.split("/");
                                     String fileName = fileNameSplit[fileNameSplit.length - 1]; //blah.ogg
-                                    ZipEntry sound = zipFile.getEntry("sfx/instruments/" + info.kind + "/" + fileName);
-                                    streams[i] = zipFile.getInputStream(sound);
+                                    ZipEntry sound = zipFile.getEntry("sfx/instruments/" + info.kind + "/" + fileName); //TODO check if the files are OGG, reject if not.
+
+                                    if(!fileName.endsWith(".ogg"))
+                                    {
+                                        Clef.LOGGER.warn("Error loading instrument " + info.itemName + " from pack " + file.getName() + ". Audio files are not .ogg");
+                                        continue;
+                                    }
+
+                                    ByteArrayOutputStream baos = new ByteArrayOutputStream();//copy to an output stream so we can copy it as an input stream.
+                                    byte[] buffer = new byte[1024];
+                                    int len;
+                                    InputStream input = zipFile.getInputStream(sound);
+                                    while ((len = input.read(buffer)) > -1 ) {
+                                        baos.write(buffer, 0, len);
+                                    }
+                                    baos.flush();
+
+                                    streams[i] = new ByteArrayInputStream(baos.toByteArray());
+                                    tuning1.audioToOutputStream.put(fileName, baos);
                                 }
                             }
                             if(streams != null)
                             {
                                 for(int i = -6; i <= 6; i++)
                                 {
-                                    tuning2.keyToTuningMap.put(e.getKey() + i, new InstrumentTuning.TuningInfo(streams, i));
+                                    if(!tuning1.keyToTuningMap.containsKey(e.getKey() + i))
+                                    {
+                                        tuning1.keyToTuningMap.put(e.getKey() + i, new InstrumentTuning.TuningInfo(streams, i));
+                                    }
                                 }
                             }
                         }
 
-                        instrument.tuning = tuning2;
+                        instrument.tuning = tuning1;
 
                         instruments.add(instrument);
                     }

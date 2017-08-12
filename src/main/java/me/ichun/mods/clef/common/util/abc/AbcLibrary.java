@@ -14,6 +14,7 @@ public class AbcLibrary
 
     public static void init()
     {
+        tracks.clear();
         Clef.LOGGER.info("Loading abc files");
         Clef.LOGGER.info("Loaded " + readAbcs(Clef.getResourceHelper().abcDir) + " abc files");
     }

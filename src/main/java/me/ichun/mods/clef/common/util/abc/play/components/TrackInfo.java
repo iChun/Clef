@@ -1,11 +1,13 @@
 package me.ichun.mods.clef.common.util.abc.play.components;
 
+import com.google.common.collect.Ordering;
 import me.ichun.mods.clef.common.util.abc.AbcObject;
 import me.ichun.mods.clef.common.util.abc.construct.Construct;
 import me.ichun.mods.clef.common.util.abc.construct.Number;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.TreeMap;
 
 public class TrackInfo
 {
@@ -13,7 +15,7 @@ public class TrackInfo
     public String composer = ""; //C
     public String transcriber = ""; //Z
 
-    public HashMap<Integer, ArrayList<Note>> notes = new HashMap<>();
+    public TreeMap<Integer, ArrayList<Note>> notes = new TreeMap<>(Ordering.natural());
     public int trackLength = 0;
 
     private TrackInfo(String title, String composer, String transcriber)
@@ -77,9 +79,13 @@ public class TrackInfo
                             chord = new Chord();
                             break;
                         }
+                        case OCTAVE:
+                        {
+                            lastId--;
+                            //DO NOT BREAK;
+                        }
                         case ACCIDENTAL:
                         case NOTE:
-                        case OCTAVE:
                         {
                             if(currentNote == null)
                             {
@@ -90,7 +96,16 @@ public class TrackInfo
                         }
                         case NUMBER_NUMERATOR:
                         {
-                            numberNum = ((Number)construct).number;
+                            if(numberNum != -1)
+                            {
+                                numberNum *= 10;
+                                numberNum += ((Number)construct).number;
+                            }
+                            else
+                            {
+                                numberNum = ((Number)construct).number;
+                            }
+                            lastId--;
                             break;
                         }
                         case OPERATOR:
@@ -104,7 +119,16 @@ public class TrackInfo
                         }
                         case NUMBER_DENOMINATOR:
                         {
-                            numberDen = ((Number)construct).number;
+                            if(abc.constructs.size() >= 2 && abc.constructs.get(i - 1).getType() == Construct.EnumConstructType.OPERATOR)
+                            {
+                                numberDen = ((Number)construct).number;
+                            }
+                            else
+                            {
+                                numberDen *= 10;
+                                numberDen += ((Number)construct).number;
+                            }
+                            lastId--;
                             break;
                         }
                         case SPACE:
@@ -195,7 +219,16 @@ public class TrackInfo
                         }
                         case CHORD_NUMBER_NUMERATOR:
                         {
-                            chordNum = ((Number)construct).number;
+                            if(chordNum != -1)
+                            {
+                                chordNum *= 10;
+                                chordNum += ((Number)construct).number;
+                            }
+                            else
+                            {
+                                chordNum = ((Number)construct).number;
+                            }
+                            lastId--;
                             break;
                         }
                         case CHORD_OPERATOR:
@@ -209,7 +242,16 @@ public class TrackInfo
                         }
                         case CHORD_NUMBER_DENOMINATOR:
                         {
-                            chordDen = ((Number)construct).number;
+                            if(abc.constructs.size() >= 2 && abc.constructs.get(i - 1).getType() == Construct.EnumConstructType.OPERATOR)
+                            {
+                                chordDen = ((Number)construct).number;
+                            }
+                            else
+                            {
+                                chordDen *= 10;
+                                chordDen += ((Number)construct).number;
+                            }
+                            lastId--;
                             break;
                         }
                         case GRACE_CLOSE:
@@ -286,7 +328,13 @@ public class TrackInfo
             return null; //If the track has no notes, don't bother creating an "empty track".
         }
 
-        double[] info = new double[] { 20D, 0.125D, 1D, 0D, 0.125D }; //ticks per beat, unit note length, meter, key, tempo split
+        double[] info = new double[] {
+                20D, //ticks per beat
+                0.125D, //unit note length
+                1D, //meter
+                0D, //key
+                0.125D //tempo split
+        };
         HashMap<Integer, Integer> keyAccidentals = new HashMap<>();
         int currentTick = 0;
         for(Note note : notes)
@@ -296,7 +344,7 @@ public class TrackInfo
             {
                 noteAtTime.add(note); //only add the actual notes. No specials.
                 trackInfo.trackLength = currentTick + note.durationInTicks; // adds to the length of the note.
-                currentTick += info[0] * info[2];
+                currentTick += note.durationInTicks;
             }
         }
 

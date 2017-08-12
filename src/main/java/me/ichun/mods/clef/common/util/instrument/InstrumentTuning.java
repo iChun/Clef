@@ -1,17 +1,21 @@
 package me.ichun.mods.clef.common.util.instrument;
 
+import com.google.gson.annotations.SerializedName;
+
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.Map;
 
 public class InstrumentTuning
 {
-    public final float fadeout;
-    public final HashMap<Integer, TuningInfo> keyToTuningMap = new HashMap<>();
+    public float fadeout;
+    public Map<String, TuningInt> mapping;
 
-    public InstrumentTuning(float fadeout)
-    {
-        this.fadeout = fadeout;
-    }
+    public transient HashMap<Integer, TuningInfo> keyToTuningMap = new HashMap<>();
+    public transient HashMap<String, ByteArrayOutputStream> audioToOutputStream = new HashMap<>(); //this is so we can re-archive the sound and send the files
+
+    public InstrumentTuning(){}
 
     public static class TuningInfo
     {
@@ -23,5 +27,13 @@ public class InstrumentTuning
             this.stream = stream;
             this.keyOffset = keyOffset;
         }
+    }
+
+    public class TuningInt
+    {
+        @SerializedName("f")
+        public float frequency;
+        public String file;
+        public String files[];
     }
 }

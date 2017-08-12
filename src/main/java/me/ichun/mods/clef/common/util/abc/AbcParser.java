@@ -34,7 +34,7 @@ public class AbcParser
     public static final char[] ignored = new char[] { '-', '(', ')', '~', 'H', 'L', 'M', 'O', 'P', 'S', 'T', 'u', 'v', '\\' }; //ties = 3, decorations = 10, continue on next line = 1
 
     //TODO there are some strings that we need to ignore. Some start with % and some start with others. Look them up.
-    public static String[] ignoredStarts = new String[] { "%", "[r:" };//TODO ignore remarks in ABC where when looking for chords
+    public static String[] ignoredStarts = new String[] { "%", "[r:", "O:", "V:" };//TODO ignore remarks in ABC where when looking for chords
 
     public static TrackInfo parse(File file)
     {

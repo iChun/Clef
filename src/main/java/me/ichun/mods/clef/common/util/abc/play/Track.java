@@ -26,6 +26,7 @@ public class Track
     {
         this.track = track;
         this.instruments.add(instrument);
+//        playProg = 2000;
     }
 
     public void addInstrument(Instrument instrument)
@@ -43,6 +44,10 @@ public class Track
 
         for(Instrument i : instruments)
         {
+            if(i.info.kind.equals("keyboard"))
+            {
+                continue;
+            }
             if(track.notes.containsKey(playProg))
             {
                 ArrayList<Note> notes = track.notes.get(playProg);

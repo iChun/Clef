@@ -39,20 +39,19 @@ public class PlayedNote
     {
         this.instrument = instrument;
         this.key = key;
-        this.instrumentSound = new InstrumentSound(SoundEvents.BLOCK_NOTE_HARP, SoundCategory.AMBIENT, 1F);
+        this.instrumentSound = new InstrumentSound(SoundEvents.BLOCK_NOTE_HARP, SoundCategory.AMBIENT, 0.7F);
         this.startTick = startTick;
         this.duration = duration;
     }
 
     public PlayedNote start()
     {
-        //Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, (float)Math.pow(2.0D, (double)((key) - 12 - 48) / 12.0D)));
+//        Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.ENTITY_PIG_AMBIENT, (float)Math.pow(2.0D, (double)((key) - 12 - 48) / 12.0D)));
 //        Minecraft.getMinecraft().getSoundHandler().playSound(sound);
         Minecraft mc = Minecraft.getMinecraft();
         SoundManager soundManager = mc.getSoundHandler().sndManager;
         if (mc.gameSettings.getSoundLevel(SoundCategory.MASTER) > 0.0F && instrument.hasAvailableKey(key))
         {
-            played = true;
             instrumentSound.createAccessor(mc.getSoundHandler());
 
             float f3 = instrumentSound.getVolume();
@@ -93,6 +92,8 @@ public class PlayedNote
                 soundManager.categorySounds.put(soundcategory, uniqueId);
             }
 //            soundManager.tickableSounds.add(instrumentSound);
+
+            played = true;
         }
 
         return this;
@@ -137,7 +138,8 @@ public class PlayedNote
 
     private static URL getURLForSoundResource(final Instrument instrument, final int key)
     {
-        String s = String.format("%s:%s:%s", "clef", instrument.info.itemName, key + ".ogg");
+        int randKey = rand.nextInt(instrument.tuning.keyToTuningMap.get(key).stream.length);
+        String s = String.format("%s:%s:%s", "clef", instrument.info.itemName, key + ":" + randKey + ".ogg");
         URLStreamHandler urlstreamhandler = new URLStreamHandler()
         {
             protected URLConnection openConnection(final URL p_openConnection_1_)
@@ -149,7 +151,7 @@ public class PlayedNote
                     }
                     public InputStream getInputStream() throws IOException
                     {
-                        return instrument.tuning.keyToTuningMap.get(key).stream[rand.nextInt(instrument.tuning.keyToTuningMap.get(key).stream.length)];
+                        return instrument.tuning.keyToTuningMap.get(key).stream[randKey];
                     }
                 };
             }
