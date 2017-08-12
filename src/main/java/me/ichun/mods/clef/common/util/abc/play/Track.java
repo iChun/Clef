@@ -8,12 +8,6 @@ import java.util.ArrayList;
 
 public class Track
 {
-    public int beatOffset = 0;
-    public int ticksPerBeat;
-    public double currentMeter;
-    public double unitNoteLength;
-    public double key; //musical key
-
     public int playProg;
     public boolean playing = true;
 
@@ -37,7 +31,6 @@ public class Track
     {
         if(!playing || playProg > track.trackLength)
         {
-            stop();
             return false;
         }
 
@@ -56,14 +49,9 @@ public class Track
         for(int i = playingNotes.size() - 1; i >= 0; i--)
         {
             PlayedNote note = playingNotes.get(i);
-            if(playProg > note.startTick + note.duration + note.instrument.tuning.fadeout * 20D)
+            if(playProg > note.startTick + note.duration + (note.instrument.tuning.fadeout * 20D) + 5)
             {
-                note.stop();
                 playingNotes.remove(i);
-            }
-            else
-            {
-                note.tick(playProg);
             }
         }
 
@@ -73,12 +61,7 @@ public class Track
 
     public void stop()
     {
-        for(PlayedNote note : playingNotes)
-        {
-            note.stop();
-        }
         playingNotes.clear();
-
         playing = false;
     }
 

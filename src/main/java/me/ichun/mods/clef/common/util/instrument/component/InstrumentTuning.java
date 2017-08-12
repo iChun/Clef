@@ -1,4 +1,4 @@
-package me.ichun.mods.clef.common.util.instrument;
+package me.ichun.mods.clef.common.util.instrument.component;
 
 import com.google.gson.annotations.SerializedName;
 

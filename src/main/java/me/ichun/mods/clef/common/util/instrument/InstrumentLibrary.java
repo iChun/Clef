@@ -3,18 +3,15 @@ package me.ichun.mods.clef.common.util.instrument;
 import com.google.common.collect.Ordering;
 import com.google.gson.Gson;
 import me.ichun.mods.clef.common.Clef;
+import me.ichun.mods.clef.common.util.instrument.component.InstrumentInfo;
+import me.ichun.mods.clef.common.util.instrument.component.InstrumentTuning;
 import net.minecraft.util.text.translation.LanguageMap;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.commons.io.IOUtils;
 
 import javax.imageio.ImageIO;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -173,7 +170,9 @@ public class InstrumentLibrary
                         continue;
                     }
                 }
-                instrumentCount += instruments.size();
+                instrumentCount += instruments.size();//TODO wait what this isn't right.
+
+                Collections.sort(instruments);
             }
             catch(Exception e)
             {

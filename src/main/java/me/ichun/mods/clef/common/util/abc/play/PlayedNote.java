@@ -5,9 +5,9 @@ import me.ichun.mods.clef.client.core.SoundSystemReflect;
 import me.ichun.mods.clef.client.sound.InstrumentSound;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
-import me.ichun.mods.clef.common.util.instrument.InstrumentTuning;
+import me.ichun.mods.clef.common.util.instrument.component.InstrumentTuning;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.*;
+import net.minecraft.client.audio.SoundManager;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.MathHelper;
@@ -28,26 +28,29 @@ public class PlayedNote
 {
     public final Instrument instrument;
     public final int key;
-    public final InstrumentSound instrumentSound;
     public final int startTick;
     public final int duration;
+    public final InstrumentSound instrumentSound;
 
     public String uniqueId;
     public boolean played;
 
-    public PlayedNote(Instrument instrument, int startTick, int duration, int key)
+    public PlayedNote(Instrument instrument, int startTick, int duration, int key, SoundCategory category)
     {
         this.instrument = instrument;
         this.key = key;
-        this.instrumentSound = new InstrumentSound(SoundEvents.BLOCK_NOTE_HARP, SoundCategory.AMBIENT, 0.7F);
         this.startTick = startTick;
         this.duration = duration;
+
+        InstrumentTuning.TuningInfo tuning = instrument.tuning.keyToTuningMap.get(key);
+        float pitch = (float)Math.pow(2.0D, (double)tuning.keyOffset / 12.0D);
+        this.instrumentSound = new InstrumentSound(SoundEvents.BLOCK_NOTE_HARP, category, duration, (int)Math.ceil(instrument.tuning.fadeout * 20F), 0.7F, pitch);
     }
 
     public PlayedNote start()
     {
-//        Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.ENTITY_PIG_AMBIENT, (float)Math.pow(2.0D, (double)((key) - 12 - 48) / 12.0D)));
-//        Minecraft.getMinecraft().getSoundHandler().playSound(sound);
+        //        Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.ENTITY_PIG_AMBIENT, (float)Math.pow(2.0D, (double)((key) - 12 - 48) / 12.0D)));
+        //        Minecraft.getMinecraft().getSoundHandler().playSound(sound);
         Minecraft mc = Minecraft.getMinecraft();
         SoundManager soundManager = mc.getSoundHandler().sndManager;
         if (mc.gameSettings.getSoundLevel(SoundCategory.MASTER) > 0.0F && instrument.hasAvailableKey(key))
@@ -91,37 +94,12 @@ public class PlayedNote
             {
                 soundManager.categorySounds.put(soundcategory, uniqueId);
             }
-//            soundManager.tickableSounds.add(instrumentSound);
+            soundManager.tickableSounds.add(instrumentSound);
 
             played = true;
         }
 
         return this;
-    }
-
-    public void tick(int currentTick)
-    {
-        if(played && currentTick > startTick + duration)
-        {
-            int falloff = (int)Math.ceil(instrument.tuning.fadeout * 20D);
-            float f1 = Minecraft.getMinecraft().getSoundHandler().sndManager.getClampedVolume(instrumentSound);
-            try
-            {
-                float volume = f1 * (float)((falloff - (currentTick - (startTick + duration))) / (double)falloff);
-                SoundSystemReflect.ssSetVolume.invoke(Minecraft.getMinecraft().getSoundHandler().sndManager.sndSystem, uniqueId, volume);
-            }
-            catch(InvocationTargetException | IllegalAccessException e)
-            {
-                Clef.LOGGER.warn("Error playing instrument sound.");
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public void stop()
-    {
-        //TODO pass this volume tapering over to the InstrumentSound later.
-        instrumentSound.donePlaying = true;
     }
 
     private static URL getURLForSoundResource(final Instrument instrument, final int key)

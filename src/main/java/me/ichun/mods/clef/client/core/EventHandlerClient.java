@@ -44,7 +44,7 @@ public class EventHandlerClient
     {
         ImmutableList.Builder<BakedQuad> builder = ImmutableList.builder();
         builder.addAll(ItemLayerModel.getQuadsForSprite(0, txInstrument, DefaultVertexFormats.ITEM, Optional.absent()));
-        event.getModelRegistry().putObject(new ModelResourceLocation("clef:instrument", "inventory"), new BakedModelInstrument(builder.build(), txInstrument, ImmutableMap.copyOf(new HashMap<>()), null));
+        event.getModelRegistry().putObject(new ModelResourceLocation("clef:instrument", "inventory"), new BakedModelInstrument(builder.build(), txInstrument, ImmutableMap.copyOf(new HashMap<>()), null, null));
     }
 
     @SubscribeEvent
@@ -69,8 +69,8 @@ public class EventHandlerClient
                     {
                         if(!tracksPlaying.isEmpty())
                         {
-                            //                            Instrument instrument = InstrumentLibrary.instruments.get((int)Math.floor(Math.random() * InstrumentLibrary.instruments.size()));
-                            Instrument instrument = InstrumentLibrary.getInstrumentByName("koto");
+                                                        Instrument instrument = InstrumentLibrary.instruments.get((int)Math.floor(Math.random() * InstrumentLibrary.instruments.size()));
+//                            Instrument instrument = InstrumentLibrary.getInstrumentByName("koto");
 
                             System.out.println("ADDING RANDOM INSTRUMENT: " + instrument.info.itemName);
                             tracksPlaying.get(0).addInstrument(instrument);
