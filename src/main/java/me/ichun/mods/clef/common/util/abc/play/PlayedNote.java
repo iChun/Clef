@@ -87,7 +87,7 @@ public class PlayedNote
                 Clef.LOGGER.warn("Error playing instrument sound.");
                 e.printStackTrace();
             }
-            soundManager.playingSoundsStopTime.put(uniqueId, soundManager.playTime + 20);
+            soundManager.playingSoundsStopTime.put(uniqueId, soundManager.playTime + duration + (int)(instrument.tuning.fadeout * 20F) + 20);
             soundManager.playingSounds.put(uniqueId, instrumentSound);
 
             if (soundcategory != SoundCategory.MASTER)
