@@ -14,6 +14,8 @@ public class Track
     public final TrackInfo track;
     public ArrayList<Instrument> instruments = new ArrayList<>();
 
+    //TODO tell server we're trying to stop playing our shit.
+
     public Track(TrackInfo track, Instrument instrument)
     {
         this.track = track;

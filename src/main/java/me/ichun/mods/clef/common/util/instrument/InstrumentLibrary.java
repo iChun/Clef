@@ -4,7 +4,7 @@ import com.google.common.collect.Ordering;
 import com.google.gson.Gson;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.packet.PacketFileFragment;
-import me.ichun.mods.clef.common.packet.PacketRequestInstrument;
+import me.ichun.mods.clef.common.packet.PacketRequestFile;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentInfo;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentPackInfo;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentTuning;
@@ -249,14 +249,14 @@ public class InstrumentLibrary
         {
             if(requestedInstrumentsFromServer.add(name))
             {
-                Clef.channel.sendToServer(new PacketRequestInstrument(name));
+                Clef.channel.sendToServer(new PacketRequestFile(name, true));
             }
         }
         else
         {
             if(requestedInstrumentsFromPlayers.add(name))
             {
-                Clef.channel.sendTo(new PacketRequestInstrument(name), player);
+                Clef.channel.sendTo(new PacketRequestFile(name, true), player);
             }
         }
     }
@@ -321,13 +321,13 @@ public class InstrumentLibrary
             players.add(player.getName());
             if(requestedInstrumentsFromPlayers.add(name))
             {
-                Clef.channel.sendToAllExcept(new PacketRequestInstrument(name), player);
+                Clef.channel.sendToAllExcept(new PacketRequestFile(name, true), player);
             }
         }
         //Do nothing if client
     }
 
-    public static void handleReceivedFile(String fileName, byte[][] fileArray, Side side)
+    public static void handleReceivedFile(String fileName, byte[] fileData, Side side)
     {
         File dir = new File(Clef.getResourceHelper().instrumentDir, "received");
         File file = new File(dir, fileName);
@@ -337,20 +337,6 @@ public class InstrumentLibrary
             if(file.exists())
             {
                 file.delete();
-            }
-
-            int size = 0;
-            for(int i = 0; i < fileArray.length; i++)
-            {
-                size += fileArray[i].length;
-            }
-            byte[] fileData = new byte[size];
-
-            int index = 0;
-            for(int i = 0; i < fileArray.length; i++)
-            {
-                System.arraycopy(fileArray[i], 0, fileData, index, fileArray[i].length);
-                index += fileArray[i].length;
             }
 
             FileOutputStream fos = new FileOutputStream(file);

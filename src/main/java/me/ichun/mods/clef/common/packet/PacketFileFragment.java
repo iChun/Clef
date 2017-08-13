@@ -41,13 +41,27 @@ public class PacketFileFragment extends PacketDataFragment
         }
         if(complete)
         {
+            int size = 0;
+            for(int i = 0; i < packets.length; i++)
+            {
+                size += packets[i].length;
+            }
+            byte[] fileData = new byte[size];
+
+            int index = 0;
+            for(int i = 0; i < packets.length; i++)
+            {
+                System.arraycopy(packets[i], 0, fileData, index, packets[i].length);
+                index += packets[i].length;
+            }
+
             if(fileName.endsWith(".cia"))
             {
-                InstrumentLibrary.handleReceivedFile(fileName, packets, side);
+                InstrumentLibrary.handleReceivedFile(fileName, fileData, side);
             }
             else if(fileName.endsWith(".abc"))
             {
-                AbcLibrary.handleReceivedFile(fileName, packets);
+                AbcLibrary.handleReceivedFile(fileName, fileData, side);
             }
             else
             {

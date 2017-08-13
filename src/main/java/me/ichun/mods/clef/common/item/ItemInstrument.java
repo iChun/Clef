@@ -3,13 +3,20 @@ package me.ichun.mods.clef.common.item;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
+import me.ichun.mods.ichunutil.common.item.DualHandedItemCallback;
+import me.ichun.mods.ichunutil.common.item.ItemHandler;
 import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.EnumAction;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
 import net.minecraft.util.text.translation.I18n;
+import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -22,6 +29,17 @@ public class ItemInstrument extends Item
         maxStackSize = 1;
         setMaxDamage(0);
         setHasSubtypes(true);
+    }
+
+    @Override
+    public ActionResult<ItemStack> onItemRightClick(ItemStack is, World world, EntityPlayer player, EnumHand hand)
+    {
+        if(ItemHandler.canItemBeUsed(player, is))
+        {
+
+            return new ActionResult<>(EnumActionResult.SUCCESS, is);
+        }
+        return new ActionResult<>(EnumActionResult.FAIL, is);
     }
 
     @SideOnly(Side.CLIENT)
@@ -87,4 +105,12 @@ public class ItemInstrument extends Item
         return Integer.MAX_VALUE;
     }
 
+    public static class DualHandedInstrumentCallback extends DualHandedItemCallback
+    {
+        @Override
+        public boolean shouldItemBeHeldLikeBow(ItemStack is, EntityLivingBase ent)
+        {
+            return true;
+        }
+    }
 }
