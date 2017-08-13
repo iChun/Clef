@@ -4,8 +4,6 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import me.ichun.mods.clef.client.render.BakedModelInstrument;
-import me.ichun.mods.clef.common.Clef;
-import me.ichun.mods.clef.common.util.ResourceHelper;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
@@ -25,19 +23,16 @@ import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.network.FMLNetworkEvent;
 import org.lwjgl.input.Keyboard;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 
 public class EventHandlerClient
 {
-    public ArrayList<Track> tracksPlaying = new ArrayList<>();
+    public HashSet<Track> tracksPlaying = new HashSet<>();
 
     public TextureAtlasSprite txInstrument;
-
-    public boolean keyDown;
 
     @SubscribeEvent
     public void onTextureStitchedPre(TextureStitchEvent.Pre event)
@@ -58,83 +53,40 @@ public class EventHandlerClient
     {
         if(event.phase == TickEvent.Phase.END)
         {
-            for(int i = tracksPlaying.size() - 1; i >= 0; i--)
+            Minecraft mc = Minecraft.getMinecraft();
+            if(!mc.isGamePaused())
             {
-                Track track = tracksPlaying.get(i);
-                if(!track.update())
+                Iterator<Track> ite = tracksPlaying.iterator();
+                while(ite.hasNext())
                 {
-                    tracksPlaying.remove(i);
+                    Track track = ite.next();
+                    if(!track.update())
+                    {
+                        ite.remove();
+                        continue;
+                    }
                 }
             }
-
-            if(keyDown && !Keyboard.isKeyDown(Keyboard.KEY_TAB))
-            {
-                if(Keyboard.isKeyDown(Keyboard.KEY_LCONTROL))
-                {
-                    if(Keyboard.isKeyDown(Keyboard.KEY_LSHIFT))
-                    {
-                        if(!tracksPlaying.isEmpty())
-                        {
-                                                        Instrument instrument = InstrumentLibrary.instruments.get((int)Math.floor(Math.random() * InstrumentLibrary.instruments.size()));
-//                            Instrument instrument = InstrumentLibrary.getInstrumentByName("koto");
-
-                            System.out.println("ADDING RANDOM INSTRUMENT: " + instrument.info.itemName);
-                            tracksPlaying.get(0).addInstrument(instrument);
-                        }
-                    }
-                    else
-                    {
-                        for(int i = tracksPlaying.size() - 1; i >= 0; i--)
-                        {
-                            Track track = tracksPlaying.get(i);
-                            track.stop();
-                        }
-                        tracksPlaying.clear();
-
-                        Instrument instrument = InstrumentLibrary.getInstrumentByName("piano");
-                        if(instrument != null)
-                        {
-                            TrackInfo trackInfo = AbcLibrary.tracks.get((int)(Math.floor(Math.random() * AbcLibrary.tracks.size()))).track;
-                            tracksPlaying.add(new Track(trackInfo, instrument));
-                            System.out.println("PLAYING: " + trackInfo.title);
-                        }
-                        else
-                        {
-                            System.out.println("NO SUCH INST");
-                        }
-                    }
-                }
-                else if(Keyboard.isKeyDown(Keyboard.KEY_LSHIFT))
-                {
-                    for(int i = tracksPlaying.size() - 1; i >= 0; i--)
-                    {
-                        Track track = tracksPlaying.get(i);
-                        track.stop();
-                    }
-                    tracksPlaying.clear();
-                    System.out.println("CLEARING");
-                }
-                else
-                {
-                        //TODO cleanup AbcLibrary.init();
-//                    AbcLibrary.init();
-//                    InstrumentLibrary.instruments.clear();
-//                    InstrumentLibrary.init();
-                }
-            }
-            keyDown = Keyboard.isKeyDown(Keyboard.KEY_TAB);
         }
     }
 
     @SubscribeEvent
     public void onClientDisconnect(FMLNetworkEvent.ClientDisconnectionFromServerEvent event)
     {
-        Minecraft.getMinecraft().addScheduledTask(this::removeRequests);
+        Minecraft.getMinecraft().addScheduledTask(this::disconnectFromServer);
     }
 
-    public void removeRequests()
+    public void disconnectFromServer()
     {
+        tracksPlaying.clear();
+
         AbcLibrary.requestedABCFromServer.clear();
         InstrumentLibrary.requestedInstrumentsFromServer.clear();
+    }
+
+    public void addTrack(Track track)
+    {
+        tracksPlaying.remove(track); //Remove old instances
+        tracksPlaying.add(track); //Add the new instance.
     }
 }

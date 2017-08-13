@@ -80,7 +80,7 @@ public class Clef
     @Mod.EventHandler
     public void onServerStoppingDown(FMLServerStoppingEvent event)
     {
-        eventHandlerServer.removeRequests();
+        eventHandlerServer.shutdownServer();
     }
 
     public static ResourceHelper getResourceHelper()

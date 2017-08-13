@@ -31,20 +31,26 @@ public class PlayedNote
     public final int startTick;
     public final int duration;
     public final InstrumentSound instrumentSound;
+    public Object noteLocation;
 
     public String uniqueId;
     public boolean played;
 
-    public PlayedNote(Instrument instrument, int startTick, int duration, int key, SoundCategory category)
+    //TODO handle corrupt sound files somehow.
+
+    public PlayedNote(Instrument instrument, int startTick, int duration, int key, SoundCategory category, Object noteLocation)
     {
         this.instrument = instrument;
         this.key = key;
         this.startTick = startTick;
         this.duration = duration;
+        this.noteLocation = noteLocation;
+
+        uniqueId = MathHelper.getRandomUuid(ThreadLocalRandom.current()).toString();
 
         InstrumentTuning.TuningInfo tuning = instrument.tuning.keyToTuningMap.get(key);
         float pitch = (float)Math.pow(2.0D, (double)tuning.keyOffset / 12.0D);
-        this.instrumentSound = new InstrumentSound(SoundEvents.BLOCK_NOTE_HARP, category, duration, (int)Math.ceil(instrument.tuning.fadeout * 20F), 0.7F, pitch);
+        this.instrumentSound = new InstrumentSound(uniqueId, SoundEvents.BLOCK_NOTE_HARP, category, duration, (int)Math.ceil(instrument.tuning.fadeout * 20F), 0.7F, pitch, noteLocation);
     }
 
     public PlayedNote start()
@@ -70,8 +76,6 @@ public class PlayedNote
 
             InstrumentTuning.TuningInfo tuning = instrument.tuning.keyToTuningMap.get(key);
             float f2 = (float)Math.pow(2.0D, (double)tuning.keyOffset / 12.0D);
-
-            uniqueId = MathHelper.getRandomUuid(ThreadLocalRandom.current()).toString();
 
             try
             {

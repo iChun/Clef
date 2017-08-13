@@ -136,6 +136,7 @@ public class InstrumentLibrary
                         for(Map.Entry<Integer, String[]> e : tuningInfo.entrySet())
                         {
                             InputStream[] streams = null;
+                            boolean mute = false;
                             if(e.getValue() != null)
                             {
                                 String[] files = e.getValue();
@@ -164,15 +165,27 @@ public class InstrumentLibrary
 
                                     streams[i] = new ByteArrayInputStream(baos.toByteArray());
                                     tuning1.audioToOutputStream.put(fileName, baos);
+
+                                    if(fileName.contains("mute"))
+                                    {
+                                        mute = true;
+                                    }
                                 }
                             }
                             if(streams != null)
                             {
-                                for(int i = -6; i <= 6; i++)
+                                if(mute)
                                 {
-                                    if(!tuning1.keyToTuningMap.containsKey(e.getKey() + i))
+                                    tuning1.keyToTuningMap.put(e.getKey(), new InstrumentTuning.TuningInfo(new InputStream[0], 0));
+                                }
+                                else
+                                {
+                                    for(int i = -6; i <= 6; i++)
                                     {
-                                        tuning1.keyToTuningMap.put(e.getKey() + i, new InstrumentTuning.TuningInfo(streams, i));
+                                        if(!tuning1.keyToTuningMap.containsKey(e.getKey() + i))
+                                        {
+                                            tuning1.keyToTuningMap.put(e.getKey() + i, new InstrumentTuning.TuningInfo(streams, i));
+                                        }
                                     }
                                 }
                             }

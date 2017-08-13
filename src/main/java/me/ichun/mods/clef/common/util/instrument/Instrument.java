@@ -49,6 +49,8 @@ public class Instrument
     @SideOnly(Side.CLIENT)
     public BakedModelInstrument handModel;
 
+    //TODO some of the textures are TOOO BIG. Sort.
+    //TODO one handed instruments?
 
     public Instrument(InstrumentInfo info, BufferedImage iconImg, BufferedImage handImg)
     {
@@ -59,7 +61,7 @@ public class Instrument
 
     public boolean hasAvailableKey(int key)
     {
-        return tuning.keyToTuningMap.containsKey(key);
+        return tuning.keyToTuningMap.containsKey(key) && tuning.keyToTuningMap.get(key).stream.length > 0;
     }
 
     @Override

@@ -20,9 +20,9 @@ public class Special extends Note
     }
 
     @Override
-    public boolean playNote(Track track, int currentProg, Instrument instrument)
+    public int playNote(Track track, int currentProg, Instrument instrument, Object noteLocation)
     {
-        return false;
+        return 0;
     }
 
     @Override

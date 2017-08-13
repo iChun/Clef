@@ -2,21 +2,26 @@ package me.ichun.mods.clef.common.core;
 
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
+import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import me.ichun.mods.ichunutil.common.iChunUtil;
 import net.minecraft.entity.item.EntityItem;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.event.entity.player.PlayerDropsEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.PlayerEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.relauncher.Side;
 
+import java.util.HashSet;
+import java.util.Iterator;
+
 public class EventHandlerServer
 {
+    public HashSet<Track> tracksPlaying = new HashSet<>();
+
     @SubscribeEvent
     public void onPlayerTick(TickEvent.PlayerTickEvent event)
     {
@@ -62,8 +67,43 @@ public class EventHandlerServer
         }
     }
 
-    public void removeRequests()
+    @SubscribeEvent
+    public void onServerTick(TickEvent.ServerTickEvent event)
     {
+        if(event.phase == TickEvent.Phase.END)
+        {
+            Iterator<Track> ite = tracksPlaying.iterator();
+            while(ite.hasNext())
+            {
+                Track track = ite.next();
+                if(!track.update())
+                {
+                    ite.remove();
+                    continue;
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public void onPlayerConnect(PlayerEvent.PlayerLoggedInEvent event)
+    {
+        HashSet<Track> tracks = new HashSet<>();
+        for(Track track : tracksPlaying)
+        {
+            if(track.getTrack() != null) //this means the track is actively played
+            {
+                tracks.add(track);
+            }
+        }
+        AbcLibrary.startPlayingTrack(event.player, tracks.toArray(new Track[tracks.size()]));
+    }
+
+    public void shutdownServer()
+    {
+        tracksPlaying.clear();
+
+        AbcLibrary.tracksWaitingForTrackInfo.clear();
         AbcLibrary.requestedABCFromPlayers.clear();
         InstrumentLibrary.requestsFromPlayers.clear();
         InstrumentLibrary.requestedInstrumentsFromPlayers.clear();

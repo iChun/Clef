@@ -1,6 +1,9 @@
 package me.ichun.mods.clef.common.item;
 
 import me.ichun.mods.clef.common.Clef;
+import me.ichun.mods.clef.common.packet.PacketPlayABC;
+import me.ichun.mods.clef.common.util.abc.AbcLibrary;
+import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import me.ichun.mods.ichunutil.common.item.DualHandedItemCallback;
@@ -36,7 +39,10 @@ public class ItemInstrument extends Item
     {
         if(ItemHandler.canItemBeUsed(player, is))
         {
-
+            if(player.worldObj.isRemote)
+            {
+                Clef.channel.sendToServer(new PacketPlayABC(AbcLibrary.tracks.get(0).md5));
+            }
             return new ActionResult<>(EnumActionResult.SUCCESS, is);
         }
         return new ActionResult<>(EnumActionResult.FAIL, is);
@@ -110,7 +116,18 @@ public class ItemInstrument extends Item
         @Override
         public boolean shouldItemBeHeldLikeBow(ItemStack is, EntityLivingBase ent)
         {
-            return true;
+            if(ent instanceof EntityPlayer)
+            {
+                EntityPlayer player = (EntityPlayer)ent;
+                for(Track track : Clef.eventHandlerClient.tracksPlaying)
+                {
+                    if(track.players.contains(player))
+                    {
+                        return track.timeToSilence > 0;
+                    }
+                }
+            }
+            return false;
         }
     }
 }

@@ -13,13 +13,18 @@ public class Chord extends Note
     public ArrayList<Note> notes = new ArrayList<>();
 
     @Override
-    public boolean playNote(Track track, int currentProg, Instrument instrument)
+    public int playNote(Track track, int currentProg, Instrument instrument, Object noteLocation)
     {
+        int longest = 0;
         for(Note note : notes)
         {
-            note.playNote(track, currentProg, instrument);
+            int dur = note.playNote(track, currentProg, instrument, noteLocation);
+            if(dur > longest)
+            {
+                longest = dur;
+            }
         }
-        return true;
+        return longest;
     }
 
     @Override

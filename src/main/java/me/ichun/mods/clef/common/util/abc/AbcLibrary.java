@@ -2,23 +2,25 @@ package me.ichun.mods.clef.common.util.abc;
 
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.packet.PacketFileFragment;
+import me.ichun.mods.clef.common.packet.PacketPlayingTracks;
 import me.ichun.mods.clef.common.packet.PacketRequestFile;
+import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
 import me.ichun.mods.ichunutil.common.core.util.IOUtil;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.relauncher.Side;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.*;
 
 public class AbcLibrary
 {
     public static ArrayList<TrackFile> tracks = new ArrayList<>();
 
-    public static void init()
+    public static void init() //TODO thread reading the files on load.
     {
         tracks.clear();
         Clef.LOGGER.info("Loading abc files");
@@ -47,13 +49,19 @@ public class AbcLibrary
         if(file.exists() && file.getName().endsWith(".abc"))
         {
             String md5 = IOUtil.getMD5Checksum(file);
-//            if(!hasTrack(md5))
+            if(!hasTrack(md5))
             {
                 TrackInfo track = AbcParser.parse(file);
                 if(track != null)
                 {
                     tracks.add(new TrackFile(track, file, md5));
                     Collections.sort(tracks);
+
+                    if(FMLCommonHandler.instance().getEffectiveSide().isServer() && tracksWaitingForTrackInfo.containsKey(md5))
+                    {
+                        tracksWaitingForTrackInfo.get(md5).setTrack(md5, track);
+                        tracksWaitingForTrackInfo.remove(md5);
+                    }
                     return true;
                 }
             }
@@ -78,27 +86,33 @@ public class AbcLibrary
         return null;
     }
 
-    public static void playAbc(String md5, EntityPlayer player)
+    public static void playAbc(String md5, EntityPlayer player) //CLIENT NEVER CALLS THIS.
     {
         TrackFile file = getTrack(md5);
+        Track track = new Track(RandomStringUtils.randomAscii(IOUtil.IDENTIFIER_LENGTH), md5, (file != null ? file.track : null), false);
         if(file == null) //We don't have the ABC. Ask from the client.
         {
-            if(player == null)
+            if(requestedABCFromPlayers.add(md5))
             {
-                if(requestedABCFromServer.add(md5))
+                if(track.getTrack() == null)
                 {
-                    Clef.channel.sendToServer(new PacketRequestFile(md5, false));
+                    tracksWaitingForTrackInfo.put(md5, track);
                 }
-            }
-            else
-            {
-                if(requestedABCFromPlayers.add(md5))
-                {
-                    Clef.channel.sendTo(new PacketRequestFile(md5, false), player);
-                }
+                Clef.channel.sendTo(new PacketRequestFile(md5, false), player);
             }
         }
         //queue the track. track plays when the trackfile is set.
+        Clef.eventHandlerServer.tracksPlaying.add(track);
+        track.players.add(player);
+        if(track.getTrack() != null)
+        {
+            Clef.channel.sendToAll(new PacketPlayingTracks(track));
+        }
+    }
+
+    public static void startPlayingTrack(EntityPlayer player, Track...tracks)
+    {
+        Clef.channel.sendTo(new PacketPlayingTracks(tracks), player);
     }
 
     public static void sendAbc(String md5, EntityPlayer player)
@@ -161,6 +175,7 @@ public class AbcLibrary
 
     public static HashSet<String> requestedABCFromServer = new HashSet<>(); // The server should ALWAYS have all the abc files, unlike the server.
     public static HashSet<String> requestedABCFromPlayers = new HashSet<>();
+    public static HashMap<String, Track> tracksWaitingForTrackInfo = new HashMap<>();
 
     public static void handleReceivedFile(String fileName, byte[] fileData, Side side)
     {
