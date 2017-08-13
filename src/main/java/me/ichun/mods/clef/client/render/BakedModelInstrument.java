@@ -93,7 +93,10 @@ public class BakedModelInstrument
                     instrument.setupModels();
                     return instrument.iconModel;
                 }
-                //TODO should we request for the instrument here?
+                else
+                {
+                    InstrumentLibrary.requestInstrument(tag.getString("itemName"), null);
+                }
             }
             return originalModel;
         }

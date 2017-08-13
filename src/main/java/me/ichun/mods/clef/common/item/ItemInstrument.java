@@ -53,14 +53,6 @@ public class ItemInstrument extends Item
             {
                 list.add(I18n.translateToLocal("item.clef.instrument." + instrument.info.itemName + ".desc"));
             }
-            else
-            {
-                list.add(I18n.translateToLocal("what"));//TODO localise this?
-            }
-        }
-        else
-        {
-            list.add(I18n.translateToLocal("what"));//TODO localise this?
         }
     }
 

@@ -33,7 +33,7 @@ public class PacketRequestInstrument extends AbstractPacket
     @Override
     public AbstractPacket execute(Side side, EntityPlayer player)
     {
-        InstrumentLibrary.packageAndSendInstrument(instrumentName, side); //side is the side receiving this request
+        InstrumentLibrary.packageAndSendInstrument(instrumentName, side == Side.SERVER ? player : null); //send to player, if null, to server
         return null;
     }
 

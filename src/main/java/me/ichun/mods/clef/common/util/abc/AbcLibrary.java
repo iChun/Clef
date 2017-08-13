@@ -5,8 +5,10 @@ import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
 import me.ichun.mods.ichunutil.common.core.util.IOUtil;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 
 public class AbcLibrary
 {
@@ -70,5 +72,34 @@ public class AbcLibrary
             }
         }
         return null;
+    }
+
+    public static HashSet<String> requestedABCFromServer = new HashSet<>();
+    public static HashSet<String> requestedABCFromPlayers = new HashSet<>();
+
+    public static void handleReceivedFile(String fileName, byte[][] fileArray)
+    {
+        File dir = new File(Clef.getResourceHelper().abcDir, "received");
+        File file = new File(dir, fileName);
+        try
+        {
+            dir.mkdirs();
+            FileOutputStream fos = new FileOutputStream(file);
+            for(int i = 0; i < fileArray.length; i++)
+            {
+                fos.write(fileArray[i]);
+            }
+            fos.close();
+
+            Clef.LOGGER.info("Received " + fileName + ". Reading.");
+            readAbc(file);
+
+            requestedABCFromPlayers.remove(fileName.substring(0, fileName.length() - 4));
+            requestedABCFromServer.remove(fileName.substring(0, fileName.length() - 4));
+        }
+        catch(Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 }

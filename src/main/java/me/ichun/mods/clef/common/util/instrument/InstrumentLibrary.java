@@ -3,13 +3,17 @@ package me.ichun.mods.clef.common.util.instrument;
 import com.google.common.collect.Ordering;
 import com.google.gson.Gson;
 import me.ichun.mods.clef.common.Clef;
+import me.ichun.mods.clef.common.packet.PacketFileFragment;
 import me.ichun.mods.clef.common.packet.PacketRequestInstrument;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentInfo;
+import me.ichun.mods.clef.common.util.instrument.component.InstrumentPackInfo;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentTuning;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.text.translation.LanguageMap;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import org.apache.commons.io.IOUtils;
 
@@ -61,6 +65,16 @@ public class InstrumentLibrary
             {
                 ZipFile zipFile = new ZipFile(file);
                 Enumeration entriesIte = zipFile.entries();
+
+                InstrumentPackInfo packInfo = new InstrumentPackInfo();
+                ZipEntry packInfoZip = zipFile.getEntry("info.cii");
+                if(packInfoZip != null)
+                {
+                    StringWriter writer = new StringWriter();
+                    IOUtils.copy(zipFile.getInputStream(packInfoZip), writer);
+                    String jsonString = writer.toString();
+                    packInfo = (new Gson()).fromJson(jsonString, InstrumentPackInfo.class);
+                }
 
                 ArrayList<ZipEntry> entries = new ArrayList<>();
                 while(entriesIte.hasMoreElements())
@@ -131,7 +145,7 @@ public class InstrumentLibrary
                                     String s = files[i];
                                     String[] fileNameSplit = s.split("/");
                                     String fileName = fileNameSplit[fileNameSplit.length - 1]; //blah.ogg
-                                    ZipEntry sound = zipFile.getEntry("sfx/instruments/" + info.kind + "/" + fileName); //TODO check if the files are OGG, reject if not.
+                                    ZipEntry sound = zipFile.getEntry("sfx/instruments/" + info.kind + "/" + fileName);
 
                                     if(!fileName.endsWith(".ogg"))
                                     {
@@ -165,6 +179,7 @@ public class InstrumentLibrary
                         }
 
                         instrument.tuning = tuning1;
+                        instrument.packInfo = packInfo;
 
                         instruments.add(instrument);
                     }
@@ -210,9 +225,11 @@ public class InstrumentLibrary
         return null;
     }
 
+    public static HashMap<String, HashSet<String>> requestsFromPlayers = new HashMap<>();
+    public static HashSet<String> requestedInstrumentsFromServer = new HashSet<>();
     public static HashSet<String> requestedInstrumentsFromPlayers = new HashSet<>();
 
-    public static void checkForInstrument(ItemStack is, EntityPlayer player)
+    public static void checkForInstrument(ItemStack is, EntityPlayer player) //Primarily called by server. Can be called by client though
     {
         NBTTagCompound tag = is.getTagCompound();
         if(tag != null)
@@ -221,27 +238,153 @@ public class InstrumentLibrary
             Instrument inst = getInstrumentByName(instName);
             if(inst == null)
             {
-                requestInstrumentFromPlayer(instName, player);
+                requestInstrument(instName, player);
             }
         }
     }
 
-    public static void requestInstrumentFromPlayer(String name, EntityPlayer player)
+    public static void requestInstrument(String name, EntityPlayer player)
     {
-        requestedInstrumentsFromPlayers.add(name);
-        Clef.channel.sendTo(new PacketRequestInstrument(name), player);
+        if(player == null)
+        {
+            if(requestedInstrumentsFromServer.add(name))
+            {
+                Clef.channel.sendToServer(new PacketRequestInstrument(name));
+            }
+        }
+        else
+        {
+            if(requestedInstrumentsFromPlayers.add(name))
+            {
+                Clef.channel.sendTo(new PacketRequestInstrument(name), player);
+            }
+        }
     }
 
-    public static boolean packageAndSendInstrument(String name, Side side) //side is the side receiving this request
+    public static void packageAndSendInstrument(String name, EntityPlayer player) //side is the side receiving this request
     {
+        if(name.isEmpty())
+        {
+            return;
+        }
         Instrument instrument = getInstrumentByName(name);
         if(instrument != null)
         {
             //Archive and send the instrument
             ByteArrayOutputStream baos = instrument.getAsBAOS();
-            //TODO split this part up and send it to server/player
-            return true;
+            if(baos != null)
+            {
+                byte[] file = baos.toByteArray();
+
+                if(file.length > 10000000) // what instruments are >10 mb holy shaite
+                {
+                    Clef.LOGGER.warn("Unable to send instrument " + instrument.info.itemName + ". It is above the size limit!");
+                    return;
+                }
+                else if(file.length == 0)
+                {
+                    Clef.LOGGER.warn("Unable to send instrument " + instrument.info.itemName + ". The file is empty!");
+                    return;
+                }
+
+                Clef.LOGGER.info("Sending instrument " + instrument.info.itemName + " to " + (player == null ? "the server" : player.getName()));
+
+                int fileSize = file.length;
+                int packetsToSend = (int)Math.ceil((float)fileSize / 32000F);
+                int packetCount = 0;
+                int index = 0;
+
+                while(fileSize > 0)
+                {
+                    byte[] fileBytes = new byte[fileSize > 32000 ? 32000 : fileSize];
+                    System.arraycopy(file, index, fileBytes, 0, fileBytes.length);
+                    index += fileBytes.length;
+
+                    if(player != null)
+                    {
+                        Clef.channel.sendTo(new PacketFileFragment(instrument.info.itemName + ".cia", packetsToSend, packetCount, fileSize > 32000 ? 32000 : fileSize, fileBytes), player);
+                    }
+                    else
+                    {
+                        Clef.channel.sendToServer(new PacketFileFragment(instrument.info.itemName + ".cia", packetsToSend, packetCount, fileSize > 32000 ? 32000 : fileSize, fileBytes));
+                    }
+
+                    packetCount++;
+                    fileSize -= 32000;
+                }
+            }
         }
-        return false;
+        else if(player != null)
+        {
+            //Ask players for it if server
+            HashSet<String> players = requestsFromPlayers.computeIfAbsent(name, v -> new HashSet<>());
+            players.add(player.getName());
+            if(requestedInstrumentsFromPlayers.add(name))
+            {
+                Clef.channel.sendToAllExcept(new PacketRequestInstrument(name), player);
+            }
+        }
+        //Do nothing if client
+    }
+
+    public static void handleReceivedFile(String fileName, byte[][] fileArray, Side side)
+    {
+        File dir = new File(Clef.getResourceHelper().instrumentDir, "received");
+        File file = new File(dir, fileName);
+        try
+        {
+            dir.mkdirs();
+            if(file.exists())
+            {
+                file.delete();
+            }
+
+            int size = 0;
+            for(int i = 0; i < fileArray.length; i++)
+            {
+                size += fileArray[i].length;
+            }
+            byte[] fileData = new byte[size];
+
+            int index = 0;
+            for(int i = 0; i < fileArray.length; i++)
+            {
+                System.arraycopy(fileArray[i], 0, fileData, index, fileArray[i].length);
+                index += fileArray[i].length;
+            }
+
+            FileOutputStream fos = new FileOutputStream(file);
+            fos.write(fileData);
+            fos.close();
+
+            Clef.LOGGER.info("Received " + fileName + ". Reading.");
+            readInstrumentPack(file);
+
+            if(side.isServer())
+            {
+                String instName = fileName.substring(0, fileName.length() - 4);
+                requestedInstrumentsFromPlayers.remove(instName);
+                HashSet<String> playersRequesting = requestsFromPlayers.get(instName);
+                if(playersRequesting != null)
+                {
+                    for(String s : playersRequesting)
+                    {
+                        EntityPlayerMP player = FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList().getPlayerByUsername(s);
+                        if(player != null)
+                        {
+                            packageAndSendInstrument(instName, player);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                requestedInstrumentsFromServer.remove(fileName.substring(0, fileName.length() - 4));
+            }
+        }
+        catch(Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 }

@@ -7,6 +7,7 @@ import com.google.gson.Gson;
 import me.ichun.mods.clef.client.render.BakedModelInstrument;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentInfo;
+import me.ichun.mods.clef.common.util.instrument.component.InstrumentPackInfo;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentTuning;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.BakedQuad;
@@ -15,16 +16,21 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureUtil;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.resources.IResourceManager;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.model.ItemLayerModel;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -36,6 +42,7 @@ public class Instrument
     public final BufferedImage iconImg;
     public final BufferedImage handImg;
     public InstrumentTuning tuning;
+    public InstrumentPackInfo packInfo;
 
     @SideOnly(Side.CLIENT)
     public BakedModelInstrument iconModel;
@@ -63,15 +70,27 @@ public class Instrument
 
     public ByteArrayOutputStream getAsBAOS()
     {
-        //TODO clef instrument info?
         try
         {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
             ZipOutputStream out = new ZipOutputStream(baos);
             out.setLevel(9);
-            out.putNextEntry(new ZipEntry("items/instruments/" + info.itemName + ".instrument"));
 
+            if(packInfo != null)
+            {
+                String desc = packInfo.description;
+                packInfo.description = packInfo.description.concat(" - This pack is a single instrument from the main pack.");
+                out.putNextEntry(new ZipEntry("info.cii"));
+                byte[] data = (new Gson()).toJson(packInfo).getBytes();
+                out.write(data, 0, data.length);
+                out.closeEntry();
+                packInfo.description = desc;
+            }
+
+            out.putNextEntry(new ZipEntry("items/"));
+            out.putNextEntry(new ZipEntry("items/instruments/"));
+            out.putNextEntry(new ZipEntry("items/instruments/" + info.itemName + ".instrument"));
             byte[] data = (new Gson()).toJson(info).getBytes();
             out.write(data, 0, data.length);
             out.closeEntry();
@@ -80,10 +99,16 @@ public class Instrument
             ImageIO.write(iconImg, "png", out);
             out.closeEntry();
 
-            out.putNextEntry(new ZipEntry("items/instruments/" + info.activeImage));
-            ImageIO.write(handImg, "png", out);
-            out.closeEntry();
+            if(!info.inventoryIcon.equals(info.activeImage))
+            {
+                out.putNextEntry(new ZipEntry("items/instruments/" + info.activeImage));
+                ImageIO.write(handImg, "png", out);
+                out.closeEntry();
+            }
 
+            out.putNextEntry(new ZipEntry("sfx/"));
+            out.putNextEntry(new ZipEntry("sfx/instruments/"));
+            out.putNextEntry(new ZipEntry("sfx/instruments/" + info.kind + "/"));
             out.putNextEntry(new ZipEntry("sfx/instruments/" + info.kind + "/tuning.config"));
             data = (new Gson()).toJson(tuning).getBytes();
             out.write(data, 0, data.length);

@@ -22,7 +22,7 @@ public class Track
 
     public void addInstrument(Instrument instrument)
     {
-        instruments.add(instrument);
+        instruments.add(instrument); //TODO if we're playing an instrument we don't recognise?
     }
 
     public boolean update() //returns false if it's time to stop playing.

@@ -17,6 +17,7 @@ import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLServerStoppingEvent;
 
 import java.io.File;
 
@@ -74,6 +75,12 @@ public class Clef
     public void postInit(FMLPostInitializationEvent event)
     {
         proxy.postInitMod();
+    }
+
+    @Mod.EventHandler
+    public void onServerStoppingDown(FMLServerStoppingEvent event)
+    {
+        eventHandlerServer.removeRequests();
     }
 
     public static ResourceHelper getResourceHelper()

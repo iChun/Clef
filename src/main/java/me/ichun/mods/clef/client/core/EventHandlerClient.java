@@ -4,6 +4,8 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import me.ichun.mods.clef.client.render.BakedModelInstrument;
+import me.ichun.mods.clef.common.Clef;
+import me.ichun.mods.clef.common.util.ResourceHelper;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
@@ -20,8 +22,12 @@ import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.client.model.ItemLayerModel;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
+import net.minecraftforge.fml.common.network.FMLNetworkEvent;
 import org.lwjgl.input.Keyboard;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -110,12 +116,25 @@ public class EventHandlerClient
                 }
                 else
                 {
-                    AbcLibrary.init();
-                    InstrumentLibrary.instruments.clear();
-                    InstrumentLibrary.init();
+                        //TODO cleanup AbcLibrary.init();
+//                    AbcLibrary.init();
+//                    InstrumentLibrary.instruments.clear();
+//                    InstrumentLibrary.init();
                 }
             }
             keyDown = Keyboard.isKeyDown(Keyboard.KEY_TAB);
         }
+    }
+
+    @SubscribeEvent
+    public void onClientDisconnect(FMLNetworkEvent.ClientDisconnectionFromServerEvent event)
+    {
+        Minecraft.getMinecraft().addScheduledTask(this::removeRequests);
+    }
+
+    public void removeRequests()
+    {
+        AbcLibrary.requestedABCFromServer.clear();
+        InstrumentLibrary.requestedInstrumentsFromServer.clear();
     }
 }
