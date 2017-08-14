@@ -48,7 +48,7 @@ public class ProxyCommon
         Clef.eventHandlerServer = new EventHandlerServer();
         MinecraftForge.EVENT_BUS.register(Clef.eventHandlerServer);
 
-        Clef.channel = new PacketChannel("Clef", PacketRequestFile.class, PacketFileFragment.class, PacketPlayABC.class, PacketPlayingTracks.class, PacketStopPlayingTrack.class, PacketInstrumentPlayerInfo.class);
+        Clef.channel = new PacketChannel("Clef", PacketRequestFile.class, PacketFileFragment.class, PacketPlayABC.class, PacketPlayingTracks.class, PacketStopPlayingTrack.class, PacketInstrumentPlayerInfo.class, PacketCreateInstrument.class);
     }
 
     public void initMod(){}

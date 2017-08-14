@@ -2,13 +2,16 @@ package me.ichun.mods.clef.common.block;
 
 import me.ichun.mods.clef.client.gui.GuiPlayTrackBlock;
 import me.ichun.mods.clef.common.Clef;
+import me.ichun.mods.clef.common.packet.PacketCreateInstrument;
 import me.ichun.mods.clef.common.tileentity.TileEntityInstrumentPlayer;
+import me.ichun.mods.clef.common.util.instrument.Instrument;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Items;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.inventory.InventoryHelper;
 import net.minecraft.item.ItemStack;
@@ -50,30 +53,61 @@ public class BlockInstrumentPlayer extends BlockContainer
             TileEntityInstrumentPlayer player = (TileEntityInstrumentPlayer)te;
             boolean hasSlot = false;
             ItemStack is = playerIn.getHeldItemMainhand();
-            if(is != null && is.getItem() == Clef.itemInstrument)
+            if(is != null)
             {
-                if(is.getTagCompound() == null && !worldIn.isRemote)
+                if(is.getItem() == Clef.itemInstrument)
                 {
-                    InstrumentLibrary.assignRandomInstrument(is);
-                }
-                //Find a free slot
-                for(int i = 0; i < player.getSizeInventory(); i++)
-                {
-                    ItemStack is1 = player.getStackInSlot(i);
-                    if(is1 == null)
+                    if(is.getTagCompound() == null && !worldIn.isRemote)
                     {
-                        hasSlot = true;
-                        worldIn.playSound(null, pos.getX() + 0.5D, pos.getY() + 1D, pos.getZ() + 0.5D, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 0.2F, ((worldIn.rand.nextFloat() - worldIn.rand.nextFloat()) * 0.7F + 1.0F) * 2.0F);
-                        if(!worldIn.isRemote)
-                        {
-                            player.setInventorySlotContents(i, is);
-                            player.markDirty();
-                            playerIn.setHeldItem(EnumHand.MAIN_HAND, null);
-                            playerIn.inventory.markDirty();
-                            worldIn.notifyBlockUpdate(pos, state, state, 3);
-                        }
-                        break;
+                        InstrumentLibrary.assignRandomInstrument(is);
                     }
+                    //Find a free slot
+                    for(int i = 0; i < player.getSizeInventory(); i++)
+                    {
+                        ItemStack is1 = player.getStackInSlot(i);
+                        if(is1 == null)
+                        {
+                            hasSlot = true;
+                            worldIn.playSound(null, pos.getX() + 0.5D, pos.getY() + 1D, pos.getZ() + 0.5D, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 0.2F, ((worldIn.rand.nextFloat() - worldIn.rand.nextFloat()) * 0.7F + 1.0F) * 2.0F);
+                            if(!worldIn.isRemote)
+                            {
+                                player.setInventorySlotContents(i, is);
+                                player.markDirty();
+                                playerIn.setHeldItem(EnumHand.MAIN_HAND, null);
+                                playerIn.inventory.markDirty();
+                                worldIn.notifyBlockUpdate(pos, state, state, 3);
+                            }
+                            break;
+                        }
+                    }
+                }
+                else if(is.getItem() == Items.NAME_TAG && is.hasDisplayName())
+                {
+                    boolean full = true;
+                    for(int i = 0; i < 9 ; i++)
+                    {
+                        if(player.getStackInSlot(i) == null)
+                        {
+                            full = false;
+                            break;
+                        }
+                    }
+                    if(!full)
+                    {
+                        return false;
+                    }
+                    if(worldIn.isRemote)
+                    {
+                        for(Instrument instrument : InstrumentLibrary.instruments)
+                        {
+                            if(instrument.info.itemName.equalsIgnoreCase(is.getDisplayName()))
+                            {
+                                Clef.channel.sendToServer(new PacketCreateInstrument(instrument.info.itemName, pos));
+                                break;
+                            }
+                        }
+                    }
+                    return true;
                 }
             }
             if(!hasSlot)

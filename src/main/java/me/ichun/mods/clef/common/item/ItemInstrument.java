@@ -8,6 +8,7 @@ import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import me.ichun.mods.ichunutil.common.item.DualHandedItemCallback;
 import me.ichun.mods.ichunutil.common.item.ItemHandler;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -111,6 +112,10 @@ public class ItemInstrument extends Item
             if(instrument != null)
             {
                 list.add(I18n.translateToLocal("item.clef.instrument." + instrument.info.itemName + ".desc"));
+                if(GuiScreen.isShiftKeyDown())
+                {
+                    list.add(I18n.translateToLocal("clef.item.itemName") + ": " + instrument.info.itemName);
+                }
             }
         }
     }

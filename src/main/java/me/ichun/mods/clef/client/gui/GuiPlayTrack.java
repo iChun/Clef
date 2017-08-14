@@ -81,6 +81,20 @@ public class GuiPlayTrack extends GuiScreen
         bandName.setTextColor(16777215);
         bandName.setText(bandNameString);
 
+        for(GuiButton btn : buttonList)
+        {
+            if(btn.id == ID_SYNC_PLAY)
+            {
+                btn.enabled = !bandName.getText().isEmpty() && syncTrack == 0;
+                btn.displayString = I18n.translateToLocal(syncPlay == 1 ? "gui.yes" : "gui.no");
+            }
+            else if(btn.id == ID_SYNC_TRACK)
+            {
+                btn.enabled = !bandName.getText().isEmpty();
+                btn.displayString = I18n.translateToLocal(syncTrack == 1 ? "gui.yes" : "gui.no");
+            }
+        }
+
         trackList = new GuiTrackList(this, 158, ySize - 22, guiTop + 17, trackListBottom, guiLeft + 7, 8, tracks);
     }
 
@@ -133,33 +147,23 @@ public class GuiPlayTrack extends GuiScreen
     protected void keyTyped(char c, int i)
     {
         bandName.textboxKeyTyped(c, i);
-        for(GuiButton btn : buttonList)
-        {
-            if(btn.id == ID_SYNC_PLAY)
-            {
-                btn.enabled = !bandName.getText().isEmpty() || syncTrack == 0;
-                btn.displayString = I18n.translateToLocal(syncPlay == 1 ? "gui.yes" : "gui.no");
-            }
-            else if(btn.id == ID_SYNC_TRACK)
-            {
-                btn.enabled = !bandName.getText().isEmpty();
-                btn.displayString = I18n.translateToLocal(syncTrack == 1 ? "gui.yes" : "gui.no");
-            }
-        }
         if(bandName.isFocused())
         {
-            syncPlay = 1;
-            syncTrack = 1;
-            for(GuiButton btn : buttonList)
+            if (i != 1)
             {
-                if(btn.id == ID_SYNC_PLAY)
+                syncPlay = 1;
+                syncTrack = 1;
+                for(GuiButton btn : buttonList)
                 {
-                    btn.enabled = false;
-                    btn.displayString = I18n.translateToLocal(syncPlay == 1 ? "gui.yes" : "gui.no");
-                }
-                else if(btn.id == ID_SYNC_TRACK)
-                {
-                    btn.displayString = I18n.translateToLocal(syncTrack == 1 ? "gui.yes" : "gui.no");
+                    if(btn.id == ID_SYNC_PLAY)
+                    {
+                        btn.enabled = false;
+                        btn.displayString = I18n.translateToLocal(syncPlay == 1 ? "gui.yes" : "gui.no");
+                    }
+                    else if(btn.id == ID_SYNC_TRACK)
+                    {
+                        btn.displayString = I18n.translateToLocal(syncTrack == 1 ? "gui.yes" : "gui.no");
+                    }
                 }
             }
         }
@@ -174,6 +178,19 @@ public class GuiPlayTrack extends GuiScreen
             {
                 closeScreen();
                 mc.setIngameFocus();
+            }
+        }
+        for(GuiButton btn : buttonList)
+        {
+            if(btn.id == ID_SYNC_PLAY)
+            {
+                btn.enabled = !bandName.getText().isEmpty() && syncTrack == 0;
+                btn.displayString = I18n.translateToLocal(syncPlay == 1 ? "gui.yes" : "gui.no");
+            }
+            else if(btn.id == ID_SYNC_TRACK)
+            {
+                btn.enabled = !bandName.getText().isEmpty();
+                btn.displayString = I18n.translateToLocal(syncTrack == 1 ? "gui.yes" : "gui.no");
             }
         }
     }
@@ -211,7 +228,7 @@ public class GuiPlayTrack extends GuiScreen
 
         trackList.drawScreen(mouseX, mouseY, partialTicks);
 
-        if(syncTrack == 1)
+        if(syncTrack == 1 && !bandName.getText().isEmpty())
         {
             Gui.drawRect(guiLeft + 6, guiTop + 16, guiLeft + 166, trackListBottom + 1, -1072689136);
         }
