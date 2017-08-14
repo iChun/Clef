@@ -3,6 +3,7 @@ package me.ichun.mods.clef.common.block;
 import me.ichun.mods.clef.client.gui.GuiPlayTrackBlock;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.tileentity.TileEntityInstrumentPlayer;
+import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
@@ -39,6 +40,7 @@ public class BlockInstrumentPlayer extends BlockContainer
         return new TileEntityInstrumentPlayer();
     }
 
+    //TODO if the thingy is full and you right click with a name tag, create new inventory.
     @Override
     public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, @Nullable ItemStack heldItem, EnumFacing side, float hitX, float hitY, float hitZ)
     {
@@ -50,6 +52,10 @@ public class BlockInstrumentPlayer extends BlockContainer
             ItemStack is = playerIn.getHeldItemMainhand();
             if(is != null && is.getItem() == Clef.itemInstrument)
             {
+                if(is.getTagCompound() == null && !worldIn.isRemote)
+                {
+                    InstrumentLibrary.assignRandomInstrument(is);
+                }
                 //Find a free slot
                 for(int i = 0; i < player.getSizeInventory(); i++)
                 {

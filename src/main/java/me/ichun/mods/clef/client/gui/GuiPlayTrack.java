@@ -133,6 +133,19 @@ public class GuiPlayTrack extends GuiScreen
     protected void keyTyped(char c, int i)
     {
         bandName.textboxKeyTyped(c, i);
+        for(GuiButton btn : buttonList)
+        {
+            if(btn.id == ID_SYNC_PLAY)
+            {
+                btn.enabled = !bandName.getText().isEmpty() || syncTrack == 0;
+                btn.displayString = I18n.translateToLocal(syncPlay == 1 ? "gui.yes" : "gui.no");
+            }
+            else if(btn.id == ID_SYNC_TRACK)
+            {
+                btn.enabled = !bandName.getText().isEmpty();
+                btn.displayString = I18n.translateToLocal(syncTrack == 1 ? "gui.yes" : "gui.no");
+            }
+        }
         if(bandName.isFocused())
         {
             syncPlay = 1;

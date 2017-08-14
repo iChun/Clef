@@ -265,6 +265,17 @@ public class InstrumentLibrary
                 requestInstrument(instName, player);
             }
         }
+        else
+        {
+            assignRandomInstrument(is);
+        }
+    }
+
+    public static void assignRandomInstrument(ItemStack is)
+    {
+        NBTTagCompound tag = new NBTTagCompound();
+        tag.setString("itemName", instruments.get((int)Math.floor(Math.random() * instruments.size())).info.itemName);
+        is.setTagCompound(tag);
     }
 
     public static void requestInstrument(String name, EntityPlayer player)

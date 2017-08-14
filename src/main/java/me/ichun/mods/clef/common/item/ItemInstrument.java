@@ -46,6 +46,10 @@ public class ItemInstrument extends Item
     @Override
     public ActionResult<ItemStack> onItemRightClick(ItemStack is, World world, EntityPlayer player, EnumHand hand)
     {
+        if(is.getTagCompound() == null && !world.isRemote)
+        {
+            InstrumentLibrary.assignRandomInstrument(is);
+        }
         if(ItemHandler.canItemBeUsed(player, is))
         {
             if(player.worldObj.isRemote)
