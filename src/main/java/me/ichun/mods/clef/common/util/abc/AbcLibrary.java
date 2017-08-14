@@ -103,7 +103,7 @@ public class AbcLibrary
         }
         //queue the track. track plays when the trackfile is set.
         Clef.eventHandlerServer.tracksPlaying.add(track);
-        track.players.add(player);
+        track.players.put(player, 0);
         if(track.getTrack() != null)
         {
             Clef.channel.sendToAll(new PacketPlayingTracks(track));

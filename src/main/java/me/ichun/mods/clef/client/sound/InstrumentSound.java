@@ -1,17 +1,11 @@
 package me.ichun.mods.clef.client.sound;
 
-import me.ichun.mods.clef.client.core.SoundSystemReflect;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.ITickableSound;
 import net.minecraft.client.audio.PositionedSound;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
-
-import java.lang.reflect.InvocationTargetException;
 
 public class InstrumentSound extends PositionedSound implements ITickableSound
 {

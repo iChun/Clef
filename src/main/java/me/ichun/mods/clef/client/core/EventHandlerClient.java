@@ -4,26 +4,28 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import me.ichun.mods.clef.client.render.BakedModelInstrument;
+import me.ichun.mods.clef.common.Clef;
+import me.ichun.mods.clef.common.packet.PacketStopPlayingTrack;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
 import me.ichun.mods.clef.common.util.abc.play.Track;
-import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
-import me.ichun.mods.clef.common.util.instrument.Instrument;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
+import me.ichun.mods.ichunutil.common.item.ItemHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.event.ModelBakeEvent;
 import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.client.model.ItemLayerModel;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.network.FMLNetworkEvent;
-import org.lwjgl.input.Keyboard;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -86,7 +88,51 @@ public class EventHandlerClient
 
     public void addTrack(Track track)
     {
-        tracksPlaying.remove(track); //Remove old instances
-        tracksPlaying.add(track); //Add the new instance.
+        tracksPlaying.remove(track);//Remove old instances
+        if(!track.playersNames.isEmpty())
+        {
+            tracksPlaying.add(track); //Add the new instance.
+        }
+    }
+
+    public Track getTrackPlayedByPlayer(EntityPlayer player)
+    {
+        for(Track track : tracksPlaying)
+        {
+            if(track.players.containsKey(player) || track.playersNames.contains(player.getName()))
+            {
+                return track;
+            }
+        }
+        return null;
+    }
+
+    @SubscribeEvent
+    public void onLeftClickEmpty(PlayerInteractEvent.LeftClickEmpty event)
+    {
+        ItemStack is = ItemHandler.getUsableDualHandedItem(event.getEntityPlayer());
+        if(is != null && is.getItem() == Clef.itemInstrument)
+        {
+            stopPlayingTrack(event.getEntityPlayer());
+        }
+    }
+
+    @SubscribeEvent
+    public void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event)
+    {
+        ItemStack is = ItemHandler.getUsableDualHandedItem(event.getEntityPlayer());
+        if(is != null && is.getItem() == Clef.itemInstrument)
+        {
+            stopPlayingTrack(event.getEntityPlayer());
+        }
+    }
+
+    public void stopPlayingTrack(EntityPlayer player)
+    {
+        Track track = getTrackPlayedByPlayer(player);
+        if(track != null)
+        {
+            Clef.channel.sendToServer(new PacketStopPlayingTrack(track.getId()));
+        }
     }
 }

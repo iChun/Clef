@@ -1,12 +1,14 @@
 package me.ichun.mods.clef.common.core;
 
 import me.ichun.mods.clef.common.Clef;
+import me.ichun.mods.clef.common.packet.PacketPlayingTracks;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import me.ichun.mods.ichunutil.common.iChunUtil;
 import net.minecraft.entity.item.EntityItem;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.event.entity.player.PlayerDropsEvent;
@@ -81,6 +83,23 @@ public class EventHandlerServer
                     ite.remove();
                     continue;
                 }
+            }
+        }
+    }
+
+    public void stopPlayingTrack(EntityPlayer player, String trackId)
+    {
+        for(Track track : tracksPlaying)
+        {
+            if(track.getId().equals(trackId))
+            {
+                track.players.remove(player);
+                if(track.players.isEmpty())
+                {
+                    track.stop();
+                }
+                Clef.channel.sendToAll(new PacketPlayingTracks(track));
+                break;
             }
         }
     }

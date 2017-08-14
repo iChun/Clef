@@ -19,9 +19,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.*;
 
 public class Track
 {
@@ -35,9 +33,8 @@ public class Track
     public boolean playing = true;
     public int timeToSilence = 0;
 
-    private HashSet<String> playersNames = new HashSet<>();
-    public HashSet<EntityPlayer> players = new HashSet<>();
-    //TODO tell server we're trying to stop playing our shit.
+    public HashSet<String> playersNames = new HashSet<>();
+    public HashMap<EntityPlayer, Integer> players = new HashMap<>();
 
     public Track(String id, String md5, @Nullable TrackInfo track, boolean isRemote)
     {
@@ -112,11 +109,11 @@ public class Track
 
             if(track.notes.containsKey(playProg))
             {
-                Iterator<EntityPlayer> playerIte = players.iterator();
+                Iterator<Map.Entry<EntityPlayer, Integer>> playerIte = players.entrySet().iterator();
                 while(playerIte.hasNext())
                 {
-                    EntityPlayer player = playerIte.next();
-
+                    Map.Entry<EntityPlayer, Integer> e = playerIte.next();
+                    EntityPlayer player = e.getKey();
                     if(player.isEntityAlive())
                     {
                         ItemStack is = ItemHandler.getUsableDualHandedItem(player);
@@ -149,6 +146,49 @@ public class Track
                 }
             }
         }
+        else
+        {
+            boolean update = false;
+            Iterator<Map.Entry<EntityPlayer, Integer>> playerIte = players.entrySet().iterator();
+            while(playerIte.hasNext())
+            {
+                Map.Entry<EntityPlayer, Integer> e = playerIte.next();
+                EntityPlayer player = e.getKey();
+                if(player.isEntityAlive())
+                {
+                    e.setValue(e.getValue() + 1);
+
+                    ItemStack is = ItemHandler.getUsableDualHandedItem(player);
+                    if(is != null && is.getItem() == Clef.itemInstrument)
+                    {
+                        NBTTagCompound tag = is.getTagCompound();
+                        if(tag != null)
+                        {
+                            Instrument instrument = InstrumentLibrary.getInstrumentByName(tag.getString("itemName"));
+                            if(instrument != null)
+                            {
+                                e.setValue(0);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    e.setValue(10000000);
+                }
+
+                if(e.getValue() > 100) //5 seconds
+                {
+                    update = true;
+                    playerIte.remove();
+                }
+            }
+
+            if(update)
+            {
+                Clef.channel.sendToAll(new PacketPlayingTracks(this));
+            }
+        }
 
         playProg++;
         return true;
@@ -169,9 +209,15 @@ public class Track
     {
         if(o instanceof Track)
         {
-            return ((Track)o).id.equals(id);
+            return id.equals(((Track)o).id);
         }
         return false;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return id.hashCode();
     }
 
     @SideOnly(Side.CLIENT)
@@ -186,7 +232,7 @@ public class Track
                 EntityPlayer player = Minecraft.getMinecraft().theWorld.getPlayerEntityByName(s);
                 if(player != null && player.isEntityAlive())
                 {
-                    players.add(player);
+                    players.put(player, 0);
                     ite.remove();
                 }
             }

@@ -9,6 +9,7 @@ import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import me.ichun.mods.ichunutil.common.item.DualHandedItemCallback;
 import me.ichun.mods.ichunutil.common.item.ItemHandler;
 import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.EnumAction;
@@ -18,6 +19,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumHand;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.translation.I18n;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
@@ -35,17 +37,39 @@ public class ItemInstrument extends Item
     }
 
     @Override
+    public boolean doesSneakBypassUse(ItemStack stack, net.minecraft.world.IBlockAccess world, BlockPos pos, EntityPlayer player)
+    {
+        return true;
+    }
+
+    @Override
     public ActionResult<ItemStack> onItemRightClick(ItemStack is, World world, EntityPlayer player, EnumHand hand)
     {
         if(ItemHandler.canItemBeUsed(player, is))
         {
             if(player.worldObj.isRemote)
             {
-                Clef.channel.sendToServer(new PacketPlayABC(AbcLibrary.tracks.get(0).md5));
+                Track track = Clef.eventHandlerClient.getTrackPlayedByPlayer(player);
+                if(track == null)
+                {
+                    //Open the GUI
+                    Clef.channel.sendToServer(new PacketPlayABC(AbcLibrary.tracks.get(1).md5));
+                }
+                else
+                {
+                    Clef.eventHandlerClient.stopPlayingTrack(player);
+                }
             }
             return new ActionResult<>(EnumActionResult.SUCCESS, is);
         }
         return new ActionResult<>(EnumActionResult.FAIL, is);
+    }
+
+    @Override
+    public boolean onLeftClickEntity(ItemStack stack, EntityPlayer player, Entity entity)
+    {
+        Clef.eventHandlerClient.stopPlayingTrack(player);
+        return false;
     }
 
     @SideOnly(Side.CLIENT)
@@ -119,12 +143,10 @@ public class ItemInstrument extends Item
             if(ent instanceof EntityPlayer)
             {
                 EntityPlayer player = (EntityPlayer)ent;
-                for(Track track : Clef.eventHandlerClient.tracksPlaying)
+                Track track = Clef.eventHandlerClient.getTrackPlayedByPlayer(player);
+                if(track != null)
                 {
-                    if(track.players.contains(player))
-                    {
-                        return track.timeToSilence > 0;
-                    }
+                    return track.timeToSilence > 0;
                 }
             }
             return false;

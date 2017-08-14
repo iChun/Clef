@@ -31,7 +31,7 @@ public class PacketPlayingTracks extends AbstractPacket
             ByteBufUtils.writeUTF8String(buf, track.getMd5());
             buf.writeInt(track.playProg);
             buf.writeInt(track.players.size());
-            for(EntityPlayer player : track.players)
+            for(EntityPlayer player : track.players.keySet())
             {
                 ByteBufUtils.writeUTF8String(buf, player.getName());
             }
