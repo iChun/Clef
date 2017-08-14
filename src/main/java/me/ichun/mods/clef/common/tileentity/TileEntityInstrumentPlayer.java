@@ -143,6 +143,14 @@ public class TileEntityInstrumentPlayer extends TileEntity
                             playlistIndex = 0;
                         }
                     }
+                    else if(!bandName.isEmpty() && syncTrack)
+                    {
+                        //Find the band
+                        Track track = Clef.eventHandlerServer.findTrackByBand(bandName);
+                        HashSet<BlockPos> players = track.instrumentPlayers.computeIfAbsent(getWorld().provider.getDimension(), v -> new HashSet<>());
+                        players.add(getPos());
+                        Clef.channel.sendToAll(new PacketPlayingTracks(track));
+                    }
                 }
             }
         }
@@ -155,7 +163,7 @@ public class TileEntityInstrumentPlayer extends TileEntity
             playedTracks.clear();
             if(repeat != 2)
             {
-                if(shuffle)
+                if(shuffle && !tracks.isEmpty())
                 {
                     playlistIndex = getWorld().rand.nextInt(tracks.size());
                 }
