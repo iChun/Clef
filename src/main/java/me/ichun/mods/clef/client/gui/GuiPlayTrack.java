@@ -45,6 +45,7 @@ public class GuiPlayTrack extends GuiScreen
     public GuiTextField bandName;
 
     public GuiTrackList trackList;
+    public int trackListBottom;
 
     public int syncPlay = 1;
     public int syncTrack = 0;
@@ -53,10 +54,12 @@ public class GuiPlayTrack extends GuiScreen
     public int doneTimeout = 0;
 
     public ArrayList<TrackFile> tracks;
+    public String bandNameString = "";
 
     public GuiPlayTrack()
     {
         tracks = AbcLibrary.tracks;
+        trackListBottom = guiTop + ySize + 6;
     }
 
     @Override
@@ -67,18 +70,25 @@ public class GuiPlayTrack extends GuiScreen
         this.guiLeft = (this.width - this.xSize) / 2;
         this.guiTop = (this.height - this.ySize) / 2;
 
+        buttonList.clear();
+
         buttonList.add(new GuiButton(ID_CONFIRM, guiLeft + 174, guiTop + 210, 83, 20, I18n.translateToLocal("clef.gui.play")));
-        buttonList.add(new GuiButton(ID_SYNC_PLAY, guiLeft + 179, guiTop + 51, 72, 20, I18n.translateToLocal(syncPlay == 1 ? "gui.yes" : "gui.no")));
-        buttonList.add(new GuiButton(ID_SYNC_TRACK, guiLeft + 179, guiTop + 94, 72, 20, I18n.translateToLocal(syncTrack == 1 ? "gui.yes" : "gui.no")));
-        addReloadButtons();
+        addButtons();
 
         bandName = new GuiTextField(0, mc.fontRendererObj, this.guiLeft + 181, this.guiTop + 18, 64, mc.fontRendererObj.FONT_HEIGHT);
         bandName.setMaxStringLength(15);
         bandName.setEnableBackgroundDrawing(false);
         bandName.setTextColor(16777215);
-        bandName.setText("");
+        bandName.setText(bandNameString);
 
-        trackList = new GuiTrackList(this, 158, ySize - 22, guiTop + 17, guiTop + ySize - 7, guiLeft + 7, 8, tracks);
+        trackList = new GuiTrackList(this, 158, ySize - 22, guiTop + 17, trackListBottom, guiLeft + 7, 8, tracks);
+    }
+
+    public void addButtons()
+    {
+        buttonList.add(new GuiButton(ID_SYNC_PLAY, guiLeft + 179, guiTop + 51, 72, 20, I18n.translateToLocal(syncPlay == 1 ? "gui.yes" : "gui.no")));
+        buttonList.add(new GuiButton(ID_SYNC_TRACK, guiLeft + 179, guiTop + 94, 72, 20, I18n.translateToLocal(syncTrack == 1 ? "gui.yes" : "gui.no")));
+        addReloadButtons();
     }
 
     public void addReloadButtons()
@@ -170,14 +180,12 @@ public class GuiPlayTrack extends GuiScreen
         this.mc.getTextureManager().bindTexture(background);
         this.drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 
-        Gui.drawRect(guiLeft + 6, guiTop + 16, guiLeft + 166, guiTop + ySize - 6, -1072689136);
+        Gui.drawRect(guiLeft + 6, guiTop + 16, guiLeft + 166, trackListBottom + 1, -1072689136);
 
         if(bandName.getVisible())
         {
             bandName.drawTextBox();
         }
-
-        fontRendererObj.drawString(I18n.translateToLocal("clef.gui.chooseSong") + " (" + tracks.size() + ")", guiLeft + 6, guiTop + 5, 16777215, true);
 
         fontRendererObj.drawString(I18n.translateToLocal("clef.gui.band"), guiLeft + 179, guiTop + 5, 16777215, true);
 
@@ -186,19 +194,25 @@ public class GuiPlayTrack extends GuiScreen
             fontRendererObj.drawString(I18n.translateToLocal("clef.gui.bandSolo"), guiLeft + 182, guiTop + 18, 0xcccccc, false);
         }
 
-        fontRendererObj.drawString(I18n.translateToLocal("clef.gui.syncPlayTime"), guiLeft + 179, guiTop + 40, 16777215, true);
-        fontRendererObj.drawString(I18n.translateToLocal("clef.gui.syncTrack"), guiLeft + 179, guiTop + 83, 16777215, true);
+        drawText();
 
         trackList.drawScreen(mouseX, mouseY, partialTicks);
 
         if(syncTrack == 1)
         {
-            Gui.drawRect(guiLeft + 6, guiTop + 16, guiLeft + 166, guiTop + ySize - 6, -1072689136);
+            Gui.drawRect(guiLeft + 6, guiTop + 16, guiLeft + 166, trackListBottom + 1, -1072689136);
         }
 
         super.drawScreen(mouseX, mouseY, partialTicks);
 
         drawReloadButtons();
+    }
+
+    public void drawText()
+    {
+        fontRendererObj.drawString(I18n.translateToLocal("clef.gui.chooseSong") + " (" + tracks.size() + ")", guiLeft + 6, guiTop + 5, 16777215, true);
+        fontRendererObj.drawString(I18n.translateToLocal("clef.gui.syncPlayTime"), guiLeft + 179, guiTop + 40, 16777215, true);
+        fontRendererObj.drawString(I18n.translateToLocal("clef.gui.syncTrack"), guiLeft + 179, guiTop + 83, 16777215, true);
     }
 
     public void closeScreen()
@@ -244,7 +258,7 @@ public class GuiPlayTrack extends GuiScreen
     {
         if(btn.id == ID_CONFIRM)
         {
-            confirmSelection();
+            confirmSelection(false);
         }
         else if(btn.id == ID_SYNC_PLAY)
         {
@@ -296,7 +310,7 @@ public class GuiPlayTrack extends GuiScreen
         return syncTrack == 0 && index == i;
     }
 
-    public void confirmSelection()
+    public void confirmSelection(boolean doubleClick)
     {
         if(syncTrack == 0 && !(index >= 0 && index < tracks.size()))
         {

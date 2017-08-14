@@ -1,6 +1,9 @@
 package me.ichun.mods.clef.common.tileentity;
 
 import me.ichun.mods.clef.common.Clef;
+import me.ichun.mods.clef.common.util.abc.AbcLibrary;
+import me.ichun.mods.clef.common.util.abc.TrackFile;
+import me.ichun.mods.ichunutil.common.iChunUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.ItemStackHelper;
@@ -13,22 +16,52 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ITickable;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 
 public class TileEntityInstrumentPlayer extends TileEntity
         implements ITickable, IInventory
 {
+    public int tries = 20;
+    public ArrayList<TrackFile> tracks = new ArrayList<>();
+    public ArrayList<String> pending_md5s = new ArrayList<>();
+    public String bandName = "";
+    public boolean syncPlay = true;
+    public boolean syncTrack = false;
+    public int repeat = 0;
+    public boolean shuffle = true;
+
+    public int playlistIndex = 0;
+
     private ItemStack[] contents = new ItemStack[9];
     public boolean previousRedstoneState;
 
     public TileEntityInstrumentPlayer()
     {
-        //        for(int i = 0; i < contents.length; i++)
-        //        {
-        //            contents[i] = new ItemStack(Clef.itemInstrument, 1, 0);
-        //            NBTTagCompound tag = new NBTTagCompound();
-        //            tag.setString("itemName", "piano");
-        //            contents[i].setTagCompound(tag);
-        //        }
+    }
+
+    @Override
+    public void update()
+    {
+        if(!pending_md5s.isEmpty() && iChunUtil.eventHandlerServer.ticks % 100 == 0) //Only tries every 5 seconds, pending_md5s is only populated server end.
+        {
+            tries++;
+            for(String s : pending_md5s)
+            {
+                TrackFile file = AbcLibrary.getTrack(s);
+                if(file == null && tries < 20)
+                {
+                    tracks.clear();
+                    return;
+                }
+                else
+                {
+                    tracks.add(file);
+                }
+            }
+            pending_md5s.clear();//It'll only get to this point if it gets all teh tracks.
+        }
+
+        //TODO do stuff here.
     }
 
     @Override
@@ -50,9 +83,9 @@ public class TileEntityInstrumentPlayer extends TileEntity
     }
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound compound)
+    public NBTTagCompound writeToNBT(NBTTagCompound tag)
     {
-        super.writeToNBT(compound);
+        super.writeToNBT(tag);
         NBTTagList nbttaglist = new NBTTagList();
 
         for (int i = 0; i < this.contents.length; ++i)
@@ -66,17 +99,31 @@ public class TileEntityInstrumentPlayer extends TileEntity
             }
         }
 
-        compound.setTag("Items", nbttaglist);
-        compound.setBoolean("powered", this.previousRedstoneState);
-        return compound;
+        tag.setTag("Items", nbttaglist);
+        tag.setBoolean("powered", this.previousRedstoneState);
+
+        tag.setInteger("trackCount", tracks.size());
+        for(int i = 0 ; i < tracks.size(); i++)
+        {
+            TrackFile file = tracks.get(i);
+            tag.setString("track_" + i, file.md5);
+        }
+
+        tag.setString("bandName", bandName);
+        tag.setBoolean("syncPlay", syncPlay);
+        tag.setBoolean("syncTrack", syncTrack);
+        tag.setInteger("repeat", repeat);
+        tag.setBoolean("shuffle", shuffle);
+
+        return tag;
     }
 
     @Override
-    public void readFromNBT(NBTTagCompound compound)
+    public void readFromNBT(NBTTagCompound tag)
     {
-        super.readFromNBT(compound);
+        super.readFromNBT(tag);
         this.contents = new ItemStack[this.getSizeInventory()];
-        NBTTagList nbttaglist = compound.getTagList("Items", 10);
+        NBTTagList nbttaglist = tag.getTagList("Items", 10);
 
         for (int i = 0; i < nbttaglist.tagCount(); ++i)
         {
@@ -88,13 +135,24 @@ public class TileEntityInstrumentPlayer extends TileEntity
                 this.contents[j] = ItemStack.loadItemStackFromNBT(nbttagcompound);
             }
         }
-        this.previousRedstoneState = compound.getBoolean("powered");
-    }
+        this.previousRedstoneState = tag.getBoolean("powered");
 
-    @Override
-    public void update()
-    {
+        tracks.clear();
+        int size = tag.getInteger("trackCount");
+        for(int i = 0; i < size; i++)
+        {
+            TrackFile file = AbcLibrary.getTrack(tag.getString("track_" + i));
+            if(file != null)
+            {
+                tracks.add(file);
+            }
+        }
 
+        bandName = tag.getString("bandName");
+        syncPlay = tag.getBoolean("syncPlay");
+        syncTrack = tag.getBoolean("syncTrack");
+        repeat = tag.getInteger("repeat");
+        shuffle = tag.getBoolean("shuffle");
     }
 
     @Override

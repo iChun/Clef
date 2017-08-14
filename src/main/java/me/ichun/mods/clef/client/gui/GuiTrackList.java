@@ -12,7 +12,7 @@ import java.util.ArrayList;
 public class GuiTrackList extends GuiScrollingList
 {
     private GuiPlayTrack parent;
-    private ArrayList<TrackFile> tracks;
+    public ArrayList<TrackFile> tracks;
 
     public GuiTrackList(GuiPlayTrack parent, int width, int height, int top, int bottom, int left, int entryHeight, ArrayList<TrackFile> track)
     {
@@ -33,7 +33,7 @@ public class GuiTrackList extends GuiScrollingList
         parent.setIndex(index);
         if(doubleClick)
         {
-            parent.confirmSelection();
+            parent.confirmSelection(true);
         }
     }
 
