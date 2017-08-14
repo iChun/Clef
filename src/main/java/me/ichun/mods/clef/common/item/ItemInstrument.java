@@ -1,13 +1,13 @@
 package me.ichun.mods.clef.common.item;
 
+import me.ichun.mods.clef.client.gui.GuiPlayTrack;
 import me.ichun.mods.clef.common.Clef;
-import me.ichun.mods.clef.common.packet.PacketPlayABC;
-import me.ichun.mods.clef.common.util.abc.AbcLibrary;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import me.ichun.mods.ichunutil.common.item.DualHandedItemCallback;
 import me.ichun.mods.ichunutil.common.item.ItemHandler;
+import net.minecraft.client.Minecraft;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -22,6 +22,7 @@ import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.translation.I18n;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.client.FMLClientHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -53,7 +54,7 @@ public class ItemInstrument extends Item
                 if(track == null)
                 {
                     //Open the GUI
-                    Clef.channel.sendToServer(new PacketPlayABC(AbcLibrary.tracks.get(1).md5));
+                    openGui();
                 }
                 else
                 {
@@ -70,6 +71,12 @@ public class ItemInstrument extends Item
     {
         Clef.eventHandlerClient.stopPlayingTrack(player);
         return false;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public void openGui()
+    {
+        FMLClientHandler.instance().displayGuiScreen(Minecraft.getMinecraft().thePlayer, new GuiPlayTrack());
     }
 
     @SideOnly(Side.CLIENT)

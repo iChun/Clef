@@ -88,6 +88,7 @@ public class AbcLibrary
 
     public static void playAbc(String md5, EntityPlayer player) //CLIENT NEVER CALLS THIS.
     {
+        //TODO check that the player is not already playing a track
         TrackFile file = getTrack(md5);
         Track track = new Track(RandomStringUtils.randomAscii(IOUtil.IDENTIFIER_LENGTH), md5, (file != null ? file.track : null), false);
         if(file == null) //We don't have the ABC. Ask from the client.

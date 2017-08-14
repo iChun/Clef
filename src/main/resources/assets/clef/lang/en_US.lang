@@ -1,2 +1,13 @@
 itemGroup.clef=Instruments
 item.clef.item.instrument.name=Unknown Instrument
+
+clef.gui.chooseSong=Choose a song
+clef.gui.play=Play
+clef.gui.band=Band Name
+clef.gui.bandSolo=Play Solo
+clef.gui.reload=Reload:
+clef.gui.syncPlayTime=Sync Play Time
+clef.gui.syncTrack=Sync Track
+
+clef.gui.instruments=Instruments
+clef.gui.tracks=Tracks
