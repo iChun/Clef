@@ -6,6 +6,7 @@ import me.ichun.mods.clef.common.tileentity.TileEntityInstrumentPlayer;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
 import me.ichun.mods.clef.common.util.abc.TrackFile;
 import me.ichun.mods.ichunutil.common.core.network.AbstractPacket;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.tileentity.TileEntity;
@@ -96,6 +97,8 @@ public class PacketInstrumentPlayerInfo extends AbstractPacket
             instrumentPlayer.repeat = repeat;
             instrumentPlayer.shuffle = shuffle;
             instrumentPlayer.markDirty();
+            IBlockState state = player.worldObj.getBlockState(pos);
+            player.worldObj.notifyBlockUpdate(pos, state, state, 3);
         }
         return null;
     }
