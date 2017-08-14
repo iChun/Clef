@@ -21,6 +21,7 @@ import net.minecraft.util.text.translation.I18n;
 import java.io.IOException;
 import java.util.ArrayList;
 
+@SuppressWarnings("deprecation")
 public class GuiPlayTrackBlock extends GuiPlayTrack
 {
     public static final int ID_ADD_PLAYLIST = 10;
@@ -48,7 +49,6 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
         this.player = player;
         this.containerInstrumentPlayer = new ContainerInstrumentPlayer(player);
 
-        trackListBottom -= 22;
         disableListWhenSyncTrack = false;
 
         playlist = new ArrayList<>(player.tracks);
@@ -63,6 +63,9 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
     public void initGui()
     {
         super.initGui();
+        trackListBottom -= 22;
+        trackList = new GuiTrackList(this, 158, ySize - 22, guiTop + 17, trackListBottom, guiLeft + 7, 8, tracks);
+
         this.mc.thePlayer.openContainer = this.containerInstrumentPlayer;
 
         for(GuiButton btn : buttonList)

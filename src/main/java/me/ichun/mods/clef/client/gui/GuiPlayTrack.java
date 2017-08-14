@@ -61,7 +61,6 @@ public class GuiPlayTrack extends GuiScreen
     public GuiPlayTrack()
     {
         tracks = AbcLibrary.tracks;
-        trackListBottom = guiTop + ySize + 6;
         bandNameString = Clef.config.favoriteBand;
     }
 
@@ -72,6 +71,8 @@ public class GuiPlayTrack extends GuiScreen
 
         this.guiLeft = (this.width - this.xSize) / 2;
         this.guiTop = (this.height - this.ySize) / 2;
+
+        trackListBottom = guiTop + ySize - 6;
 
         buttonList.clear();
 
@@ -246,6 +247,13 @@ public class GuiPlayTrack extends GuiScreen
         fontRendererObj.drawString(I18n.translateToLocal("clef.gui.chooseSong") + " (" + tracks.size() + ")", guiLeft + 6, guiTop + 5, 16777215, true);
         fontRendererObj.drawString(I18n.translateToLocal("clef.gui.syncPlayTime"), guiLeft + 179, guiTop + 40, 16777215, true);
         fontRendererObj.drawString(I18n.translateToLocal("clef.gui.syncTrack"), guiLeft + 179, guiTop + 83, 16777215, true);
+        GlStateManager.pushMatrix();
+        int length = fontRendererObj.getStringWidth(I18n.translateToLocal("clef.gui.moreSongs"));
+        GlStateManager.translate(guiLeft - 4, guiTop + length + 3, 0);
+        GlStateManager.scale(0.5F, 0.5F, 1F);
+        GlStateManager.rotate(-90F, 0F, 0F, 1F);
+        fontRendererObj.drawString(I18n.translateToLocal("clef.gui.moreSongs"), 0, 0, 16777215, true);
+        GlStateManager.popMatrix();
     }
 
     public void closeScreen()

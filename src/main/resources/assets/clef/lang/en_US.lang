@@ -5,6 +5,8 @@ tile.clef.item.instrumentPlayer.name=Instrument Player
 
 clef.item.itemName=Item Name
 
+clef.gui.moreSongs=You can get more songs online in abc format
+
 clef.gui.chooseSong=Choose a song
 clef.gui.play=Play
 clef.gui.band=Band Name

@@ -96,7 +96,7 @@ public class Track
             }
             else
             {
-                if(AbcLibrary.requestedABCFromServer.add(md5))
+                if(shouldRequestTrack() && AbcLibrary.requestedABCFromServer.add(md5))
                 {
                     Clef.channel.sendToServer(new PacketRequestFile(md5, false));
                 }
@@ -297,5 +297,36 @@ public class Track
                 }
             }
         }
+    }
+
+    @SideOnly(Side.CLIENT)
+    public boolean shouldRequestTrack()
+    {
+        HashSet<BlockPos> poses = instrumentPlayers.get(Minecraft.getMinecraft().thePlayer.getEntityWorld().provider.getDimension());
+        if(poses != null)
+        {
+            for(BlockPos pos : poses)
+            {
+                if(Minecraft.getMinecraft().thePlayer.getDistance(pos.getX(), pos.getY(), pos.getZ()) < 256D)
+                {
+                    return true;
+                }
+            }
+        }
+
+        Iterator<String> ite = playersNames.iterator();
+        while(ite.hasNext())
+        {
+            String s = ite.next();
+            if(Minecraft.getMinecraft().theWorld != null)
+            {
+                EntityPlayer player = Minecraft.getMinecraft().theWorld.getPlayerEntityByName(s);
+                if(player != null && player.isEntityAlive())
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
