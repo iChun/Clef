@@ -2,6 +2,7 @@ package me.ichun.mods.clef.common.core;
 
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.packet.PacketPlayingTracks;
+import me.ichun.mods.clef.common.tileentity.TileEntityInstrumentPlayer;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
@@ -102,6 +103,18 @@ public class EventHandlerServer
                 break;
             }
         }
+    }
+
+    public Track getTrackPlayedByPlayer(TileEntityInstrumentPlayer player)
+    {
+        for(Track track : tracksPlaying)
+        {
+            if(track.instrumentPlayers.containsKey(player.getWorld().provider.getDimension()) && track.instrumentPlayers.get(player.getWorld().provider.getDimension()).contains(player.getPos()))
+            {
+                return track;
+            }
+        }
+        return null;
     }
 
     public Track getTrackPlayedByPlayer(EntityPlayer player)

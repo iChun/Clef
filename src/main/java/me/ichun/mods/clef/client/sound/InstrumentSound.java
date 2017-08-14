@@ -5,7 +5,9 @@ import net.minecraft.client.audio.PositionedSound;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Vec3d;
 
 public class InstrumentSound extends PositionedSound implements ITickableSound
 {
@@ -63,9 +65,17 @@ public class InstrumentSound extends PositionedSound implements ITickableSound
         if(noteLocationObject instanceof EntityLivingBase)
         {
             EntityLivingBase living = (EntityLivingBase)noteLocationObject;
-            this.xPosF = (float)living.posX;
-            this.yPosF = (float)living.posY + living.getEyeHeight();
-            this.zPosF = (float)living.posZ;
+            Vec3d view = living.getLookVec();
+            this.xPosF = (float)(living.posX + view.xCoord * 0.3D);
+            this.yPosF = (float)(living.posY + living.getEyeHeight() + view.yCoord * 0.3D);
+            this.zPosF = (float)(living.posZ + view.zCoord * 0.3D);
+        }
+        else if(noteLocationObject instanceof BlockPos)
+        {
+            BlockPos pos = (BlockPos)noteLocationObject;
+            this.xPosF = pos.getX() + 0.5F;
+            this.yPosF = pos.getY() + 0.5F;
+            this.zPosF = pos.getZ() + 0.5F;
         }
     }
 }

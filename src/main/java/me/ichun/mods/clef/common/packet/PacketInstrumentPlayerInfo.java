@@ -90,6 +90,10 @@ public class PacketInstrumentPlayerInfo extends AbstractPacket
                     instrumentPlayer.pending_md5s = abc_md5s;
                     Clef.channel.sendTo(new PacketRequestFile(s, false), player);
                 }
+                else
+                {
+                    instrumentPlayer.tracks.add(track);
+                }
             }
             instrumentPlayer.bandName = bandName;
             instrumentPlayer.syncPlay = syncPlay;

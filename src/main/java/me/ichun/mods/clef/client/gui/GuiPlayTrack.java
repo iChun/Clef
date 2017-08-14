@@ -56,6 +56,8 @@ public class GuiPlayTrack extends GuiScreen
     public ArrayList<TrackFile> tracks;
     public String bandNameString = "";
 
+    public boolean disableListWhenSyncTrack = true;
+
     public GuiPlayTrack()
     {
         tracks = AbcLibrary.tracks;
@@ -137,7 +139,7 @@ public class GuiPlayTrack extends GuiScreen
         int mouseY = this.height - Mouse.getEventY() * this.height / this.mc.displayHeight - 1;
 
         super.handleMouseInput();
-        if(syncTrack == 0)
+        if(syncTrack == 0 && disableListWhenSyncTrack)
         {
             this.trackList.handleMouseInput(mouseX, mouseY);
         }
@@ -228,7 +230,7 @@ public class GuiPlayTrack extends GuiScreen
 
         trackList.drawScreen(mouseX, mouseY, partialTicks);
 
-        if(syncTrack == 1 && !bandName.getText().isEmpty())
+        if(syncTrack == 1 && disableListWhenSyncTrack && !bandName.getText().isEmpty())
         {
             Gui.drawRect(guiLeft + 6, guiTop + 16, guiLeft + 166, trackListBottom + 1, -1072689136);
         }

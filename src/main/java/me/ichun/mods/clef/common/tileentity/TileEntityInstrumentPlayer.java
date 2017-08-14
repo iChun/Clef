@@ -1,8 +1,11 @@
 package me.ichun.mods.clef.common.tileentity;
 
 import me.ichun.mods.clef.common.Clef;
+import me.ichun.mods.clef.common.packet.PacketPlayingTracks;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
 import me.ichun.mods.clef.common.util.abc.TrackFile;
+import me.ichun.mods.clef.common.util.abc.play.Track;
+import me.ichun.mods.ichunutil.common.core.util.IOUtil;
 import me.ichun.mods.ichunutil.common.iChunUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
@@ -14,9 +17,13 @@ import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ITickable;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 public class TileEntityInstrumentPlayer extends TileEntity
         implements ITickable, IInventory
@@ -27,10 +34,11 @@ public class TileEntityInstrumentPlayer extends TileEntity
     public String bandName = "";
     public boolean syncPlay = true;
     public boolean syncTrack = false;
-    public int repeat = 0;
+    public int repeat = 0; //0 = none, 1 = all, 2 = one
     public boolean shuffle = true;
 
     public int playlistIndex = 0;
+    public HashSet<String> playedTracks = new HashSet<>(); //for shuffle
 
     private ItemStack[] contents = new ItemStack[9];
     public boolean previousRedstoneState;
@@ -42,26 +50,142 @@ public class TileEntityInstrumentPlayer extends TileEntity
     @Override
     public void update()
     {
-        if(!pending_md5s.isEmpty() && iChunUtil.eventHandlerServer.ticks % 100 == 0) //Only tries every 5 seconds, pending_md5s is only populated server end.
+        if(!getWorld().isRemote)
         {
-            tries++;
-            for(String s : pending_md5s)
+            if(!pending_md5s.isEmpty() && iChunUtil.eventHandlerServer.ticks % 100 == 0) //Only tries every 5 seconds, pending_md5s is only populated server end.
             {
-                TrackFile file = AbcLibrary.getTrack(s);
-                if(file == null && tries < 20)
+                tries++;
+                for(String s : pending_md5s)
                 {
-                    tracks.clear();
-                    return;
+                    TrackFile file = AbcLibrary.getTrack(s);
+                    if(file == null && tries < 20)
+                    {
+                        tracks.clear();
+                        return;
+                    }
+                    else
+                    {
+                        tracks.add(file);
+                    }
+                }
+                pending_md5s.clear();//It'll only get to this point if it gets all teh tracks.
+            }
+
+            if(previousRedstoneState)//aka isPowered
+            {
+                boolean hasInst = false;
+                for(ItemStack is : contents)
+                {
+                    if(is != null && is.getItem() == Clef.itemInstrument)
+                    {
+                        hasInst = true;
+                        break;
+                    }
+                }
+                if(hasInst)
+                {
+                    Track track2 = Clef.eventHandlerServer.getTrackPlayedByPlayer(this);
+                    if(track2 == null && (shuffle && playedTracks.size() < tracks.size() || !shuffle && playlistIndex < tracks.size()))
+                    {
+                        //play a new track
+                        TrackFile file = null;
+                        if(shuffle)
+                        {
+                            int tries = 0;
+                            while(tries < 1000)
+                            {
+                                file = tracks.get(getWorld().rand.nextInt(tracks.size()));
+                                if(!playedTracks.contains(file.md5))
+                                {
+                                    break;
+                                }
+                                tries++;
+                            }
+                        }
+                        else
+                        {
+                            file = tracks.get(playlistIndex);
+                        }
+                        Track track;
+                        if(!bandName.isEmpty())
+                        {
+                            //Find the band
+                            track = Clef.eventHandlerServer.findTrackByBand(bandName);
+                            Track track1 = track;
+                            if(track == null || !syncTrack) //No band
+                            {
+                                track = new Track(RandomStringUtils.randomAscii(IOUtil.IDENTIFIER_LENGTH), bandName, file.md5, file.track, false);
+                            }
+                            if(syncPlay && track1 != null)
+                            {
+                                track.playAtProgress(track1.playProg);
+                            }
+                        }
+                        else
+                        {
+                            track = new Track(RandomStringUtils.randomAscii(IOUtil.IDENTIFIER_LENGTH), bandName, file.md5, file.track, false);
+                        }
+
+                        Clef.eventHandlerServer.tracksPlaying.add(track);
+                        HashSet<BlockPos> players = track.instrumentPlayers.computeIfAbsent(getWorld().provider.getDimension(), v -> new HashSet<>());
+                        players.add(getPos());
+                        Clef.channel.sendToAll(new PacketPlayingTracks(track));
+
+                        System.out.println(track.getTrack().title);
+
+                        if(shuffle && repeat != 1 && file.md5.equals(track.getMd5()))
+                        {
+                            playedTracks.add(track.getMd5());
+                        }
+                        playlistIndex++;
+                        if(repeat == 1 && playlistIndex >= tracks.size())
+                        {
+                            playlistIndex = 0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public void changeRedstoneState(boolean newState)
+    {
+        if(newState)
+        {
+            playedTracks.clear();
+            if(repeat != 2)
+            {
+                if(shuffle)
+                {
+                    playlistIndex = getWorld().rand.nextInt(tracks.size());
                 }
                 else
                 {
-                    tracks.add(file);
+                    playlistIndex = 0;
                 }
             }
-            pending_md5s.clear();//It'll only get to this point if it gets all teh tracks.
         }
-
-        //TODO do stuff here.
+        else
+        {
+            Track track = Clef.eventHandlerServer.getTrackPlayedByPlayer(this);
+            if(track != null)
+            {
+                HashSet<BlockPos> players = track.instrumentPlayers.get(getWorld().provider.getDimension());
+                if(players != null)
+                {
+                    players.remove(getPos());
+                    if(players.isEmpty())
+                    {
+                        track.instrumentPlayers.remove(getWorld().provider.getDimension());
+                    }
+                }
+                if(!track.hasObjectsPlaying())
+                {
+                    track.stop();
+                }
+                Clef.channel.sendToAll(new PacketPlayingTracks(track));
+            }
+        }
     }
 
     @Override
@@ -115,6 +239,16 @@ public class TileEntityInstrumentPlayer extends TileEntity
         tag.setInteger("repeat", repeat);
         tag.setBoolean("shuffle", shuffle);
 
+        tag.setInteger("playedCount", playedTracks.size());
+        int i = 0;
+        for(String s : playedTracks)
+        {
+            tag.setString("played_" + i, s);
+            i++;
+        }
+
+        tag.setInteger("playlistIndex", playlistIndex);
+
         return tag;
     }
 
@@ -147,12 +281,19 @@ public class TileEntityInstrumentPlayer extends TileEntity
                 tracks.add(file);
             }
         }
+        size = tag.getInteger("playedCount");
+        for(int i = 0; i < size; i++)
+        {
+            playedTracks.add(tag.getString("played_" + i));
+        }
 
         bandName = tag.getString("bandName");
         syncPlay = tag.getBoolean("syncPlay");
         syncTrack = tag.getBoolean("syncTrack");
         repeat = tag.getInteger("repeat");
         shuffle = tag.getBoolean("shuffle");
+
+        playlistIndex = MathHelper.clamp_int(tag.getInteger("playlistIndex"), 0, tracks.size());
     }
 
     @Override

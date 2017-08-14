@@ -49,6 +49,7 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
         this.containerInstrumentPlayer = new ContainerInstrumentPlayer(player);
 
         trackListBottom -= 22;
+        disableListWhenSyncTrack = false;
 
         playlist = new ArrayList<>(player.tracks);
         bandNameString = player.bandName;
@@ -276,16 +277,13 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
     @Override
     public void confirmSelection(boolean doubleClick)
     {
-        if(syncTrack == 0 && !(index >= 0 && index < tracks.size()))
-        {
-            return;
-        }
         if(doubleClick)
         {
             if(!playlistView && index >= 0 && index < tracks.size() && !playlist.contains(tracks.get(index)))
             {
                 playlist.add(tracks.get(index));
                 this.mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                return;
             }
         }
         if(playlist.isEmpty())

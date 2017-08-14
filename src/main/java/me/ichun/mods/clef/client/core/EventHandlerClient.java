@@ -89,7 +89,7 @@ public class EventHandlerClient
     public void addTrack(Track track)
     {
         tracksPlaying.remove(track);//Remove old instances
-        if(!track.playersNames.isEmpty())
+        if(track.hasObjectsPlaying())
         {
             tracksPlaying.add(track); //Add the new instance.
         }

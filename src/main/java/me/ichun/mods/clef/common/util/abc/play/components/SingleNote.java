@@ -6,6 +6,7 @@ import me.ichun.mods.clef.common.util.abc.construct.Octave;
 import me.ichun.mods.clef.common.util.abc.play.PlayedNote;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.SoundCategory;
 
@@ -19,7 +20,7 @@ public class SingleNote extends Note
     {
         if(key != Note.NOTE_REST)
         {
-            new PlayedNote(instrument, currentProg, durationInTicks, key, noteLocation instanceof EntityPlayer ? SoundCategory.PLAYERS : SoundCategory.BLOCKS, noteLocation).start();
+            new PlayedNote(instrument, currentProg, durationInTicks, key, noteLocation instanceof EntityPlayer ? SoundCategory.PLAYERS : noteLocation instanceof EntityLivingBase ? SoundCategory.HOSTILE : SoundCategory.BLOCKS, noteLocation).start();
         }
         return durationInTicks;
     }

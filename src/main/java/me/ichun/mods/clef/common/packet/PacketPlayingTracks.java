@@ -7,8 +7,13 @@ import me.ichun.mods.clef.common.util.abc.TrackFile;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.ichunutil.common.core.network.AbstractPacket;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.network.PacketBuffer;
+import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.relauncher.Side;
+
+import java.util.HashSet;
+import java.util.Map;
 
 public class PacketPlayingTracks extends AbstractPacket
 {
@@ -24,6 +29,7 @@ public class PacketPlayingTracks extends AbstractPacket
     @Override
     public void writeTo(ByteBuf buf)
     {
+        PacketBuffer buff = new PacketBuffer(buf);
         buf.writeInt(tracks.length);
         for(Track track : tracks)
         {
@@ -36,12 +42,23 @@ public class PacketPlayingTracks extends AbstractPacket
             {
                 ByteBufUtils.writeUTF8String(buf, player.getName());
             }
+            buf.writeInt(track.instrumentPlayers.size());
+            for(Map.Entry<Integer, HashSet<BlockPos>> e : track.instrumentPlayers.entrySet())
+            {
+                buf.writeInt(e.getKey());
+                buf.writeInt(e.getValue().size());
+                for(BlockPos pos : e.getValue())
+                {
+                    buff.writeBlockPos(pos);
+                }
+            }
         }
     }
 
     @Override
     public void readFrom(ByteBuf buf)
     {
+        PacketBuffer buff = new PacketBuffer(buf);
         tracks = new Track[buf.readInt()];
         for(int i = 0; i < tracks.length; i++)
         {
@@ -55,6 +72,18 @@ public class PacketPlayingTracks extends AbstractPacket
             for(int x = 0; x < playerCount; x++)
             {
                 tracks[i].addPlayer(ByteBufUtils.readUTF8String(buf));
+            }
+            playerCount = buf.readInt();
+            for(int x = 0; x < playerCount; x++)
+            {
+                int key = buf.readInt();
+                int count = buf.readInt();
+                HashSet<BlockPos> poses = new HashSet<>();
+                for(int k = 0; k < count; k++)
+                {
+                    poses.add(buff.readBlockPos());
+                }
+                tracks[i].instrumentPlayers.put(key, poses);
             }
         }
     }

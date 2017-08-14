@@ -3,6 +3,7 @@ package me.ichun.mods.clef.common.util.abc.play;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.packet.PacketPlayingTracks;
 import me.ichun.mods.clef.common.packet.PacketRequestFile;
+import me.ichun.mods.clef.common.tileentity.TileEntityInstrumentPlayer;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
 import me.ichun.mods.clef.common.util.abc.play.components.Note;
 import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
@@ -14,6 +15,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.relauncher.Side;
@@ -35,7 +37,7 @@ public class Track
     public boolean playing = true;
     public int timeToSilence = 0;
 
-    public HashMap<Integer, ArrayList<BlockPos>> instrumentPlayers = new HashMap<>();
+    public HashMap<Integer, HashSet<BlockPos>> instrumentPlayers = new HashMap<>();
     public HashSet<String> playersNames = new HashSet<>();
     public HashMap<EntityPlayer, Integer> players = new HashMap<>();
 
@@ -119,12 +121,17 @@ public class Track
 
             if(track.notes.containsKey(playProg))
             {
+                EntityPlayer mcPlayer = iChunUtil.proxy.getMcPlayer();
+                if(mcPlayer == null)
+                {
+                    return false;
+                }
                 Iterator<Map.Entry<EntityPlayer, Integer>> playerIte = players.entrySet().iterator();
                 while(playerIte.hasNext())
                 {
                     Map.Entry<EntityPlayer, Integer> e = playerIte.next();
                     EntityPlayer player = e.getKey();
-                    if(player.isEntityAlive())
+                    if(player.isEntityAlive() && player.getDistanceToEntity(mcPlayer) < 256D)
                     {
                         ItemStack is = ItemHandler.getUsableDualHandedItem(player);
                         if(is != null && is.getItem() == Clef.itemInstrument)
@@ -152,6 +159,37 @@ public class Track
                     {
                         playersNames.add(player.getName());
                         playerIte.remove();
+                    }
+                }
+                HashSet<BlockPos> poses = instrumentPlayers.get(mcPlayer.getEntityWorld().provider.getDimension());
+                if(poses != null)
+                {
+                    for(BlockPos pos : poses)
+                    {
+                        if(mcPlayer.getDistance(pos.getX(), pos.getY(), pos.getZ()) < 256D)
+                        {
+                            TileEntity te = mcPlayer.worldObj.getTileEntity(pos);
+                            if(te instanceof TileEntityInstrumentPlayer)
+                            {
+                                TileEntityInstrumentPlayer player = (TileEntityInstrumentPlayer)te;
+                                for(int i = 0; i < 9; i++)
+                                {
+                                    ItemStack is = player.getStackInSlot(i);
+                                    if(is != null && is.getItem() == Clef.itemInstrument && is.getTagCompound() != null)
+                                    {
+                                        Instrument instrument = InstrumentLibrary.getInstrumentByName(is.getTagCompound().getString("itemName"));
+                                        if(instrument != null)
+                                        {
+                                            ArrayList<Note> notes = track.notes.get(playProg);
+                                            for(Note note : notes)
+                                            {
+                                                note.playNote(this, playProg, instrument, player.getPos());
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -216,7 +254,7 @@ public class Track
 
     public boolean hasObjectsPlaying()
     {
-        for(ArrayList<BlockPos> list : instrumentPlayers.values())
+        for(HashSet<BlockPos> list : instrumentPlayers.values())
         {
             if(!list.isEmpty())
             {
