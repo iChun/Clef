@@ -24,6 +24,7 @@ import java.util.List;
 public class GuiPlayTrack extends GuiScreen
 {
     public static final ResourceLocation texBackground = new ResourceLocation("clef", "textures/gui/track_select.png");
+    public static final ResourceLocation texBackgroundBlock = new ResourceLocation("clef", "textures/gui/track_select_block.png");
     public static final ResourceLocation texInstrument = new ResourceLocation("clef", "textures/items/instrument.png");
     public static final ResourceLocation texNote = new ResourceLocation("minecraft", "textures/particle/particles.png");
 
@@ -32,6 +33,8 @@ public class GuiPlayTrack extends GuiScreen
     public static final int ID_SYNC_TRACK = 2;
     public static final int ID_RELOAD_INSTRUMENTS = 20;
     public static final int ID_RELOAD_TRACKS = 21;
+
+    public ResourceLocation background = texBackground;
 
     protected int xSize = 256;
     protected int ySize = 230;
@@ -64,14 +67,10 @@ public class GuiPlayTrack extends GuiScreen
         this.guiLeft = (this.width - this.xSize) / 2;
         this.guiTop = (this.height - this.ySize) / 2;
 
-        buttonList.clear();
-
         buttonList.add(new GuiButton(ID_CONFIRM, guiLeft + 174, guiTop + 210, 83, 20, I18n.translateToLocal("clef.gui.play")));
         buttonList.add(new GuiButton(ID_SYNC_PLAY, guiLeft + 179, guiTop + 51, 72, 20, I18n.translateToLocal(syncPlay == 1 ? "gui.yes" : "gui.no")));
         buttonList.add(new GuiButton(ID_SYNC_TRACK, guiLeft + 179, guiTop + 94, 72, 20, I18n.translateToLocal(syncTrack == 1 ? "gui.yes" : "gui.no")));
-        buttonList.add(new GuiButton(ID_RELOAD_INSTRUMENTS, guiLeft + 179, guiTop + 137, 20, 20, ""));
-        buttonList.add(new GuiButton(ID_RELOAD_TRACKS, guiLeft + 205, guiTop + 137, 20, 20, ""));
-        //        buttonList.add(new GuiButton(ID_RELOAD_TRACKS, guiLeft + 231, guiTop + 94, 20, 20, ""));
+        addReloadButtons();
 
         bandName = new GuiTextField(0, mc.fontRendererObj, this.guiLeft + 181, this.guiTop + 18, 64, mc.fontRendererObj.FONT_HEIGHT);
         bandName.setMaxStringLength(15);
@@ -80,6 +79,13 @@ public class GuiPlayTrack extends GuiScreen
         bandName.setText("");
 
         trackList = new GuiTrackList(this, 158, ySize - 22, guiTop + 17, guiTop + ySize - 7, guiLeft + 7, 8, tracks);
+    }
+
+    public void addReloadButtons()
+    {
+        buttonList.add(new GuiButton(ID_RELOAD_INSTRUMENTS, guiLeft + 179, guiTop + 137, 20, 20, ""));
+        buttonList.add(new GuiButton(ID_RELOAD_TRACKS, guiLeft + 205, guiTop + 137, 20, 20, ""));
+        //        buttonList.add(new GuiButton(ID_RELOAD_TRACKS, guiLeft + 231, guiTop + 94, 20, 20, ""));
     }
 
     public FontRenderer getFontRenderer()
@@ -143,7 +149,7 @@ public class GuiPlayTrack extends GuiScreen
             }
             else
             {
-                mc.displayGuiScreen(null);
+                closeScreen();
                 mc.setIngameFocus();
             }
         }
@@ -152,7 +158,7 @@ public class GuiPlayTrack extends GuiScreen
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks)
     {
-//        initGui();
+        //        initGui();
         if(mc == null)
         {
             mc = Minecraft.getMinecraft();
@@ -161,7 +167,7 @@ public class GuiPlayTrack extends GuiScreen
         drawDefaultBackground();
 
         GlStateManager.color(1F, 1F, 1F, 1F);
-        this.mc.getTextureManager().bindTexture(texBackground);
+        this.mc.getTextureManager().bindTexture(background);
         this.drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
 
         Gui.drawRect(guiLeft + 6, guiTop + 16, guiLeft + 166, guiTop + ySize - 6, -1072689136);
@@ -183,15 +189,6 @@ public class GuiPlayTrack extends GuiScreen
         fontRendererObj.drawString(I18n.translateToLocal("clef.gui.syncPlayTime"), guiLeft + 179, guiTop + 40, 16777215, true);
         fontRendererObj.drawString(I18n.translateToLocal("clef.gui.syncTrack"), guiLeft + 179, guiTop + 83, 16777215, true);
 
-        fontRendererObj.drawString(I18n.translateToLocal("clef.gui.reload"), guiLeft + 179, guiTop + 126, 16777215, true);
-        if(doneTimeout > 0)
-        {
-            fontRendererObj.drawString(I18n.translateToLocal("gui.done"), guiLeft + 179 + 2 + fontRendererObj.getStringWidth(I18n.translateToLocal("clef.gui.reload")), guiTop + 126, 16777215, true);
-        }
-
-        zLevel = 10;
-        zLevel = 0;
-
         trackList.drawScreen(mouseX, mouseY, partialTicks);
 
         if(syncTrack == 1)
@@ -200,6 +197,22 @@ public class GuiPlayTrack extends GuiScreen
         }
 
         super.drawScreen(mouseX, mouseY, partialTicks);
+
+        drawReloadButtons();
+    }
+
+    public void closeScreen()
+    {
+        mc.displayGuiScreen(null);
+    }
+
+    public void drawReloadButtons()
+    {
+        fontRendererObj.drawString(I18n.translateToLocal("clef.gui.reload"), guiLeft + 179, guiTop + 126, 16777215, true);
+        if(doneTimeout > 0)
+        {
+            fontRendererObj.drawString(I18n.translateToLocal("gui.done"), guiLeft + 179 + 2 + fontRendererObj.getStringWidth(I18n.translateToLocal("clef.gui.reload")), guiTop + 126, 16777215, true);
+        }
 
         GlStateManager.color(1F, 1F, 1F, 1F);
         this.mc.getTextureManager().bindTexture(texInstrument);
@@ -247,11 +260,11 @@ public class GuiPlayTrack extends GuiScreen
             {
                 if(btn1.id == ID_SYNC_PLAY)
                 {
-                    btn.enabled = syncTrack == 0;
-                    if(!btn.enabled)
+                    btn1.enabled = syncTrack == 0;
+                    if(!btn1.enabled)
                     {
                         syncPlay = 1;
-                        btn.displayString = I18n.translateToLocal("gui.yes");
+                        btn1.displayString = I18n.translateToLocal("gui.yes");
                     }
                     break;
                 }
@@ -259,11 +272,17 @@ public class GuiPlayTrack extends GuiScreen
         }
         else if(btn.id == ID_RELOAD_INSTRUMENTS)
         {
-            InstrumentLibrary.reloadInstruments(this);
+            if(doneTimeout <= 0)
+            {
+                InstrumentLibrary.reloadInstruments(this);
+            }
         }
         else if(btn.id == ID_RELOAD_TRACKS)
         {
-            AbcLibrary.reloadTracks(this);
+            if(doneTimeout <= 0)
+            {
+                AbcLibrary.reloadTracks(this);
+            }
         }
     }
 
@@ -284,7 +303,7 @@ public class GuiPlayTrack extends GuiScreen
             return;
         }
         Clef.channel.sendToServer(new PacketPlayABC(index >= 0 && index < tracks.size() ? tracks.get(index).md5 : "", bandName.getText(), syncPlay == 1, syncTrack == 1));
-        mc.displayGuiScreen(null);
+        closeScreen();
         mc.setIngameFocus();
     }
 

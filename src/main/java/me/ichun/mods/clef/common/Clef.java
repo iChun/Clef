@@ -10,6 +10,7 @@ import me.ichun.mods.ichunutil.common.core.config.ConfigHandler;
 import me.ichun.mods.ichunutil.common.core.network.PacketChannel;
 import me.ichun.mods.ichunutil.common.iChunUtil;
 import me.ichun.mods.ichunutil.common.module.update.UpdateChecker;
+import net.minecraft.block.Block;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraftforge.fml.common.Mod;
@@ -52,6 +53,7 @@ public class Clef
 
     public static CreativeTabs creativeTabInstruments;
     public static Item itemInstrument;
+    public static Block blockInstrumentPlayer;
 
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event)

@@ -22,6 +22,8 @@ public class AbcLibrary
 {
     public static ArrayList<TrackFile> tracks = new ArrayList<>();
 
+    //TODO extract files from mod zip
+
     public static void init() //TODO thread reading the files on load.
     {
         tracks.clear();
@@ -80,7 +82,7 @@ public class AbcLibrary
         AbcLibrary.tracks = tracks;
         gui.tracks = tracks;
         gui.index = -1;
-        gui.doneTimeout = 10;
+        gui.doneTimeout = 20;
         gui.initGui();
     }
 

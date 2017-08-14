@@ -30,6 +30,8 @@ public class InstrumentLibrary
 {
     public static ArrayList<Instrument> instruments = new ArrayList<>();
 
+    //TODO extract files from mod zip
+
     public static void init()
     {
         instruments.clear();
@@ -222,7 +224,7 @@ public class InstrumentLibrary
         Clef.LOGGER.info("Reloading instruments");
         Clef.LOGGER.info("Reloaded " + readInstruments(Clef.getResourceHelper().instrumentDir, instruments) + " instruments");
         InstrumentLibrary.instruments = instruments;
-        gui.doneTimeout = 10;
+        gui.doneTimeout = 20;
     }
 
     public static void injectLocalization(Instrument instrument)
