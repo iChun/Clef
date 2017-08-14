@@ -28,6 +28,7 @@ public class PacketPlayingTracks extends AbstractPacket
         for(Track track : tracks)
         {
             ByteBufUtils.writeUTF8String(buf, track.getId());
+            ByteBufUtils.writeUTF8String(buf, track.getBandName());
             ByteBufUtils.writeUTF8String(buf, track.getMd5());
             buf.writeInt(track.playProg);
             buf.writeInt(track.players.size());
@@ -45,9 +46,10 @@ public class PacketPlayingTracks extends AbstractPacket
         for(int i = 0; i < tracks.length; i++)
         {
             String id = ByteBufUtils.readUTF8String(buf);
+            String band = ByteBufUtils.readUTF8String(buf);
             String md5 = ByteBufUtils.readUTF8String(buf);
             TrackFile file = AbcLibrary.getTrack(md5);
-            tracks[i] = new Track(id, md5, file != null ? file.track : null, true);
+            tracks[i] = new Track(id, band, md5, file != null ? file.track : null, true);
             tracks[i].playProg = buf.readInt();
             int playerCount = buf.readInt();
             for(int x = 0; x < playerCount; x++)

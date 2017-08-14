@@ -24,6 +24,7 @@ import java.util.*;
 public class Track
 {
     private final String id;
+    private final String band;
     private String md5;
     private TrackInfo track;
 
@@ -36,10 +37,11 @@ public class Track
     public HashSet<String> playersNames = new HashSet<>();
     public HashMap<EntityPlayer, Integer> players = new HashMap<>();
 
-    public Track(String id, String md5, @Nullable TrackInfo track, boolean isRemote)
+    public Track(String id, String band, String md5, @Nullable TrackInfo track, boolean isRemote)
     {
         this.md5 = md5;
         this.id = id;
+        this.band = band;
         this.track = track;
         this.isRemote = isRemote;
     }
@@ -52,6 +54,11 @@ public class Track
     public String getId()
     {
         return id;
+    }
+
+    public String getBandName()
+    {
+        return band;
     }
 
     public String getMd5()
@@ -76,12 +83,7 @@ public class Track
 
     public boolean update() //returns false if it's time to stop playing.
     {
-        if(!playing || playProg > track.trackLength)
-        {
-            return false;
-        }
-
-        if(track == null) //damnit idea yes, track can be null, don't be silly.
+        if(track == null)
         {
             if(!isRemote)
             {
@@ -96,6 +98,11 @@ public class Track
                 playProg++;
                 return true;
             }
+        }
+
+        if(!playing || playProg > track.trackLength)
+        {
+            return false;
         }
 
         if(isRemote)

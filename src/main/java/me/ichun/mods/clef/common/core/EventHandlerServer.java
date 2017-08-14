@@ -104,6 +104,30 @@ public class EventHandlerServer
         }
     }
 
+    public Track getTrackPlayedByPlayer(EntityPlayer player)
+    {
+        for(Track track : tracksPlaying)
+        {
+            if(track.players.containsKey(player))
+            {
+                return track;
+            }
+        }
+        return null;
+    }
+
+    public Track findTrackByBand(String bandName)
+    {
+        for(Track track : tracksPlaying)
+        {
+            if(track.getBandName().equalsIgnoreCase(bandName))
+            {
+                return track;
+            }
+        }
+        return null;
+    }
+
     @SubscribeEvent
     public void onPlayerConnect(PlayerEvent.PlayerLoggedInEvent event)
     {

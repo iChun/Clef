@@ -1,5 +1,6 @@
 package me.ichun.mods.clef.common.util.abc;
 
+import me.ichun.mods.clef.client.gui.GuiPlayTrack;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.packet.PacketFileFragment;
 import me.ichun.mods.clef.common.packet.PacketPlayingTracks;
@@ -11,6 +12,7 @@ import me.ichun.mods.ichunutil.common.core.util.IOUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.*;
@@ -24,19 +26,19 @@ public class AbcLibrary
     {
         tracks.clear();
         Clef.LOGGER.info("Loading abc files");
-        Clef.LOGGER.info("Loaded " + readAbcs(Clef.getResourceHelper().abcDir) + " abc files");
+        Clef.LOGGER.info("Loaded " + readAbcs(Clef.getResourceHelper().abcDir, tracks) + " abc files");
     }
 
-    private static int readAbcs(File dir)
+    private static int readAbcs(File dir, ArrayList<TrackFile> tracks)
     {
         int trackCount = 0;
         for(File file : dir.listFiles())
         {
             if(file.isDirectory())
             {
-                trackCount += readAbcs(file);
+                trackCount += readAbcs(file, tracks);
             }
-            else if(readAbc(file))
+            else if(readAbc(file, tracks))
             {
                 trackCount++;
             }
@@ -44,12 +46,12 @@ public class AbcLibrary
         return trackCount;
     }
 
-    public static boolean readAbc(File file)
+    public static boolean readAbc(File file, ArrayList<TrackFile> tracks)
     {
         if(file.exists() && file.getName().endsWith(".abc"))
         {
             String md5 = IOUtil.getMD5Checksum(file);
-            if(!hasTrack(md5))
+            if(!(tracks == AbcLibrary.tracks && hasTrack(md5)))
             {
                 TrackInfo track = AbcParser.parse(file);
                 if(track != null)
@@ -69,6 +71,19 @@ public class AbcLibrary
         return false;
     }
 
+    @SideOnly(Side.CLIENT)
+    public static void reloadTracks(GuiPlayTrack gui)
+    {
+        ArrayList<TrackFile> tracks = new ArrayList<>();
+        Clef.LOGGER.info("Reloading abc files");
+        Clef.LOGGER.info("Reloaded " + readAbcs(Clef.getResourceHelper().abcDir, tracks) + " abc files");
+        AbcLibrary.tracks = tracks;
+        gui.tracks = tracks;
+        gui.index = -1;
+        gui.doneTimeout = 10;
+        gui.initGui();
+    }
+
     public static boolean hasTrack(String md5)
     {
         return getTrack(md5) != null;
@@ -86,11 +101,37 @@ public class AbcLibrary
         return null;
     }
 
-    public static void playAbc(String md5, EntityPlayer player) //CLIENT NEVER CALLS THIS.
+    public static void playAbc(String md5, String bandName, boolean syncPlay, boolean syncTrack, EntityPlayer player) //CLIENT NEVER CALLS THIS.
     {
-        //TODO check that the player is not already playing a track
         TrackFile file = getTrack(md5);
-        Track track = new Track(RandomStringUtils.randomAscii(IOUtil.IDENTIFIER_LENGTH), md5, (file != null ? file.track : null), false);
+        Track track;
+        if(!bandName.isEmpty())
+        {
+            //Find the band
+            track = Clef.eventHandlerServer.findTrackByBand(bandName);
+            if(track == null && md5.isEmpty())
+            {
+                return;
+            }
+            Track track1 = track;
+            if(track == null || !syncTrack) //No band
+            {
+                track = new Track(RandomStringUtils.randomAscii(IOUtil.IDENTIFIER_LENGTH), bandName, md5, (file != null ? file.track : null), false);
+            }
+            if(syncPlay && track1 != null)
+            {
+                track.playAtProgress(track1.playProg);
+            }
+        }
+        else if(md5.isEmpty())
+        {
+            return;
+        }
+        else
+        {
+            track = new Track(RandomStringUtils.randomAscii(IOUtil.IDENTIFIER_LENGTH), bandName, md5, (file != null ? file.track : null), false);
+        }
+
         if(file == null) //We don't have the ABC. Ask from the client.
         {
             if(requestedABCFromPlayers.add(md5))
@@ -102,6 +143,17 @@ public class AbcLibrary
                 Clef.channel.sendTo(new PacketRequestFile(md5, false), player);
             }
         }
+        Track playerTrack = Clef.eventHandlerServer.getTrackPlayedByPlayer(player);
+        if(playerTrack != null)
+        {
+            playerTrack.players.remove(player);
+            if(playerTrack.players.isEmpty())
+            {
+                playerTrack.stop();
+            }
+            Clef.channel.sendToAll(new PacketPlayingTracks(playerTrack));
+        }
+
         //queue the track. track plays when the trackfile is set.
         Clef.eventHandlerServer.tracksPlaying.add(track);
         track.players.put(player, 0);
@@ -195,7 +247,7 @@ public class AbcLibrary
             fos.close();
 
             Clef.LOGGER.info("Received " + fileName + ". Reading.");
-            readAbc(file);
+            readAbc(file, tracks);
 
             if(side.isServer())
             {

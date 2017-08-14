@@ -2,6 +2,7 @@ package me.ichun.mods.clef.common.util.instrument;
 
 import com.google.common.collect.Ordering;
 import com.google.gson.Gson;
+import me.ichun.mods.clef.client.gui.GuiPlayTrack;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.packet.PacketFileFragment;
 import me.ichun.mods.clef.common.packet.PacketRequestFile;
@@ -15,6 +16,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.text.translation.LanguageMap;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.commons.io.IOUtils;
 
 import javax.imageio.ImageIO;
@@ -30,36 +32,33 @@ public class InstrumentLibrary
 
     public static void init()
     {
+        instruments.clear();
         Clef.LOGGER.info("Loading instruments");
-        Clef.LOGGER.info("Loaded " + readInstruments(Clef.getResourceHelper().instrumentDir) + " instruments"); //TODO loaded instrument count?
+        Clef.LOGGER.info("Loaded " + readInstruments(Clef.getResourceHelper().instrumentDir, instruments) + " instruments");
     }
 
-    private static int readInstruments(File dir)
+    private static int readInstruments(File dir, ArrayList<Instrument> instruments)
     {
         int instrumentsCount = 0;
         for(File file : dir.listFiles())
         {
             if(file.isDirectory())
             {
-                instrumentsCount += readInstruments(file);
+                instrumentsCount += readInstruments(file, instruments);
             }
             else
             {
-                instrumentsCount += readInstrumentPack(file);
+                instrumentsCount += readInstrumentPack(file, instruments);
             }
         }
         return instrumentsCount;
     }
 
-    public static int readInstrumentPack(File file)
+    public static int readInstrumentPack(File file, ArrayList<Instrument> instruments)
     {
         int instrumentCount = 0;
         if(file.exists() && (file.getName().endsWith(".cia") || file.getName().endsWith(".zip"))) //clef instrument archive, or SB mod in zip, but not in *.pak or *.modpak
         {
-            //            String md5 = IOUtil.getMD5Checksum(file);
-            //            //            if(!hasInstrument(md5))
-            //            {
-            //            }
             Clef.LOGGER.info("Reading file: " + file.getName());
             try
             {
@@ -216,6 +215,16 @@ public class InstrumentLibrary
         return instrumentCount;
     }
 
+    @SideOnly(Side.CLIENT)
+    public static void reloadInstruments(GuiPlayTrack gui)
+    {
+        ArrayList<Instrument> instruments = new ArrayList<>();
+        Clef.LOGGER.info("Reloading instruments");
+        Clef.LOGGER.info("Reloaded " + readInstruments(Clef.getResourceHelper().instrumentDir, instruments) + " instruments");
+        InstrumentLibrary.instruments = instruments;
+        gui.doneTimeout = 10;
+    }
+
     public static void injectLocalization(Instrument instrument)
     {
         String localName = "item.clef.instrument." + instrument.info.itemName + ".name=" + instrument.info.shortdescription;
@@ -357,7 +366,7 @@ public class InstrumentLibrary
             fos.close();
 
             Clef.LOGGER.info("Received " + fileName + ". Reading.");
-            readInstrumentPack(file);
+            readInstrumentPack(file, instruments);
 
             if(side.isServer())
             {
