@@ -62,6 +62,7 @@ public class GuiPlayTrack extends GuiScreen
     {
         tracks = AbcLibrary.tracks;
         trackListBottom = guiTop + ySize + 6;
+        bandNameString = Clef.config.favoriteBand;
     }
 
     @Override

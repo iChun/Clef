@@ -52,7 +52,7 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
         disableListWhenSyncTrack = false;
 
         playlist = new ArrayList<>(player.tracks);
-        bandNameString = player.bandName;
+        bandNameString = player.bandName.isEmpty() ? Clef.config.favoriteBand : player.bandName;
         syncPlay = player.syncPlay ? 1 : 0;
         syncTrack = player.syncTrack ? 1 : 0;
         repeat = player.repeat;
