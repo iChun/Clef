@@ -33,7 +33,6 @@ public class SingleNote extends Note
         boolean hasNote = false;
         for(Construct construct : constructs)
         {
-            //TODO take note of rests and BIG rests (multiply the meter?)
             if(construct.getType() == Construct.EnumConstructType.ACCIDENTAL)
             {
                 char c = ((Accidental)construct).type;

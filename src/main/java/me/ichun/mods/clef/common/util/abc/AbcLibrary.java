@@ -149,7 +149,7 @@ public class AbcLibrary
         if(playerTrack != null)
         {
             playerTrack.players.remove(player);
-            if(playerTrack.players.isEmpty())
+            if(!playerTrack.hasObjectsPlaying())
             {
                 playerTrack.stop();
             }

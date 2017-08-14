@@ -94,7 +94,7 @@ public class EventHandlerServer
             if(track.getId().equals(trackId))
             {
                 track.players.remove(player);
-                if(track.players.isEmpty())
+                if(!track.hasObjectsPlaying())
                 {
                     track.stop();
                 }

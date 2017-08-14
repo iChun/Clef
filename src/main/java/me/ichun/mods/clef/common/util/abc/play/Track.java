@@ -14,6 +14,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -34,6 +35,7 @@ public class Track
     public boolean playing = true;
     public int timeToSilence = 0;
 
+    public HashMap<Integer, ArrayList<BlockPos>> instrumentPlayers = new HashMap<>();
     public HashSet<String> playersNames = new HashSet<>();
     public HashMap<EntityPlayer, Integer> players = new HashMap<>();
 
@@ -81,6 +83,7 @@ public class Track
         return track;
     }
 
+    //TODO popup title similarly to records when a track starts.
     public boolean update() //returns false if it's time to stop playing.
     {
         if(track == null)
@@ -209,6 +212,18 @@ public class Track
     public void playAtProgress(int i)
     {
         playProg = i;
+    }
+
+    public boolean hasObjectsPlaying()
+    {
+        for(ArrayList<BlockPos> list : instrumentPlayers.values())
+        {
+            if(!list.isEmpty())
+            {
+                return true;
+            }
+        }
+        return !playersNames.isEmpty() || !players.isEmpty();
     }
 
     @Override

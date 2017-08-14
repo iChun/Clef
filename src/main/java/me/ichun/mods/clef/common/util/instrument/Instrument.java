@@ -51,6 +51,7 @@ public class Instrument
 
     //TODO some of the textures are TOOO BIG. Sort.
     //TODO one handed instruments?
+    //TODO sort out hands still holding instrument when not playing.
 
     public Instrument(InstrumentInfo info, BufferedImage iconImg, BufferedImage handImg)
     {

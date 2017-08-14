@@ -44,7 +44,6 @@ public class Special extends Note
             //1200 / bpm = ticks between beats.
             info[0] = 1200 / (double)tempo.bpm;
             info[4] = tempo.splits;
-            //TODO tempo splits...??????
         }
         else if(construct instanceof UnitNoteLength)
         {
