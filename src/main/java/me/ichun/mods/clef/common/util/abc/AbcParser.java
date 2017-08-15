@@ -66,9 +66,7 @@ public class AbcParser
             }
             if(reject)
             {
-                Clef.LOGGER.warn("This track is unsupported: " + file.getName());
-                stream.close();
-                return null;
+                Clef.LOGGER.warn("This track is unsupported, it may play incorrectly: " + file.getName());
             }
             for(String lineA : lines)
             {

@@ -197,6 +197,10 @@ public class TrackInfo
                                 notes.add(chord);
                                 chord = null;
                             }
+                            else //chord start.
+                            {
+                                i--;
+                            }
                             break;
                         }
                         case CHORD_NUMBER_NUMERATOR:
