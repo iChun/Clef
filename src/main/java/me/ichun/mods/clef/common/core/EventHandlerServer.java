@@ -1,22 +1,29 @@
 package me.ichun.mods.clef.common.core;
 
 import me.ichun.mods.clef.common.Clef;
+import me.ichun.mods.clef.common.item.ItemInstrument;
 import me.ichun.mods.clef.common.packet.PacketPlayingTracks;
 import me.ichun.mods.clef.common.tileentity.TileEntityInstrumentPlayer;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
+import me.ichun.mods.clef.common.util.abc.TrackFile;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
+import me.ichun.mods.ichunutil.common.core.util.IOUtil;
 import me.ichun.mods.ichunutil.common.iChunUtil;
 import net.minecraft.entity.item.EntityItem;
+import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.EnumHand;
+import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.player.PlayerDropsEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.relauncher.Side;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -71,6 +78,30 @@ public class EventHandlerServer
     }
 
     @SubscribeEvent
+    public void onLivingUpdate(LivingEvent.LivingUpdateEvent event)
+    {
+        if(Clef.config.zombiesCanUseInstruments == 1 && !event.getEntityLiving().worldObj.isRemote && event.getEntityLiving() instanceof EntityZombie)
+        {
+            EntityZombie zombie = (EntityZombie)event.getEntityLiving();
+            ItemStack is = ItemInstrument.getUsableInstrument(zombie);
+            if(is != null)
+            {
+                if(zombie.getRNG().nextFloat() < 0.004F && getTrackPlayedByPlayer(zombie) == null)
+                {
+                    TrackFile randTrack = AbcLibrary.tracks.get(zombie.getRNG().nextInt(AbcLibrary.tracks.size()));
+                    Track track = new Track(RandomStringUtils.randomAscii(IOUtil.IDENTIFIER_LENGTH), "", randTrack.md5, randTrack.track, false);
+                    Clef.eventHandlerServer.tracksPlaying.add(track);
+                    track.zombies.add(zombie.getEntityId());
+                    if(track.getTrack() != null)
+                    {
+                        Clef.channel.sendToAll(new PacketPlayingTracks(track));
+                    }
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
     public void onServerTick(TickEvent.ServerTickEvent event)
     {
         if(event.phase == TickEvent.Phase.END)
@@ -103,6 +134,18 @@ public class EventHandlerServer
                 break;
             }
         }
+    }
+
+    public Track getTrackPlayedByPlayer(EntityZombie zombie)
+    {
+        for(Track track : tracksPlaying)
+        {
+            if(track.zombies.contains(zombie.getEntityId()))
+            {
+                return track;
+            }
+        }
+        return null;
     }
 
     public Track getTrackPlayedByPlayer(TileEntityInstrumentPlayer player)

@@ -4,6 +4,7 @@ import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.packet.PacketPlayABC;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
 import me.ichun.mods.clef.common.util.abc.TrackFile;
+import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.*;
@@ -294,10 +295,64 @@ public class GuiPlayTrack extends GuiScreen
     }
 
     @Override
-    protected void mouseClicked(int x, int y, int btn) throws IOException
+    protected void mouseClicked(int mouseX, int mouseY, int btn) throws IOException
     {
-        super.mouseClicked(x, y, btn);
-        bandName.mouseClicked(x, y, btn);
+        super.mouseClicked(mouseX, mouseY, btn);
+        bandName.mouseClicked(mouseX, mouseY, btn);
+        if(btn == 1) //RMB
+        {
+            boolean flag = mouseX >= bandName.xPosition && mouseX < bandName.xPosition + this.width && mouseY >= bandName.yPosition && mouseY < bandName.yPosition + this.height;
+            if(flag)
+            {
+                if(bandName.getText().isEmpty())
+                {
+                    ArrayList<String> bands = new ArrayList<>();
+                    for(Track track : Clef.eventHandlerClient.tracksPlaying)
+                    {
+                        if(!track.getBandName().isEmpty() && !bands.contains(track.getBandName()))
+                        {
+                            bands.add(track.getBandName());
+                        }
+                    }
+                    if(!bands.isEmpty())
+                    {
+                        bandName.setText(bands.get(mc.theWorld.rand.nextInt(bands.size())));
+                        syncPlay = 1;
+                        syncTrack = 1;
+                        for(GuiButton btn1 : buttonList)
+                        {
+                            if(btn1.id == ID_SYNC_PLAY)
+                            {
+                                btn1.enabled = false;
+                                btn1.displayString = I18n.translateToLocal(syncPlay == 1 ? "gui.yes" : "gui.no");
+                            }
+                            else if(btn1.id == ID_SYNC_TRACK)
+                            {
+                                btn1.enabled = true;
+                                btn1.displayString = I18n.translateToLocal(syncTrack == 1 ? "gui.yes" : "gui.no");
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    bandName.setText("");
+                    for(GuiButton btn1 : buttonList)
+                    {
+                        if(btn1.id == ID_SYNC_PLAY)
+                        {
+                            btn1.enabled = false;
+                            btn1.displayString = I18n.translateToLocal(syncPlay == 1 ? "gui.yes" : "gui.no");
+                        }
+                        else if(btn1.id == ID_SYNC_TRACK)
+                        {
+                            btn1.enabled = false;
+                            btn1.displayString = I18n.translateToLocal(syncTrack == 1 ? "gui.yes" : "gui.no");
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @Override

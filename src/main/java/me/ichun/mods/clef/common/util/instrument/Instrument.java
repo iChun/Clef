@@ -143,7 +143,6 @@ public class Instrument
     @SideOnly(Side.CLIENT)
     public void setupModels()
     {
-        //TODO test reloading the resources and see what happens?
         if(iconModel == null && handModel == null)
         {
             Minecraft mc = Minecraft.getMinecraft();
@@ -173,7 +172,7 @@ public class Instrument
         public InstrumentTexture(ResourceLocation rl, BufferedImage image)
         {
             this.rl = rl;
-            int size = Math.max(image.getWidth(), image.getHeight());
+            int size = Math.max(Math.max(image.getWidth(), image.getHeight()), 16);
             BufferedImage image1 = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
             int halfX = (int)Math.floor((size - image.getWidth()) / 2D); //offsetX
             int halfY = (int)Math.floor((size - image.getHeight()) / 2D); //offsetY

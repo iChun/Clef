@@ -15,8 +15,8 @@ public class InstrumentInfo
     public String tooltipKind;
     public String activeImage;
     public double activeAngle;
-    public double[] activeHandPosition;
-    public double[] handPosition;
+    public double[] activeHandPosition = new double[2];
+    public double[] handPosition = new double[2];
     public boolean twoHanded;
     public String kind;
 }

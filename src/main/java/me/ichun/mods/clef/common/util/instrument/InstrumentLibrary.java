@@ -10,6 +10,8 @@ import me.ichun.mods.clef.common.util.instrument.component.InstrumentInfo;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentModPackInfo;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentPackInfo;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentTuning;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.TextureUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
@@ -36,6 +38,17 @@ public class InstrumentLibrary
     public static void init()
     {
         instruments.clear();
+        File defaultPack = new File(Clef.getResourceHelper().instrumentDir, "starbound.cia");
+        if(!defaultPack.exists())
+        {
+            try(InputStream in = Clef.class.getResourceAsStream("/starbound.cia"))
+            {
+                FileOutputStream file = new FileOutputStream(defaultPack);
+                IOUtils.copy(in, file);
+                file.close();
+            }
+            catch(IOException ignored){}
+        }
         Clef.LOGGER.info("Loading instruments");
         Clef.LOGGER.info("Loaded " + readInstruments(Clef.getResourceHelper().instrumentDir, instruments) + " instruments");
     }
@@ -246,6 +259,17 @@ public class InstrumentLibrary
         ArrayList<Instrument> instruments = new ArrayList<>();
         Clef.LOGGER.info("Reloading instruments");
         Clef.LOGGER.info("Reloaded " + readInstruments(Clef.getResourceHelper().instrumentDir, instruments) + " instruments");
+        for(Instrument instrument : InstrumentLibrary.instruments) //delete the textures to free up memory.
+        {
+            if(instrument.iconModel != null)
+            {
+                Minecraft.getMinecraft().getTextureManager().deleteTexture(instrument.iconModel.instTx);
+            }
+            if(instrument.handModel != null)
+            {
+                Minecraft.getMinecraft().getTextureManager().deleteTexture(instrument.handModel.instTx);
+            }
+        }
         InstrumentLibrary.instruments = instruments;
         gui.doneTimeout = 20;
     }

@@ -1,6 +1,7 @@
 package me.ichun.mods.clef.common.util.abc.play;
 
 import me.ichun.mods.clef.common.Clef;
+import me.ichun.mods.clef.common.item.ItemInstrument;
 import me.ichun.mods.clef.common.packet.PacketPlayingTracks;
 import me.ichun.mods.clef.common.packet.PacketRequestFile;
 import me.ichun.mods.clef.common.tileentity.TileEntityInstrumentPlayer;
@@ -12,6 +13,8 @@ import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import me.ichun.mods.ichunutil.common.iChunUtil;
 import me.ichun.mods.ichunutil.common.item.ItemHandler;
 import net.minecraft.client.Minecraft;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -40,6 +43,7 @@ public class Track
     public HashMap<Integer, HashSet<BlockPos>> instrumentPlayers = new HashMap<>();
     public HashSet<String> playersNames = new HashSet<>();
     public HashMap<EntityPlayer, Integer> players = new HashMap<>();
+    public HashSet<Integer> zombies = new HashSet<>();
 
     public Track(String id, String band, String md5, @Nullable TrackInfo track, boolean isRemote)
     {
@@ -133,8 +137,8 @@ public class Track
                     EntityPlayer player = e.getKey();
                     if(player.isEntityAlive() && player.getDistanceToEntity(mcPlayer) < 256D)
                     {
-                        ItemStack is = ItemHandler.getUsableDualHandedItem(player);
-                        if(is != null && is.getItem() == Clef.itemInstrument)
+                        ItemStack is = ItemInstrument.getUsableInstrument(player);
+                        if(is != null)
                         {
                             NBTTagCompound tag = is.getTagCompound();
                             if(tag != null)
@@ -196,6 +200,40 @@ public class Track
                         }
                     }
                 }
+                Iterator<Integer> ite1 = zombies.iterator();
+                while(ite1.hasNext())
+                {
+                    Integer i = ite1.next();
+                    Entity ent = mcPlayer.worldObj.getEntityByID(i);
+                    if(ent instanceof EntityZombie && ent.isEntityAlive())
+                    {
+                        ItemStack is = ItemInstrument.getUsableInstrument((EntityZombie)ent);
+                        if(is != null)
+                        {
+                            NBTTagCompound tag = is.getTagCompound();
+                            if(tag != null)
+                            {
+                                Instrument instrument = InstrumentLibrary.getInstrumentByName(tag.getString("itemName"));
+                                if(instrument != null)
+                                {
+                                    ArrayList<Note> notes = track.notes.get(playProg);
+                                    for(Note note : notes)
+                                    {
+                                        int time = note.playNote(this, playProg, instrument, ent);
+                                        if(time > timeToSilence)
+                                        {
+                                            timeToSilence = time;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    InstrumentLibrary.requestInstrument(tag.getString("itemName"), null);
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         else
@@ -210,17 +248,13 @@ public class Track
                 {
                     e.setValue(e.getValue() + 1);
 
-                    ItemStack is = ItemHandler.getUsableDualHandedItem(player);
-                    if(is != null && is.getItem() == Clef.itemInstrument)
+                    ItemStack is = ItemInstrument.getUsableInstrument(player);
+                    if(is != null)
                     {
-                        NBTTagCompound tag = is.getTagCompound();
-                        if(tag != null)
+                        Instrument instrument = InstrumentLibrary.getInstrumentByName(is.getTagCompound().getString("itemName"));
+                        if(instrument != null)
                         {
-                            Instrument instrument = InstrumentLibrary.getInstrumentByName(tag.getString("itemName"));
-                            if(instrument != null)
-                            {
-                                e.setValue(0);
-                            }
+                            e.setValue(0);
                         }
                     }
                 }
@@ -265,7 +299,7 @@ public class Track
                 return true;
             }
         }
-        return !playersNames.isEmpty() || !players.isEmpty();
+        return !playersNames.isEmpty() || !players.isEmpty() || !zombies.isEmpty();
     }
 
     @Override
@@ -331,6 +365,21 @@ public class Track
                 }
             }
         }
+
+        Iterator<Integer> ite1 = zombies.iterator();
+        while(ite1.hasNext())
+        {
+            Integer i = ite1.next();
+            if(Minecraft.getMinecraft().theWorld != null)
+            {
+                Entity ent = Minecraft.getMinecraft().theWorld.getEntityByID(i);
+                if(ent != null && ent.isEntityAlive())
+                {
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
 }

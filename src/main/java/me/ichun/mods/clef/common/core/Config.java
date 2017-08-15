@@ -11,7 +11,7 @@ import java.io.File;
 
 public class Config extends ConfigBase
 {
-    @ConfigProp(useSession = true)
+    @ConfigProp
     @IntMinMax(min = 0, max = 3)
     public int creatableInstruments = 3;
 
@@ -21,6 +21,14 @@ public class Config extends ConfigBase
     @ConfigProp(category = "clientOnly", side = Side.CLIENT)
     @IntBool
     public int showFileTitle = 1;
+
+    @ConfigProp(useSession = true)
+    @IntBool
+    public int allowOneHandedTwoHandedInstrumentUse = 0;
+
+    @ConfigProp
+    @IntBool
+    public int zombiesCanUseInstruments = 1;
 
     public Config(File file)
     {

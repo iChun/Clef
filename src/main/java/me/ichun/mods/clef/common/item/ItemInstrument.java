@@ -51,7 +51,7 @@ public class ItemInstrument extends Item
         {
             InstrumentLibrary.assignRandomInstrument(is);
         }
-        if(ItemHandler.canItemBeUsed(player, is))
+        if(getUsableInstrument(player) == is)
         {
             if(player.worldObj.isRemote)
             {
@@ -112,6 +112,7 @@ public class ItemInstrument extends Item
             if(instrument != null)
             {
                 list.add(I18n.translateToLocal("item.clef.instrument." + instrument.info.itemName + ".desc"));
+                list.add(I18n.translateToLocal(instrument.info.twoHanded && Clef.config.allowOneHandedTwoHandedInstrumentUse == 0 ? "clef.item.twoHanded" : "clef.item.oneHanded"));
                 if(GuiScreen.isShiftKeyDown())
                 {
                     list.add("");
@@ -148,9 +149,18 @@ public class ItemInstrument extends Item
     }
 
     @Override
-    public int getMaxItemUseDuration(ItemStack stack)
+    public int getMaxItemUseDuration(ItemStack is)
     {
-        return Integer.MAX_VALUE;
+        NBTTagCompound tag = is.getTagCompound();
+        if(tag != null)
+        {
+            Instrument instrument = InstrumentLibrary.getInstrumentByName(tag.getString("itemName"));
+            if(instrument != null)
+            {
+                return Math.round(instrument.tuning.fadeout * 20);
+            }
+        }
+        return 0;
     }
 
     public static class DualHandedInstrumentCallback extends DualHandedItemCallback
@@ -158,6 +168,11 @@ public class ItemInstrument extends Item
         @Override
         public boolean shouldItemBeHeldLikeBow(ItemStack is, EntityLivingBase ent)
         {
+            ItemStack is1 = getUsableInstrument(ent);
+            if(is1 == null)
+            {
+                return false;
+            }
             if(ent instanceof EntityPlayer)
             {
                 EntityPlayer player = (EntityPlayer)ent;
@@ -169,5 +184,36 @@ public class ItemInstrument extends Item
             }
             return false;
         }
+    }
+
+    public static ItemStack getUsableInstrument(EntityLivingBase entity)
+    {
+        ItemStack is = entity.getHeldItemMainhand();
+        if(is != null && is.getItem() == Clef.itemInstrument)
+        {
+            NBTTagCompound tag = is.getTagCompound();
+            if(tag != null)
+            {
+                Instrument instrument = InstrumentLibrary.getInstrumentByName(tag.getString("itemName"));
+                if(instrument != null && (!instrument.info.twoHanded || Clef.config.allowOneHandedTwoHandedInstrumentUse == 1 || entity.getHeldItemOffhand() == null))
+                {
+                    return is;
+                }
+            }
+        }
+        is = entity.getHeldItemOffhand();
+        if(is != null && is.getItem() == Clef.itemInstrument)
+        {
+            NBTTagCompound tag = is.getTagCompound();
+            if(tag != null)
+            {
+                Instrument instrument = InstrumentLibrary.getInstrumentByName(tag.getString("itemName"));
+                if(instrument != null && (!instrument.info.twoHanded || Clef.config.allowOneHandedTwoHandedInstrumentUse == 1 || entity.getHeldItemMainhand() == null))
+                {
+                    return is;
+                }
+            }
+        }
+        return null;
     }
 }

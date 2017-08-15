@@ -44,6 +44,7 @@ public class TileEntityInstrumentPlayer extends TileEntity
     public boolean previousRedstoneState;
 
     public boolean justCreatedInstrument;
+    public Track lastTrack;
 
     public TileEntityInstrumentPlayer()
     {
@@ -126,6 +127,11 @@ public class TileEntityInstrumentPlayer extends TileEntity
                             {
                                 track.playAtProgress(track1.playProg);
                             }
+
+                            if(lastTrack != null && lastTrack.getBandName().equals(bandName))
+                            {
+                                track.players = lastTrack.players;
+                            }
                         }
                         else
                         {
@@ -134,8 +140,12 @@ public class TileEntityInstrumentPlayer extends TileEntity
 
                         Clef.eventHandlerServer.tracksPlaying.add(track);
                         HashSet<BlockPos> players = track.instrumentPlayers.computeIfAbsent(getWorld().provider.getDimension(), v -> new HashSet<>());
-                        players.add(getPos());
-                        Clef.channel.sendToAll(new PacketPlayingTracks(track));
+                        if(players.add(getPos()))
+                        {
+                            Clef.channel.sendToAll(new PacketPlayingTracks(track));
+                        }
+
+                        lastTrack = track;
 
                         if(shuffle && repeat != 1 && file.md5.equals(track.getMd5()))
                         {
@@ -154,8 +164,10 @@ public class TileEntityInstrumentPlayer extends TileEntity
                         if(track != null)
                         {
                             HashSet<BlockPos> players = track.instrumentPlayers.computeIfAbsent(getWorld().provider.getDimension(), v -> new HashSet<>());
-                            players.add(getPos());
-                            Clef.channel.sendToAll(new PacketPlayingTracks(track));
+                            if(players.add(getPos()))
+                            {
+                                Clef.channel.sendToAll(new PacketPlayingTracks(track));
+                            }
                         }
                     }
                 }

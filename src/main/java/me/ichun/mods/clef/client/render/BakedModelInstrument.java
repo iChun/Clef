@@ -18,12 +18,16 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 import net.minecraftforge.client.model.IPerspectiveAwareModel;
 import net.minecraftforge.common.model.TRSRTransformation;
 import org.apache.commons.lang3.tuple.Pair;
 
 import javax.vecmath.Matrix4f;
+import javax.vecmath.Quat4f;
+import javax.vecmath.Vector3f;
+import java.util.HashMap;
 import java.util.List;
 
 public class BakedModelInstrument
@@ -33,7 +37,7 @@ public class BakedModelInstrument
     private final TextureAtlasSprite particle;
     private final ImmutableMap<ItemCameraTransforms.TransformType, TRSRTransformation> transforms;
     private final Instrument instrument;
-    private final ResourceLocation instTx;
+    public final ResourceLocation instTx;
 
     public BakedModelInstrument(ImmutableList<BakedQuad> quads, TextureAtlasSprite particle, ImmutableMap<ItemCameraTransforms.TransformType, TRSRTransformation> transforms, Instrument instrument, ResourceLocation instTx)
     {
@@ -67,6 +71,11 @@ public class BakedModelInstrument
     {
         if(instrument != null)
         {
+            HashMap<ItemCameraTransforms.TransformType, TRSRTransformation> map = new HashMap<>();
+            map.put(ItemCameraTransforms.TransformType.FIRST_PERSON_LEFT_HAND, new TRSRTransformation(new Vector3f(1F, 0F, 1F), TRSRTransformation.quatFromXYZDegrees(new Vector3f(0F, 180F, 0F)), new Vector3f(1F, 1F, 1F), new Quat4f()));
+            map.put(ItemCameraTransforms.TransformType.THIRD_PERSON_LEFT_HAND, new TRSRTransformation(new Vector3f(0.1F, 0F + (instrument.handImg.getHeight() <= 16F ? 0F : MathHelper.clamp_float((float)instrument.info.activeHandPosition[1], -0.3F, 0.3F)), 0.025F - (instrument.handImg.getWidth() <= 16F ? 0F : MathHelper.clamp_float((float)instrument.info.activeHandPosition[0], -0.5F, 0.5F))), TRSRTransformation.quatFromXYZDegrees(new Vector3f(0F, 80F, 0F)), new Vector3f(-1F, 1F, 1F),  TRSRTransformation.quatFromXYZDegrees(new Vector3f(0F, 0F, 0F))));
+            map.put(ItemCameraTransforms.TransformType.THIRD_PERSON_RIGHT_HAND, new TRSRTransformation(new Vector3f(-0.1F, 0F + (instrument.handImg.getHeight() <= 16F ? 0F : MathHelper.clamp_float((float)instrument.info.activeHandPosition[1], -0.3F, 0.3F)), 1F - (instrument.handImg.getWidth() <= 16F ? 0F : MathHelper.clamp_float((float)instrument.info.activeHandPosition[0], -0.5F, 0.5F))), TRSRTransformation.quatFromXYZDegrees(new Vector3f(0F, 80F, 0F)), new Vector3f(1F, 1F, 1F), TRSRTransformation.quatFromXYZDegrees(new Vector3f(0F, 0F, 0F))));
+            ImmutableMap<ItemCameraTransforms.TransformType, TRSRTransformation> transforms = ImmutableMap.copyOf(map);
             return IPerspectiveAwareModel.MapWrapper.handlePerspective(ModelBaseWrapper.isEntityRender(type) ? instrument.handModel : instrument.iconModel, transforms, type);
         }
         return IPerspectiveAwareModel.MapWrapper.handlePerspective(this, transforms, type);

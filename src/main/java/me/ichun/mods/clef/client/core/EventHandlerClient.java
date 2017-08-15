@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import me.ichun.mods.clef.client.render.BakedModelInstrument;
 import me.ichun.mods.clef.common.Clef;
+import me.ichun.mods.clef.common.item.ItemInstrument;
 import me.ichun.mods.clef.common.packet.PacketStopPlayingTrack;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
 import me.ichun.mods.clef.common.util.abc.play.Track;
@@ -110,8 +111,8 @@ public class EventHandlerClient
     @SubscribeEvent
     public void onLeftClickEmpty(PlayerInteractEvent.LeftClickEmpty event)
     {
-        ItemStack is = ItemHandler.getUsableDualHandedItem(event.getEntityPlayer());
-        if(is != null && is.getItem() == Clef.itemInstrument)
+        ItemStack is = ItemInstrument.getUsableInstrument(event.getEntityPlayer());
+        if(is != null && !(event.getEntityPlayer().getHeldItemMainhand() != null && event.getEntityPlayer().getHeldItemOffhand() != null))
         {
             stopPlayingTrack(event.getEntityPlayer());
         }
@@ -120,8 +121,8 @@ public class EventHandlerClient
     @SubscribeEvent
     public void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event)
     {
-        ItemStack is = ItemHandler.getUsableDualHandedItem(event.getEntityPlayer());
-        if(is != null && is.getItem() == Clef.itemInstrument)
+        ItemStack is = ItemInstrument.getUsableInstrument(event.getEntityPlayer());
+        if(is != null && !(event.getEntityPlayer().getHeldItemMainhand() != null && event.getEntityPlayer().getHeldItemOffhand() != null))
         {
             stopPlayingTrack(event.getEntityPlayer());
         }

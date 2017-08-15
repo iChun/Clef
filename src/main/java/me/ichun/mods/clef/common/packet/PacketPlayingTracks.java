@@ -52,6 +52,11 @@ public class PacketPlayingTracks extends AbstractPacket
                     buff.writeBlockPos(pos);
                 }
             }
+            buf.writeInt(track.zombies.size());
+            for(Integer i : track.zombies)
+            {
+                buf.writeInt(i);
+            }
         }
     }
 
@@ -84,6 +89,11 @@ public class PacketPlayingTracks extends AbstractPacket
                     poses.add(buff.readBlockPos());
                 }
                 tracks[i].instrumentPlayers.put(key, poses);
+            }
+            playerCount = buf.readInt();
+            for(int x = 0; x < playerCount; x++)
+            {
+                tracks[i].zombies.add(buf.readInt());
             }
         }
     }
