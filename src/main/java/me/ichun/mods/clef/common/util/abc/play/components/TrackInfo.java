@@ -366,15 +366,16 @@ public class TrackInfo
                 20D, //ticks per beat
                 0.125D, //unit note length
                 1D, //meter
-                0D, //key
+                0D, //key.. unused.
                 0.125D //tempo split
         };
+        HashMap<Integer, Integer> keySignatures = new HashMap<>();
         HashMap<Integer, Integer> keyAccidentals = new HashMap<>();
         int currentTick = 0;
         for(Note note : notes)
         {
             ArrayList<Note> noteAtTime = trackInfo.notes.computeIfAbsent(currentTick, v -> new ArrayList<>());
-            if(note.setup(info, keyAccidentals))//if true, not a special note, move to next spot.
+            if(note.setup(info, keyAccidentals, keySignatures))//if true, not a special note, move to next spot.
             {
                 noteAtTime.add(note); //only add the actual notes. No specials.
                 trackInfo.trackLength = currentTick + note.durationInTicks; // adds to the length of the note.

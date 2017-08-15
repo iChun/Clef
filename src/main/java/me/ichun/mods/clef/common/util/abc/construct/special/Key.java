@@ -16,7 +16,7 @@ public class Key extends Construct
         key = s;
         if(key.contains("%"))
         {
-            key = key.substring(0, key.indexOf("%"));
+            key = key.substring(0, key.indexOf("%")).trim();
         }
     }
 

@@ -16,9 +16,10 @@ public class BarLine extends Note
     }
 
     @Override
-    public boolean setup(double[] info, HashMap<Integer, Integer> keyAccidentals)
+    public boolean setup(double[] info, HashMap<Integer, Integer> keyAccidentals, HashMap<Integer, Integer> keySignature)
     {
         keyAccidentals.clear();
+        keyAccidentals.putAll(keySignature);
         return false;
     }
 }

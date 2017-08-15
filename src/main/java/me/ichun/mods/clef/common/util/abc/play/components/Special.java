@@ -26,7 +26,7 @@ public class Special extends Note
     }
 
     @Override
-    public boolean setup(double[] info, HashMap<Integer, Integer> keyAccidentals)
+    public boolean setup(double[] info, HashMap<Integer, Integer> keyAccidentals, HashMap<Integer, Integer> keySignature)
     {
         Construct construct = constructs.get(0); //This shouldn't be empty, ever.
         if(construct instanceof Meter)
@@ -35,8 +35,43 @@ public class Special extends Note
         }
         else if(construct instanceof Key)
         {
-            System.out.println(key);
-            //TODO this, too.
+            keySignature.clear();
+            switch(((Key)construct).key)
+            {
+                case "C#":
+                    keySignature.put(NOTE_TO_KEY_MAP.get('B') % 12, 1);
+                case "F#":
+                    keySignature.put(NOTE_TO_KEY_MAP.get('E') % 12, 1);
+                case "B":
+                    keySignature.put(NOTE_TO_KEY_MAP.get('A') % 12, 1);
+                case "E":
+                    keySignature.put(NOTE_TO_KEY_MAP.get('D') % 12, 1);
+                case "A":
+                    keySignature.put(NOTE_TO_KEY_MAP.get('G') % 12, 1);
+                case "D":
+                    keySignature.put(NOTE_TO_KEY_MAP.get('C') % 12, 1);
+                case "G":
+                    keySignature.put(NOTE_TO_KEY_MAP.get('F') % 12, 1);
+                    break;
+                case "Cb":
+                    keySignature.put(NOTE_TO_KEY_MAP.get('F') % 12, -1);
+                case "Gb":
+                    keySignature.put(NOTE_TO_KEY_MAP.get('C') % 12, -1);
+                case "Db":
+                    keySignature.put(NOTE_TO_KEY_MAP.get('G') % 12, -1);
+                case "Ab":
+                    keySignature.put(NOTE_TO_KEY_MAP.get('D') % 12, -1);
+                case "Eb":
+                    keySignature.put(NOTE_TO_KEY_MAP.get('A') % 12, -1);
+                case "Bb":
+                    keySignature.put(NOTE_TO_KEY_MAP.get('E') % 12, -1);
+                case "F":
+                    keySignature.put(NOTE_TO_KEY_MAP.get('B') % 12, -1);
+                    break;
+                case "C":
+                default:
+                    break;
+            }
         }
         else if(construct instanceof Tempo)
         {

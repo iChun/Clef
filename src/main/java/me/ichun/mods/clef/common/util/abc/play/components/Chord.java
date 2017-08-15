@@ -28,12 +28,12 @@ public class Chord extends Note
     }
 
     @Override
-    public boolean setup(double[] info, HashMap<Integer, Integer> keyAccidentals)
+    public boolean setup(double[] info, HashMap<Integer, Integer> keyAccidentals, HashMap<Integer, Integer> keySignature)
     {
         for(Note note : notes)
         {
             note.duration *= duration;
-            note.setup(info, keyAccidentals);
+            note.setup(info, keyAccidentals, keySignature);
         }
         double tempDur = 1000D;
         for(Note note : notes) //a rest in a chord denotes the duration of the chord.
@@ -49,12 +49,6 @@ public class Chord extends Note
                         {
                             tempDur = note1.duration;
                         }
-//                        char c = ((me.ichun.mods.clef.common.util.abc.construct.Note)construct).type;
-//                        if(c == 'z' || c == 'x')
-//                        {
-//                            this.duration = note1.duration;
-//                            break;
-//                        }
                     }
                 }
             }

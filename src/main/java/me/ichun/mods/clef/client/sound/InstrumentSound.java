@@ -47,7 +47,7 @@ public class InstrumentSound extends PositionedSound implements ITickableSound
         if(playTime > duration)
         {
             volume = MathHelper.clamp_float(startVolume * ((falloffTime - (playTime - duration)) / (float)falloffTime), 0F, 100F);
-            if(playTime > (duration + falloffTime + 200))
+            if(playTime > (duration + falloffTime + 600))
             {
                 donePlaying = true;
             }

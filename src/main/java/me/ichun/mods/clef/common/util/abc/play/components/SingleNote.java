@@ -10,7 +10,6 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.SoundCategory;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 public class SingleNote extends Note
@@ -18,40 +17,48 @@ public class SingleNote extends Note
     @Override
     public int playNote(Track track, int currentProg, Instrument instrument, Object noteLocation)
     {
-        if(key != Note.NOTE_REST)
+        if(key != Note.NOTE_REST && instrument.hasAvailableKey(key))
         {
             new PlayedNote(instrument, currentProg, durationInTicks, key, noteLocation instanceof EntityPlayer ? SoundCategory.PLAYERS : noteLocation instanceof EntityLivingBase ? SoundCategory.HOSTILE : SoundCategory.BLOCKS, noteLocation).start();
+        }
+        if(key == 37)
+        {
+            System.out.println(key);
         }
         return durationInTicks;
     }
 
     @Override
-    public boolean setup(double[] info, HashMap<Integer, Integer> keyAccidentals)
+    public boolean setup(double[] info, HashMap<Integer, Integer> keyAccidentals, HashMap<Integer, Integer> keySignature)
     {
-        int accidental = -2;
-        int key = (int)info[3] - 2; //middle
+        int accidental = -20;
+        boolean applyAccidental = false;
+        int currentAccidental = 0;
+        int key = 0; //middle
         boolean rest = false;
         boolean hasNote = false;
         for(Construct construct : constructs)
         {
             if(construct.getType() == Construct.EnumConstructType.ACCIDENTAL)
             {
+                applyAccidental = true;
                 char c = ((Accidental)construct).type;
                 switch(c)
                 {
                     case '^':
                     {
-                        accidental = 1;
+                        currentAccidental ++;
                         break;
                     }
                     case '=':
                     {
-                        accidental = 0;
+                        currentAccidental = 0;
                         break;
-                    } //do nothing
+                    }
                     case '_':
                     {
-                        accidental = -1;
+                        currentAccidental --;
+                        break;
                     }
                 }
             }
@@ -92,20 +99,24 @@ public class SingleNote extends Note
         {
             if(!rest)
             {
-                if(keyAccidentals.containsKey(key) && accidental == -2)
+                if(keySignature.containsKey(key % 12))
+                {
+                    accidental = keySignature.get(key % 12);
+                }
+                if(keyAccidentals.containsKey(key))
                 {
                     accidental = keyAccidentals.get(key);
                 }
-                else if(accidental != -2)
+                if(applyAccidental)
                 {
+                    accidental = currentAccidental;
                     keyAccidentals.put(key, accidental);
                 }
-                if(accidental == -2)
+                if(accidental == -20)
                 {
                     accidental = 0;
                 }
-                this.key = (key + accidental) + 54; //MiddleC?
-                //notePitch = (float)Math.pow(2.0D, (double)((key + accidental) - 12) / 12.0D);
+                this.key = (key + accidental) + (12 * 5); //MiddleC?
             }
         }
         else

@@ -36,6 +36,6 @@ public abstract class Note
 
     public abstract int playNote(Track track, int currentProg, Instrument instrument, Object noteLocation); //returns false if it's a special "note"
 
-    public abstract boolean setup(double[] info, HashMap<Integer, Integer> keyAccidentals); //returns false if it's a special "note"
+    public abstract boolean setup(double[] info, HashMap<Integer, Integer> keyAccidentals, HashMap<Integer, Integer> keySignature); //returns false if it's a special "note"
 
 }
