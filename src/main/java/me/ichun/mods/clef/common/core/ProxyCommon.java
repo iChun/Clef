@@ -5,6 +5,7 @@ import me.ichun.mods.clef.common.block.BlockInstrumentPlayer;
 import me.ichun.mods.clef.common.item.ItemInstrument;
 import me.ichun.mods.clef.common.network.GuiPlayTrackBlockHandler;
 import me.ichun.mods.clef.common.packet.*;
+import me.ichun.mods.clef.common.thread.ThreadReadFiles;
 import me.ichun.mods.clef.common.tileentity.TileEntityInstrumentPlayer;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
@@ -21,8 +22,7 @@ public class ProxyCommon
 {
     public void preInitMod()
     {
-        AbcLibrary.init();
-        InstrumentLibrary.init();
+        (new ThreadReadFiles()).start();
 
         Clef.itemInstrument = GameRegistry.register((new ItemInstrument()).setFull3D().setRegistryName("clef", "instrument").setUnlocalizedName("clef.item.instrument"));
 

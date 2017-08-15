@@ -24,7 +24,7 @@ public class AbcLibrary
 
     //TODO extract files from mod zip
 
-    public static void init() //TODO thread reading the files on load.
+    public static void init()
     {
         tracks.clear();
         Clef.LOGGER.info("Loading abc files");
@@ -226,7 +226,6 @@ public class AbcLibrary
         }
         //Do nothing if we don't have it, unlike instruments.
     }
-    //TODO ask the client for the ABC when they set a TrackBlock.
 
     public static HashSet<String> requestedABCFromServer = new HashSet<>(); // The server should ALWAYS have all the abc files, unlike the server.
     public static HashSet<String> requestedABCFromPlayers = new HashSet<>();

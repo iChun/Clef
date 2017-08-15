@@ -83,19 +83,23 @@ public class EventHandlerServer
         if(Clef.config.zombiesCanUseInstruments == 1 && !event.getEntityLiving().worldObj.isRemote && event.getEntityLiving() instanceof EntityZombie)
         {
             EntityZombie zombie = (EntityZombie)event.getEntityLiving();
-            ItemStack is = ItemInstrument.getUsableInstrument(zombie);
-            if(is != null)
+            if(zombie.getRNG().nextFloat() < 0.003F &&ItemInstrument.getUsableInstrument(zombie) != null && getTrackPlayedByPlayer(zombie) == null)
             {
-                if(zombie.getRNG().nextFloat() < 0.004F && getTrackPlayedByPlayer(zombie) == null)
+                Track track = Clef.eventHandlerServer.findTrackByBand("zombies");
+                if(track != null)
                 {
-                    TrackFile randTrack = AbcLibrary.tracks.get(zombie.getRNG().nextInt(AbcLibrary.tracks.size()));
-                    Track track = new Track(RandomStringUtils.randomAscii(IOUtil.IDENTIFIER_LENGTH), "", randTrack.md5, randTrack.track, false);
-                    Clef.eventHandlerServer.tracksPlaying.add(track);
-                    track.zombies.add(zombie.getEntityId());
-                    if(track.getTrack() != null)
+                    if(track.zombies.add(zombie.getEntityId()))
                     {
                         Clef.channel.sendToAll(new PacketPlayingTracks(track));
                     }
+                }
+                else
+                {
+                    TrackFile randTrack = AbcLibrary.tracks.get(zombie.getRNG().nextInt(AbcLibrary.tracks.size()));
+                    track = new Track(RandomStringUtils.randomAscii(IOUtil.IDENTIFIER_LENGTH), "zombies", randTrack.md5, randTrack.track, false);
+                    Clef.eventHandlerServer.tracksPlaying.add(track);
+                    track.zombies.add(zombie.getEntityId());
+                    Clef.channel.sendToAll(new PacketPlayingTracks(track));
                 }
             }
         }

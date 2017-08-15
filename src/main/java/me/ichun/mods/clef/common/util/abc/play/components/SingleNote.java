@@ -21,10 +21,6 @@ public class SingleNote extends Note
         {
             new PlayedNote(instrument, currentProg, durationInTicks, key, noteLocation instanceof EntityPlayer ? SoundCategory.PLAYERS : noteLocation instanceof EntityLivingBase ? SoundCategory.HOSTILE : SoundCategory.BLOCKS, noteLocation).start();
         }
-        if(key == 37)
-        {
-            System.out.println(key);
-        }
         return durationInTicks;
     }
 
@@ -94,7 +90,7 @@ public class SingleNote extends Note
             }
         }
 
-        this.durationInTicks = (int)Math.round(info[0] * duration * info[1] / info[4]); //tempo * duration * unit note length / tempo splits
+        this.durationInTicks = (int)Math.round(info[0] * duration * (info[1] / info[4])); //tempo * duration * (unit note length / tempo splits)
         if(hasNote)
         {
             if(!rest)

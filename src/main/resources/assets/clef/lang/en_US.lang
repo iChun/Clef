@@ -38,9 +38,11 @@ clef.config.prop.favoriteBand.name=Favorite Band
 clef.config.prop.showFileTitle.name=Show File Title
 clef.config.prop.allowOneHandedTwoHandedInstrumentUse.name=One Handed Two-Handed Instruments
 clef.config.prop.zombiesCanUseInstruments.name=Zombies Can Use Instruments
+clef.config.prop.disabledInstruments.name=Disabled Instruments
 
-clef.config.prop.creatableInstruments.desc=Can players create their own instruments with a name tag and 9 other instruments?\n0 = No\n1 = Only instruments the server doesn't have\n2 = Only instruments the server has\n3 = Any instrument
-clef.config.prop.favoriteBand.desc=Do you have a favourite band? Setting this will always set your band when you start playing a song.
-clef.config.prop.showFileTitle.desc=Some abc file have titles but aren't set properly. This will make the list show file names instead.
-clef.config.prop.allowOneHandedTwoHandedInstrumentUse.desc=Allow players to use instruments that normally require two hands, with one hand?
-clef.config.prop.zombiesCanUseInstruments.desc=Can zombies use instruments?
+clef.config.prop.creatableInstruments.comment=Can players create their own instruments with a name tag and 9 other instruments?\n0 = No\n1 = Only instruments the server doesn't have\n2 = Only instruments the server has\n3 = Any instrument
+clef.config.prop.favoriteBand.comment=Do you have a favourite band? Setting this will always set your band when you start playing a song.
+clef.config.prop.showFileTitle.comment=Some abc file have titles but aren't set properly. This will make the list show file names instead.
+clef.config.prop.allowOneHandedTwoHandedInstrumentUse.comment=Allow players to use instruments that normally require two hands, with one hand?
+clef.config.prop.zombiesCanUseInstruments.comment=Can zombies use instruments?
+clef.config.prop.disabledInstruments.comment=Disabled instruments by their item name.

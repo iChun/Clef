@@ -9,34 +9,29 @@ import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentInfo;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentPackInfo;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentTuning;
+import me.ichun.mods.ichunutil.client.render.TextureAtlasSpriteBufferedImage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.AbstractTexture;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureUtil;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.resources.IResourceManager;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.model.ItemLayerModel;
-import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class Instrument
-    implements Comparable<Instrument>
+        implements Comparable<Instrument>
 {
     public final InstrumentInfo info;
     public final BufferedImage iconImg;
@@ -48,10 +43,6 @@ public class Instrument
     public BakedModelInstrument iconModel;
     @SideOnly(Side.CLIENT)
     public BakedModelInstrument handModel;
-
-    //TODO some of the textures are TOOO BIG. Sort.
-    //TODO one handed instruments?
-    //TODO sort out hands still holding instrument when not playing.
 
     public Instrument(InstrumentInfo info, BufferedImage iconImg, BufferedImage handImg)
     {
@@ -167,7 +158,7 @@ public class Instrument
         public final ResourceLocation rl;
         public final BufferedImage image;
         public ImmutableList<BakedQuad> quads;
-        public TextureAtlasSpriteInstrument tasi;
+        public TextureAtlasSpriteBufferedImage tasi;
 
         public InstrumentTexture(ResourceLocation rl, BufferedImage image)
         {
@@ -196,44 +187,10 @@ public class Instrument
             TextureUtil.uploadTextureImageAllocate(this.getGlTextureId(), image, false, false);
 
             ImmutableList.Builder<BakedQuad> builder = ImmutableList.builder();
-            tasi = new TextureAtlasSpriteInstrument(this.rl, this.image);
+            tasi = new TextureAtlasSpriteBufferedImage(this.rl, this.image);
             tasi.load(Minecraft.getMinecraft().getResourceManager(), rl);
             builder.addAll(ItemLayerModel.getQuadsForSprite(0, tasi, DefaultVertexFormats.ITEM, Optional.absent()));
             quads = builder.build();
         }
     }
-
-    @SideOnly(Side.CLIENT) //TODO move to iChunUtil
-    public class TextureAtlasSpriteInstrument extends TextureAtlasSprite
-    {
-        public BufferedImage image;
-
-        public TextureAtlasSpriteInstrument(ResourceLocation rl, BufferedImage image)
-        {
-            super(rl.toString());
-            this.image = image;
-        }
-
-        public boolean hasCustomLoader(net.minecraft.client.resources.IResourceManager manager, net.minecraft.util.ResourceLocation location)
-        {
-            return true;
-        }
-
-        public boolean load(net.minecraft.client.resources.IResourceManager manager, net.minecraft.util.ResourceLocation location)
-        {
-            this.width = image.getWidth();
-            this.height = image.getHeight();
-
-            int[][] aint = new int[Minecraft.getMinecraft().getTextureMapBlocks().getMipmapLevels() + 1][];
-            aint[0] = new int[image.getWidth() * image.getHeight()];
-            image.getRGB(0, 0, image.getWidth(), image.getHeight(), aint[0], 0, image.getWidth());
-
-            this.framesTextureData.add(aint);
-
-            this.initSprite(width, height, 0, 0, false);
-
-            return false;
-        }
-    }
-
 }

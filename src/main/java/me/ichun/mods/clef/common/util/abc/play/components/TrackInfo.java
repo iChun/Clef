@@ -84,7 +84,10 @@ public class TrackInfo
                         }
                         case CHORD_START:
                         {
-                            chord = new Chord();
+                            if(((me.ichun.mods.clef.common.util.abc.construct.Chord)construct).type == '[')
+                            {
+                                chord = new Chord();
+                            }
                             break;
                         }
                         case OCTAVE:
@@ -172,13 +175,11 @@ public class TrackInfo
                         }
                         case CHORD_END:
                         {
-                            if(chord == null)
+                            if(((me.ichun.mods.clef.common.util.abc.construct.Chord)construct).type == ']' && chord != null)
                             {
-                                //This is a chord start. RESET the lastId;
-                                lastId = 0;
-
                                 if(currentNote != null)
                                 {
+                                    chord.notes.add(currentNote);
                                     if(numberNum > 0)
                                     {
                                         if(numberDen > 0)
@@ -190,39 +191,12 @@ public class TrackInfo
                                             currentNote.duration = numberNum;
                                         }
                                     }
-                                    if(chord != null)
-                                    {
-                                        chord.notes.add(currentNote);
-                                        currentNote = null;
-                                    }
-                                    else
-                                    {
-                                        notes.add(currentNote);
-                                        currentNote = null;
-                                    }
+                                    currentNote = null;
                                     numberNum = numberDen = -1;
                                 }
-                                break;
+                                notes.add(chord);
+                                chord = null;
                             }
-                            if(currentNote != null)
-                            {
-                                chord.notes.add(currentNote);
-                                if(numberNum > 0)
-                                {
-                                    if(numberDen > 0)
-                                    {
-                                        currentNote.duration = numberNum / (double)numberDen;
-                                    }
-                                    else
-                                    {
-                                        currentNote.duration = numberNum;
-                                    }
-                                }
-                                currentNote = null;
-                                numberNum = numberDen = -1;
-                            }
-                            notes.add(chord);
-                            chord = null;
                             break;
                         }
                         case CHORD_NUMBER_NUMERATOR:

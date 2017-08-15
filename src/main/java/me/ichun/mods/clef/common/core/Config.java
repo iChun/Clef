@@ -5,6 +5,7 @@ import me.ichun.mods.ichunutil.common.core.config.ConfigBase;
 import me.ichun.mods.ichunutil.common.core.config.annotations.ConfigProp;
 import me.ichun.mods.ichunutil.common.core.config.annotations.IntBool;
 import me.ichun.mods.ichunutil.common.core.config.annotations.IntMinMax;
+import me.ichun.mods.ichunutil.common.core.config.annotations.StringValues;
 import net.minecraftforge.fml.relauncher.Side;
 
 import java.io.File;
@@ -29,6 +30,10 @@ public class Config extends ConfigBase
     @ConfigProp
     @IntBool
     public int zombiesCanUseInstruments = 1;
+
+    @ConfigProp
+    @StringValues
+    public String[] disabledInstruments = new String[0];
 
     public Config(File file)
     {

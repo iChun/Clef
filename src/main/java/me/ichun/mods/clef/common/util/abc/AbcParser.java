@@ -34,12 +34,13 @@ public class AbcParser
     public static final char[] ignored = new char[] { '-', '(', ')', '~', 'H', 'L', 'M', 'O', 'P', 'S', 'T', 'u', 'v', '\\' }; //ties = 3, decorations = 10, continue on next line = 1
 
     //TODO there are some strings that we need to ignore. Some start with % and some start with others. Look them up.
-    public static String[] ignoredStarts = new String[] { "%", "[r:", "O:", "V:" };//TODO ignore remarks in ABC where when looking for chords
+    public static String[] ignoredStarts = new String[] { "%", "[r:", "O:", "N:", "G:", "H:" };//TODO ignore remarks in ABC where when looking for chords
+
+    public static String[] rejectFiles = new String[] { "P:", "V:" };
 
     public static TrackInfo parse(File file)
     {
         //TODO log if we don't know what we're reading.
-        Clef.LOGGER.info("Parsing - " + file.getName());
         try(FileInputStream stream = new FileInputStream(file))
         {
             AbcObject abc = new AbcObject();
@@ -47,6 +48,28 @@ public class AbcParser
             boolean readKeys = false;
             boolean unknownLine = false; //TODO use this.
             List<String> lines = IOUtils.readLines(stream);
+            boolean reject = false;
+            for(String line : lines)
+            {
+                for(String s : rejectFiles)
+                {
+                    if(line.trim().startsWith(s))
+                    {
+                        reject = true;
+                        break;
+                    }
+                }
+                if(reject)
+                {
+                    break;
+                }
+            }
+            if(reject)
+            {
+                Clef.LOGGER.warn("This track is unsupported: " + file.getName());
+                stream.close();
+                return null;
+            }
             for(String lineA : lines)
             {
                 boolean handledLine = false;
@@ -174,7 +197,7 @@ public class AbcParser
                                             while(i < line.length() && line.charAt(++i) != ']'){} //intended
                                         }
                                         //TODO fields in within [];
-                                        abc.constructs.add(new Chord());
+                                        abc.constructs.add(new Chord(key));
                                         break;
                                     }
                                 }

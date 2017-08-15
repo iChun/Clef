@@ -33,8 +33,6 @@ public class InstrumentLibrary
 {
     public static ArrayList<Instrument> instruments = new ArrayList<>();
 
-    //TODO extract files from mod zip
-
     public static void init()
     {
         instruments.clear();
@@ -128,6 +126,11 @@ public class InstrumentLibrary
                 }
                 for(InstrumentInfo info : instrumentInfos)
                 {
+                    if(isInstrumentDisabled(info.itemName))
+                    {
+                        Clef.LOGGER.warn("Not loading instrument " + info.itemName + " from pack " + file.getName() + ". Instrument is disabled.");
+                        continue;
+                    }
                     ZipEntry icon = zipFile.getEntry("items/instruments/" + info.inventoryIcon);
                     ZipEntry hand = zipFile.getEntry("items/instruments/" + info.activeImage);
                     ZipEntry tuning = zipFile.getEntry("sfx/instruments/" + info.kind + "/tuning.config");
@@ -343,6 +346,18 @@ public class InstrumentLibrary
         }
     }
 
+    public static boolean isInstrumentDisabled(String name)
+    {
+        for(String s : Clef.config.disabledInstruments)
+        {
+            if(s.equalsIgnoreCase(name))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static void packageAndSendInstrument(String name, EntityPlayer player) //side is the side receiving this request
     {
         if(name.isEmpty())
@@ -428,26 +443,29 @@ public class InstrumentLibrary
             Clef.LOGGER.info("Received " + fileName + ". Reading.");
             readInstrumentPack(file, instruments);
 
-            if(side.isServer())
+            if(!isInstrumentDisabled(fileName.substring(0, fileName.length() - 4)))
             {
-                String instName = fileName.substring(0, fileName.length() - 4);
-                requestedInstrumentsFromPlayers.remove(instName);
-                HashSet<String> playersRequesting = requestsFromPlayers.get(instName);
-                if(playersRequesting != null)
+                if(side.isServer())
                 {
-                    for(String s : playersRequesting)
+                    String instName = fileName.substring(0, fileName.length() - 4);
+                    requestedInstrumentsFromPlayers.remove(instName);
+                    HashSet<String> playersRequesting = requestsFromPlayers.get(instName);
+                    if(playersRequesting != null)
                     {
-                        EntityPlayerMP player = FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList().getPlayerByUsername(s);
-                        if(player != null)
+                        for(String s : playersRequesting)
                         {
-                            packageAndSendInstrument(instName, player);
+                            EntityPlayerMP player = FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList().getPlayerByUsername(s);
+                            if(player != null)
+                            {
+                                packageAndSendInstrument(instName, player);
+                            }
                         }
                     }
                 }
-            }
-            else
-            {
-                requestedInstrumentsFromServer.remove(fileName.substring(0, fileName.length() - 4));
+                else
+                {
+                    requestedInstrumentsFromServer.remove(fileName.substring(0, fileName.length() - 4));
+                }
             }
         }
         catch(Exception e)
