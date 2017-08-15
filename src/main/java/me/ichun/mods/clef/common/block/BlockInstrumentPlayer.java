@@ -132,7 +132,7 @@ public class BlockInstrumentPlayer extends BlockContainer
                     return true;
                 }
             }
-            if(!hasSlot)
+            if(!hasSlot && !player.justCreatedInstrument)
             {
                 FMLNetworkHandler.openGui(playerIn, Clef.instance, 0, worldIn, pos.getX(), pos.getY(), pos.getZ());
             }

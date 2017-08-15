@@ -51,11 +51,14 @@ public class GuiTrackList extends GuiScrollingList
     @Override
     protected void drawSlot(int idx, int right, int top, int height, Tessellator tess)
     {
-        FontRenderer font     = this.parent.getFontRenderer();
-        TrackFile track = tracks.get(idx);
-        GlStateManager.pushMatrix();
-        GlStateManager.scale(0.5F, 0.5F, 1F);
-        font.drawString(font.trimStringToWidth(track.track.title, (listWidth - 10) * 2), (this.left + 2) * 2 , top * 2, idx % 2 == 0 ? 0xFFFFFF : 0xAAAAAA);
-        GlStateManager.popMatrix();
+        if(idx >= 0 && idx < tracks.size())
+        {
+            FontRenderer font = this.parent.getFontRenderer();
+            TrackFile track = tracks.get(idx);
+            GlStateManager.pushMatrix();
+            GlStateManager.scale(0.5F, 0.5F, 1F);
+            font.drawString(font.trimStringToWidth(track.track.getTitle(), (listWidth - 10) * 2), (this.left + 2) * 2, top * 2, idx % 2 == 0 ? 0xFFFFFF : 0xAAAAAA);
+            GlStateManager.popMatrix();
+        }
     }
 }

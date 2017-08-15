@@ -3,6 +3,7 @@ package me.ichun.mods.clef.common.core;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.ichunutil.common.core.config.ConfigBase;
 import me.ichun.mods.ichunutil.common.core.config.annotations.ConfigProp;
+import me.ichun.mods.ichunutil.common.core.config.annotations.IntBool;
 import me.ichun.mods.ichunutil.common.core.config.annotations.IntMinMax;
 import net.minecraftforge.fml.relauncher.Side;
 
@@ -16,6 +17,10 @@ public class Config extends ConfigBase
 
     @ConfigProp(category = "clientOnly", side = Side.CLIENT)
     public String favoriteBand = "";
+
+    @ConfigProp(category = "clientOnly", side = Side.CLIENT)
+    @IntBool
+    public int showFileTitle = 1;
 
     public Config(File file)
     {

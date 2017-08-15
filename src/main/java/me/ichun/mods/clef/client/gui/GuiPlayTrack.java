@@ -18,6 +18,7 @@ import org.lwjgl.input.Mouse;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @SuppressWarnings("deprecation")
@@ -27,12 +28,14 @@ public class GuiPlayTrack extends GuiScreen
     public static final ResourceLocation texBackgroundBlock = new ResourceLocation("clef", "textures/gui/track_select_block.png");
     public static final ResourceLocation texInstrument = new ResourceLocation("clef", "textures/items/instrument.png");
     public static final ResourceLocation texNote = new ResourceLocation("minecraft", "textures/particle/particles.png");
+    public static final ResourceLocation texIcons = new ResourceLocation("minecraft", "textures/gui/icons.png");
 
     public static final int ID_CONFIRM = 0;
     public static final int ID_SYNC_PLAY = 1;
     public static final int ID_SYNC_TRACK = 2;
     public static final int ID_RELOAD_INSTRUMENTS = 20;
     public static final int ID_RELOAD_TRACKS = 21;
+    public static final int ID_TOGGLE_TITLE = 22;
 
     public ResourceLocation background = texBackground;
 
@@ -113,7 +116,7 @@ public class GuiPlayTrack extends GuiScreen
     {
         buttonList.add(new GuiButton(ID_RELOAD_INSTRUMENTS, guiLeft + 179, guiTop + 137, 20, 20, ""));
         buttonList.add(new GuiButton(ID_RELOAD_TRACKS, guiLeft + 205, guiTop + 137, 20, 20, ""));
-        //        buttonList.add(new GuiButton(ID_RELOAD_TRACKS, guiLeft + 231, guiTop + 94, 20, 20, ""));
+        buttonList.add(new GuiButton(ID_TOGGLE_TITLE, guiLeft + 231, guiTop + 137, 20, 20, ""));
     }
 
     public FontRenderer getFontRenderer()
@@ -141,7 +144,7 @@ public class GuiPlayTrack extends GuiScreen
         int mouseY = this.height - Mouse.getEventY() * this.height / this.mc.displayHeight - 1;
 
         super.handleMouseInput();
-        if(syncTrack == 0 && disableListWhenSyncTrack)
+        if(syncTrack == 0 || !disableListWhenSyncTrack)
         {
             this.trackList.handleMouseInput(mouseX, mouseY);
         }
@@ -282,6 +285,9 @@ public class GuiPlayTrack extends GuiScreen
         vertexbuffer.pos((double)(x + 0), (double)(y + 0), (double)this.zLevel).tex(0F, 0F).endVertex();
         tessellator.draw();
 
+        this.mc.getTextureManager().bindTexture(texIcons);
+        this.drawTexturedModalRect(guiLeft + 236, guiTop + 142, 0, 224, 10, 10);
+
         GlStateManager.color(0.5F, 1F, 1F, 1F);
         this.mc.getTextureManager().bindTexture(texNote);
         this.drawTexturedModalRect(guiLeft + 205 + 2, guiTop + 137 + 2, 0, 64, 16, 16);
@@ -292,6 +298,12 @@ public class GuiPlayTrack extends GuiScreen
     {
         super.mouseClicked(x, y, btn);
         bandName.mouseClicked(x, y, btn);
+    }
+
+    @Override
+    public boolean doesGuiPauseGame()
+    {
+        return false;
     }
 
     @Override
@@ -339,6 +351,12 @@ public class GuiPlayTrack extends GuiScreen
                 AbcLibrary.reloadTracks(this);
             }
         }
+        else if(btn.id == ID_TOGGLE_TITLE)
+        {
+            Clef.config.showFileTitle = Clef.config.showFileTitle == 1 ? 0 : 1;
+            Clef.config.save();
+            Collections.sort(tracks);
+        }
     }
 
     public void setIndex(int i)
@@ -348,7 +366,7 @@ public class GuiPlayTrack extends GuiScreen
 
     public boolean isSelectedIndex(int i)
     {
-        return syncTrack == 0 && index == i;
+        return (!disableListWhenSyncTrack  || syncTrack == 0) && index == i;
     }
 
     public void confirmSelection(boolean doubleClick)

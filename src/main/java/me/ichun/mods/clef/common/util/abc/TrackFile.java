@@ -21,6 +21,10 @@ public class TrackFile
     @Override
     public int compareTo(TrackFile o)
     {
-        return track.title.compareTo(o.track.title);
+        if(file.getParentFile().getAbsolutePath().equals(o.file.getParentFile().getAbsolutePath()))
+        {
+            return track.getTitle().compareTo(o.track.getTitle());
+        }
+        return file.getParentFile().getAbsolutePath().compareTo(o.file.getParentFile().getAbsolutePath());
     }
 }

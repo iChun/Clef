@@ -7,6 +7,7 @@ import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.packet.PacketFileFragment;
 import me.ichun.mods.clef.common.packet.PacketRequestFile;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentInfo;
+import me.ichun.mods.clef.common.util.instrument.component.InstrumentModPackInfo;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentPackInfo;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentTuning;
 import net.minecraft.entity.player.EntityPlayer;
@@ -59,6 +60,11 @@ public class InstrumentLibrary
     public static int readInstrumentPack(File file, ArrayList<Instrument> instruments)
     {
         int instrumentCount = 0;
+        if(file.exists() && file.getName().endsWith(".pak"))
+        {
+            Clef.LOGGER.warn("We can't read Starbound Mod Packs in .pak format! File: " + file.getName());
+            return 0;
+        }
         if(file.exists() && (file.getName().endsWith(".cia") || file.getName().endsWith(".zip"))) //clef instrument archive, or SB mod in zip, but not in *.pak or *.modpak
         {
             Clef.LOGGER.info("Reading file: " + file.getName());
@@ -81,6 +87,14 @@ public class InstrumentLibrary
                 while(entriesIte.hasMoreElements())
                 {
                     ZipEntry entry = (ZipEntry)entriesIte.nextElement();
+                    if(entry.getName().endsWith(".modinfo"))
+                    {
+                        StringWriter writer = new StringWriter();
+                        IOUtils.copy(zipFile.getInputStream(entry), writer);
+                        String jsonString = writer.toString();
+                        packInfo = InstrumentPackInfo.fromModInfo((new Gson()).fromJson(jsonString, InstrumentModPackInfo.class));
+                        continue;
+                    }
                     if(!entry.isDirectory() && !entry.getName().endsWith(".png"))
                     {
                         entries.add(entry);
@@ -90,7 +104,7 @@ public class InstrumentLibrary
                 for(int i = entries.size() - 1; i >= 0; i--)
                 {
                     ZipEntry entry = entries.get(i);
-                    if(entry.getName().endsWith(".instrument"))
+                    if(entry.getName().startsWith("items/instruments/") && entry.getName().endsWith(".instrument"))
                     {
                         StringWriter writer = new StringWriter();
                         IOUtils.copy(zipFile.getInputStream(entry), writer);
@@ -141,7 +155,7 @@ public class InstrumentLibrary
                             if(e.getValue() != null)
                             {
                                 String[] files = e.getValue();
-                                streams = new InputStream[files.length];
+                                ArrayList<InputStream> streamList = new ArrayList<>();
                                 for(int i = 0; i < files.length; i++)
                                 {
                                     String s = files[i];
@@ -149,9 +163,20 @@ public class InstrumentLibrary
                                     String fileName = fileNameSplit[fileNameSplit.length - 1]; //blah.ogg
                                     ZipEntry sound = zipFile.getEntry("sfx/instruments/" + info.kind + "/" + fileName);
 
+                                    if(fileName.contains("mute"))
+                                    {
+                                        mute = true;
+                                    }
+
                                     if(!fileName.endsWith(".ogg"))
                                     {
                                         Clef.LOGGER.warn("Error loading instrument " + info.itemName + " from pack " + file.getName() + ". Audio files are not .ogg");
+                                        continue;
+                                    }
+
+                                    if(sound == null)
+                                    {
+                                        Clef.LOGGER.warn("Error loading instrument " + info.itemName + " from pack " + file.getName() + ". Audio file " + fileName + " does not exist. Skipping file.");
                                         continue;
                                     }
 
@@ -164,13 +189,12 @@ public class InstrumentLibrary
                                     }
                                     baos.flush();
 
-                                    streams[i] = new ByteArrayInputStream(baos.toByteArray());
+                                    streamList.add(new ByteArrayInputStream(baos.toByteArray()));
                                     tuning1.audioToOutputStream.put(fileName, baos);
-
-                                    if(fileName.contains("mute"))
-                                    {
-                                        mute = true;
-                                    }
+                                }
+                                if(!streamList.isEmpty())
+                                {
+                                    streams = streamList.toArray(new InputStream[streamList.size()]);
                                 }
                             }
                             if(streams != null)
@@ -196,6 +220,7 @@ public class InstrumentLibrary
                         instrument.packInfo = packInfo;
 
                         instruments.add(instrument);
+                        instrumentCount++;
                     }
                     catch(Exception e)
                     {
@@ -204,8 +229,6 @@ public class InstrumentLibrary
                         continue;
                     }
                 }
-                instrumentCount += instruments.size();//TODO wait what this isn't right.
-
                 Collections.sort(instruments);
             }
             catch(Exception e)

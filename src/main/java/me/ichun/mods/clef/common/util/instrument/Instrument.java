@@ -68,7 +68,11 @@ public class Instrument
     @Override
     public int compareTo(Instrument o)
     {
-        return info.shortdescription.compareTo(o.info.shortdescription);
+        if(packInfo.packName.equals(o.packInfo.packName))
+        {
+            return info.shortdescription.compareTo(o.info.shortdescription);
+        }
+        return packInfo.packName.compareTo(o.packInfo.packName);
     }
 
     public ByteArrayOutputStream getAsBAOS()

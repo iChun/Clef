@@ -24,6 +24,9 @@ import java.util.ArrayList;
 @SuppressWarnings("deprecation")
 public class GuiPlayTrackBlock extends GuiPlayTrack
 {
+    public static final ResourceLocation texResourcePacks = new ResourceLocation("minecraft", "textures/gui/resource_packs.png");
+    public static final ResourceLocation texSpectatorWidgets = new ResourceLocation("minecraft", "textures/gui/spectator_widgets.png");
+
     public static final int ID_ADD_PLAYLIST = 10;
     public static final int ID_VIEW_PLAYLIST = 11;
     public static final int ID_REPEAT = 12;
@@ -64,7 +67,7 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
     {
         super.initGui();
         trackListBottom -= 22;
-        trackList = new GuiTrackList(this, 158, ySize - 22, guiTop + 17, trackListBottom, guiLeft + 7, 8, tracks);
+        trackList = new GuiTrackList(this, 158, ySize - 22, guiTop + 17, trackListBottom, guiLeft + 7, 8, playlistView ? playlist : tracks);
 
         this.mc.thePlayer.openContainer = this.containerInstrumentPlayer;
 
@@ -194,11 +197,11 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
         if(playlistView)
         {
             GlStateManager.color(1F, 1F, 1F, 1F);
-            this.mc.getTextureManager().bindTexture(new ResourceLocation("minecraft", "textures/gui/resource_packs.png"));
+            this.mc.getTextureManager().bindTexture(texResourcePacks);
             this.drawTexturedModalRect(guiLeft - 8, guiTop + 206, 96, 0, 32, 32);
             this.drawTexturedModalRect(guiLeft + 32, guiTop + 191, 80, 0, 32, 32);
 
-            this.mc.getTextureManager().bindTexture(new ResourceLocation("minecraft", "textures/gui/spectator_widgets.png"));
+            this.mc.getTextureManager().bindTexture(texSpectatorWidgets);
             this.drawTexturedModalRect(guiLeft + 40, guiTop + 207, 112, 0, 32, 32);
         }
     }
@@ -285,9 +288,17 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
             if(!playlistView && index >= 0 && index < tracks.size() && !playlist.contains(tracks.get(index)))
             {
                 playlist.add(tracks.get(index));
-                this.mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
-                return;
             }
+            else if(playlistView && index >= 0 && index < playlist.size() && !playlist.isEmpty())
+            {
+                playlist.remove(index);
+                if(index >= playlist.size())
+                {
+                    index = playlist.size() - 1;
+                }
+            }
+            this.mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            return;
         }
         if(playlist.isEmpty())
         {

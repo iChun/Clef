@@ -1,6 +1,7 @@
 package me.ichun.mods.clef.common.util.abc.play.components;
 
 import com.google.common.collect.Ordering;
+import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.util.abc.AbcObject;
 import me.ichun.mods.clef.common.util.abc.construct.Construct;
 import me.ichun.mods.clef.common.util.abc.construct.Number;
@@ -11,23 +12,30 @@ import java.util.TreeMap;
 
 public class TrackInfo
 {
-    public String title = ""; //T
+    private String title = ""; //T
+    private String fileTitle = "";
     public String composer = ""; //C
     public String transcriber = ""; //Z
 
     public TreeMap<Integer, ArrayList<Note>> notes = new TreeMap<>(Ordering.natural());
     public int trackLength = 0;
 
-    private TrackInfo(String title, String composer, String transcriber)
+    private TrackInfo(String title, String fileTitle, String composer, String transcriber)
     {
         this.title = title;
+        this.fileTitle = fileTitle;
         this.composer = composer;
         this.transcriber = transcriber;
     }
 
-    public static TrackInfo buildTrack(AbcObject abc)
+    public String getTitle()
     {
-        TrackInfo trackInfo = new TrackInfo(abc.title, abc.composer, abc.transcriber);
+        return Clef.config.showFileTitle == 1 ? fileTitle : title;
+    }
+
+    public static TrackInfo buildTrack(AbcObject abc, String fileTitle)
+    {
+        TrackInfo trackInfo = new TrackInfo(abc.title, fileTitle, abc.composer, abc.transcriber);
 
         ArrayList<Note> notes = new ArrayList<>();
         boolean discard = false;

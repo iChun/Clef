@@ -152,6 +152,10 @@ public class Track
                                         }
                                     }
                                 }
+                                else
+                                {
+                                    InstrumentLibrary.requestInstrument(tag.getString("itemName"), null);
+                                }
                             }
                         }
                     }

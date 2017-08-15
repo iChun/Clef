@@ -43,6 +43,8 @@ public class TileEntityInstrumentPlayer extends TileEntity
     private ItemStack[] contents = new ItemStack[9];
     public boolean previousRedstoneState;
 
+    public boolean justCreatedInstrument;
+
     public TileEntityInstrumentPlayer()
     {
     }
@@ -52,6 +54,10 @@ public class TileEntityInstrumentPlayer extends TileEntity
     {
         if(!getWorld().isRemote)
         {
+            if(justCreatedInstrument)
+            {
+                justCreatedInstrument = false;
+            }
             if(!pending_md5s.isEmpty() && iChunUtil.eventHandlerServer.ticks % 100 == 0) //Only tries every 5 seconds, pending_md5s is only populated server end.
             {
                 tries++;
@@ -131,8 +137,6 @@ public class TileEntityInstrumentPlayer extends TileEntity
                         players.add(getPos());
                         Clef.channel.sendToAll(new PacketPlayingTracks(track));
 
-                        System.out.println(track.getTrack().title);
-
                         if(shuffle && repeat != 1 && file.md5.equals(track.getMd5()))
                         {
                             playedTracks.add(track.getMd5());
@@ -147,9 +151,12 @@ public class TileEntityInstrumentPlayer extends TileEntity
                     {
                         //Find the band
                         Track track = Clef.eventHandlerServer.findTrackByBand(bandName);
-                        HashSet<BlockPos> players = track.instrumentPlayers.computeIfAbsent(getWorld().provider.getDimension(), v -> new HashSet<>());
-                        players.add(getPos());
-                        Clef.channel.sendToAll(new PacketPlayingTracks(track));
+                        if(track != null)
+                        {
+                            HashSet<BlockPos> players = track.instrumentPlayers.computeIfAbsent(getWorld().provider.getDimension(), v -> new HashSet<>());
+                            players.add(getPos());
+                            Clef.channel.sendToAll(new PacketPlayingTracks(track));
+                        }
                     }
                 }
             }

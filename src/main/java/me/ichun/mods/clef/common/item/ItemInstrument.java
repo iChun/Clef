@@ -114,6 +114,8 @@ public class ItemInstrument extends Item
                 list.add(I18n.translateToLocal("item.clef.instrument." + instrument.info.itemName + ".desc"));
                 if(GuiScreen.isShiftKeyDown())
                 {
+                    list.add("");
+                    list.add(I18n.translateToLocal("clef.item.packName") + ": " + instrument.packInfo.packName);
                     list.add(I18n.translateToLocal("clef.item.itemName") + ": " + instrument.info.itemName);
                 }
             }

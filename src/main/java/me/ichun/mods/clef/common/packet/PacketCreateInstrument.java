@@ -109,6 +109,7 @@ public class PacketCreateInstrument extends AbstractPacket
                     player1.markDirty();
                     player.setHeldItem(EnumHand.MAIN_HAND, null);
                     player.inventory.markDirty();
+                    player1.justCreatedInstrument = true;
                 }
             }
         }
