@@ -69,7 +69,7 @@ public class TrackInfo
             }
 
             int tries = 0;
-            for(; lastId <= Construct.EnumConstructOrder.MAX_ID; lastId++)
+            for(; lastId <= Construct.EnumConstructOrder.MAX_ID ; lastId++)
             {
                 //process
                 if(Construct.EnumConstructOrder.ORDER[lastId].getType() == construct.getType().getId())
@@ -269,10 +269,36 @@ public class TrackInfo
                         case BAR_LINE:
                         {
                             notes.add(new BarLine());
+                            lastId = 0;
+
+                            if(currentNote != null)
+                            {
+                                if(numberNum > 0)
+                                {
+                                    if(numberDen > 0)
+                                    {
+                                        currentNote.duration = numberNum / (double)numberDen;
+                                    }
+                                    else
+                                    {
+                                        currentNote.duration = numberNum;
+                                    }
+                                }
+                                if(chord != null)
+                                {
+                                    chord.notes.add(currentNote);
+                                    currentNote = null;
+                                }
+                                else
+                                {
+                                    notes.add(currentNote);
+                                    currentNote = null;
+                                }
+                                numberNum = numberDen = chordNum = chordDen = -1;
+                            }
                             break;
                         }
                     }
-
 
                     break;
                 }

@@ -14,6 +14,10 @@ public class Key extends Construct
     public Key(String s)
     {
         key = s;
+        if(key.contains("%"))
+        {
+            key = key.substring(0, key.indexOf("%"));
+        }
     }
 
     @Override

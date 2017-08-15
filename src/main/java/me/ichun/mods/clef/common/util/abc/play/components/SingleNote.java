@@ -29,7 +29,7 @@ public class SingleNote extends Note
     public boolean setup(double[] info, HashMap<Integer, Integer> keyAccidentals)
     {
         int accidental = -2;
-        int key = 0; //middle
+        int key = (int)info[3] - 2; //middle
         boolean rest = false;
         boolean hasNote = false;
         for(Construct construct : constructs)
@@ -87,7 +87,7 @@ public class SingleNote extends Note
             }
         }
 
-        this.durationInTicks = (int)Math.round(info[0] * (duration));
+        this.durationInTicks = (int)Math.round(info[0] * duration * info[1] / info[4]); //tempo * duration * unit note length / tempo splits
         if(hasNote)
         {
             if(!rest)

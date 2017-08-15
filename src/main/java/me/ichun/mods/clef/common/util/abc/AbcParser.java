@@ -285,7 +285,6 @@ public class AbcParser
                     }
                 }
             }
-
             //Finish reading the file
             return TrackInfo.buildTrack(abc, file.getName().substring(0, file.getName().length() - 4));
         }

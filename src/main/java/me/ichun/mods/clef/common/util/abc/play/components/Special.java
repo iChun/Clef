@@ -35,6 +35,7 @@ public class Special extends Note
         }
         else if(construct instanceof Key)
         {
+            System.out.println(key);
             //TODO this, too.
         }
         else if(construct instanceof Tempo)
