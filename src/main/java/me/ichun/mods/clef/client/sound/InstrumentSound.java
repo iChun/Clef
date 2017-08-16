@@ -66,9 +66,9 @@ public class InstrumentSound extends PositionedSound implements ITickableSound
         {
             EntityLivingBase living = (EntityLivingBase)noteLocationObject;
             Vec3d view = living.getLookVec();
-            this.xPosF = (float)(living.posX + view.xCoord * 0.3D);
-            this.yPosF = (float)(living.posY + living.getEyeHeight() + view.yCoord * 0.3D);
-            this.zPosF = (float)(living.posZ + view.zCoord * 0.3D);
+            this.xPosF = (float)(living.posX + view.xCoord * 0.3D) + (float)living.motionX;
+            this.yPosF = (float)(living.posY + living.getEyeHeight() + view.yCoord * 0.3D) + (float)living.motionY;
+            this.zPosF = (float)(living.posZ + view.zCoord * 0.3D) + (float)living.motionZ;
         }
         else if(noteLocationObject instanceof BlockPos)
         {
