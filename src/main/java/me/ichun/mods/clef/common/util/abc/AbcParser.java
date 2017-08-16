@@ -34,8 +34,7 @@ public class AbcParser
     public static final String[] barLinePattern = new String[] { "::", ":\\|", "\\|:", "[\\[]\\|", "\\|\\|", "\\|[\\]]", "\\|", "\\|[\\[]", "\\| [\\[]" }; //last three are repeats
     public static final String[] ignoredInfoPattern = new String[] { "[{].*[}]", "[\"].*[\"]", "[!].*[!]", "[+].*[+]" };
 
-    //TODO there are some strings that we need to ignore. Some start with % and some start with others. Look them up.
-    public static String[] ignoredStarts = new String[] { "%", "r:", "A:", "O:", "N:", "G:", "H:", "+:", "I:" };//TODO ignore remarks in ABC where when looking for chords
+    public static String[] ignoredStarts = new String[] { "%", "r:", "A:", "O:", "N:", "G:", "H:", "+:", "I:" };
 
     public static String[] rejectFiles = new String[] { "P:", "V:" };
 

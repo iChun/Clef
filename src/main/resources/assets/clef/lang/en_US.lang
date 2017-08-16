@@ -39,6 +39,12 @@ clef.config.prop.showFileTitle.name=Show File Title
 clef.config.prop.allowOneHandedTwoHandedInstrumentUse.name=One Handed Two-Handed Instruments
 clef.config.prop.zombiesCanUseInstruments.name=Zombies Can Use Instruments
 clef.config.prop.disabledInstruments.name=Disabled Instruments
+clef.config.prop.instrumentVolume.name=Instrument Volume
+clef.config.prop.zombieSpawnRate.name=Zombie Instrument Spawn Chance
+clef.config.prop.mobDropRate.name=Mob Drop Rate
+clef.config.prop.onlyHostileMobSpawn.name=Only Hostile Mob Drops
+clef.config.prop.lootSpawnRate.name=Loot Spawn Rate
+clef.config.prop.disabledLootChests.name=Disabled Loot Chests
 
 clef.config.prop.creatableInstruments.comment=Can players create their own instruments with a name tag and 9 other instruments?\n0 = No\n1 = Only instruments the server doesn't have\n2 = Only instruments the server has\n3 = Any instrument
 clef.config.prop.favoriteBand.comment=Do you have a favourite band? Setting this will always set your band when you start playing a song.
@@ -46,3 +52,9 @@ clef.config.prop.showFileTitle.comment=Some abc file have titles but aren't set 
 clef.config.prop.allowOneHandedTwoHandedInstrumentUse.comment=Allow players to use instruments that normally require two hands, with one hand?
 clef.config.prop.zombiesCanUseInstruments.comment=Can zombies use instruments?
 clef.config.prop.disabledInstruments.comment=Disabled instruments by their item name.
+clef.config.prop.instrumentVolume.comment=Volume of the instruments, divided by 100.
+clef.config.prop.zombieSpawnRate.comment=Chance of the zombies to spawn with an instrument, divided by 10000. 0 to disable
+clef.config.prop.mobDropRate.comment=Chance for mobs to drop an instrument, divided by 10000. 0 to disable. Affected by looting level.
+clef.config.prop.onlyHostileMobSpawn.comment=Only allow hostile mobs to drop instruments when they die.
+clef.config.prop.lootSpawnRate.comment=Spawn chance of instruments in loot chests.
+clef.config.prop.disabledLootChests.comment=Loot tables for chests that will be disabled. EG: minecraft:chests/stronghold_corridor

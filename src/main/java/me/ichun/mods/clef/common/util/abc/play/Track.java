@@ -267,8 +267,23 @@ public class Track
                 }
             }
 
+            Iterator<Integer> z = zombies.iterator();
+            while(z.hasNext())
+            {
+                Integer i = z.next();
+                if(Math.random() < 0.001F)
+                {
+                    z.remove();
+                    update = true;
+                }
+            }
+
             if(update)
             {
+                if(!hasObjectsPlaying())
+                {
+                    stop();
+                }
                 Clef.channel.sendToAll(new PacketPlayingTracks(this));
             }
         }

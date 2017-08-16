@@ -12,16 +12,16 @@ import java.io.File;
 
 public class Config extends ConfigBase
 {
-    @ConfigProp
-    @IntMinMax(min = 0, max = 3)
-    public int creatableInstruments = 3;
-
     @ConfigProp(category = "clientOnly", side = Side.CLIENT)
     public String favoriteBand = "";
 
     @ConfigProp(category = "clientOnly", side = Side.CLIENT)
     @IntBool
     public int showFileTitle = 1;
+
+    @ConfigProp(category = "clientOnly", side = Side.CLIENT)
+    @IntMinMax(min = 0, max = 100)
+    public int instrumentVolume = 100;
 
     @ConfigProp(useSession = true)
     @IntBool
@@ -32,8 +32,32 @@ public class Config extends ConfigBase
     public int zombiesCanUseInstruments = 1;
 
     @ConfigProp
+    @IntMinMax(min = 0, max = 10000)
+    public int zombieSpawnRate = 50;
+
+    @ConfigProp
+    @IntMinMax(min = 0, max = 10000)
+    public int mobDropRate = 50;
+
+    @ConfigProp
+    @IntBool
+    public int onlyHostileMobSpawn = 1;
+
+    @ConfigProp
+    @IntMinMax(min = 0, max = 3)
+    public int creatableInstruments = 3;
+
+    @ConfigProp
     @StringValues
     public String[] disabledInstruments = new String[0];
+
+    @ConfigProp
+    @IntMinMax(min = 0, max = 100)
+    public int lootSpawnRate = 5;
+
+    @ConfigProp
+    @StringValues
+    public String[] disabledLootChests = new String[0];
 
     public Config(File file)
     {

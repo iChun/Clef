@@ -12,12 +12,18 @@ import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import me.ichun.mods.ichunutil.common.core.util.IOUtil;
 import me.ichun.mods.ichunutil.common.iChunUtil;
 import net.minecraft.entity.item.EntityItem;
+import net.minecraft.entity.monster.EntityMob;
 import net.minecraft.entity.monster.EntityZombie;
+import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumHand;
+import net.minecraftforge.event.LootTableLoadEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
+import net.minecraftforge.event.entity.living.LivingSpawnEvent;
 import net.minecraftforge.event.entity.player.PlayerDropsEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent;
@@ -78,12 +84,38 @@ public class EventHandlerServer
     }
 
     @SubscribeEvent
+    public void onLivingDeath(LivingDropsEvent event)
+    {
+        if(!event.getEntityLiving().getEntityWorld().isRemote && (Clef.config.onlyHostileMobSpawn == 0 || event.getEntityLiving() instanceof IMob) && event.getEntityLiving().getRNG().nextFloat() < (Clef.config.mobDropRate / 10000F) * (event.getLootingLevel() + 1))
+        {
+            ItemStack stack = new ItemStack(Clef.itemInstrument, 1, 0);
+            InstrumentLibrary.assignRandomInstrument(stack);
+            event.getDrops().add(event.getEntityLiving().entityDropItem(stack, 0F));
+        }
+    }
+
+    @SubscribeEvent
+    public void onLivingSpawn(LivingSpawnEvent event)
+    {
+        if(!event.getEntityLiving().getEntityWorld().isRemote && event.getEntityLiving() instanceof EntityZombie && event.getEntityLiving().getRNG().nextFloat() < (Clef.config.zombieSpawnRate / 10000F))
+        {
+            EntityZombie zombie = (EntityZombie)event.getEntityLiving();
+            if(zombie.getHeldItemMainhand() == null)
+            {
+                ItemStack stack = new ItemStack(Clef.itemInstrument, 1, 0);
+                InstrumentLibrary.assignRandomInstrument(stack);
+                zombie.setHeldItem(EnumHand.MAIN_HAND, stack);
+            }
+        }
+    }
+
+    @SubscribeEvent
     public void onLivingUpdate(LivingEvent.LivingUpdateEvent event)
     {
         if(Clef.config.zombiesCanUseInstruments == 1 && !event.getEntityLiving().worldObj.isRemote && event.getEntityLiving() instanceof EntityZombie)
         {
             EntityZombie zombie = (EntityZombie)event.getEntityLiving();
-            if(zombie.getRNG().nextFloat() < 0.003F &&ItemInstrument.getUsableInstrument(zombie) != null && getTrackPlayedByPlayer(zombie) == null)
+            if(zombie.getRNG().nextFloat() < 0.004F &&ItemInstrument.getUsableInstrument(zombie) != null && getTrackPlayedByPlayer(zombie) == null)
             {
                 Track track = Clef.eventHandlerServer.findTrackByBand("zombies");
                 if(track != null)
@@ -97,11 +129,31 @@ public class EventHandlerServer
                 {
                     TrackFile randTrack = AbcLibrary.tracks.get(zombie.getRNG().nextInt(AbcLibrary.tracks.size()));
                     track = new Track(RandomStringUtils.randomAscii(IOUtil.IDENTIFIER_LENGTH), "zombies", randTrack.md5, randTrack.track, false);
+                    if(track.getTrack().trackLength > 0)
+                    {
+                        track.playAtProgress(zombie.getRNG().nextInt(track.getTrack().trackLength));
+                    }
                     Clef.eventHandlerServer.tracksPlaying.add(track);
                     track.zombies.add(zombie.getEntityId());
                     Clef.channel.sendToAll(new PacketPlayingTracks(track));
                 }
             }
+        }
+    }
+
+    @SubscribeEvent
+    public void onLootTableEvent(LootTableLoadEvent event)
+    {
+        for(String s : Clef.config.disabledLootChests)
+        {
+            if(event.getName().toString().equals(s))
+            {
+                return;
+            }
+        }
+        if(event.getName().getResourceDomain().contains("chest"))
+        {
+            System.out.println(event.getName());
         }
     }
 
