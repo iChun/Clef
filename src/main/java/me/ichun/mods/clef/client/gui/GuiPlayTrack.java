@@ -149,6 +149,7 @@ public class GuiPlayTrack extends GuiScreen
         {
             this.trackList.handleMouseInput(mouseX, mouseY);
         }
+        bandNameString = bandName.getText();
     }
 
     @Override
@@ -201,6 +202,7 @@ public class GuiPlayTrack extends GuiScreen
                 btn.displayString = I18n.translateToLocal(syncTrack == 1 ? "gui.yes" : "gui.no");
             }
         }
+        bandNameString = bandName.getText();
     }
 
     @Override

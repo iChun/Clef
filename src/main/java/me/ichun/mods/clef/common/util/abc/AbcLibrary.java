@@ -7,7 +7,6 @@ import me.ichun.mods.clef.common.packet.PacketPlayingTracks;
 import me.ichun.mods.clef.common.packet.PacketRequestFile;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
-import me.ichun.mods.clef.common.util.instrument.Instrument;
 import me.ichun.mods.ichunutil.common.core.util.IOUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraftforge.fml.common.FMLCommonHandler;
@@ -23,6 +22,7 @@ public class AbcLibrary
     public static ArrayList<TrackFile> tracks = new ArrayList<>();
 
     //TODO extract files from mod zip
+    //TODO tracks needs at least one ABC
 
     public static void init()
     {

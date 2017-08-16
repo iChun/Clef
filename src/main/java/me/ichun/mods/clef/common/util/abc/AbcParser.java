@@ -1,136 +1,81 @@
 package me.ichun.mods.clef.common.util.abc;
 
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Splitter;
+import com.google.common.collect.Iterables;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.util.abc.construct.*;
-import me.ichun.mods.clef.common.util.abc.construct.Number;
 import me.ichun.mods.clef.common.util.abc.construct.special.Key;
 import me.ichun.mods.clef.common.util.abc.construct.special.Meter;
 import me.ichun.mods.clef.common.util.abc.construct.special.Tempo;
 import me.ichun.mods.clef.common.util.abc.construct.special.UnitNoteLength;
-import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
+import me.ichun.mods.clef.common.util.abc.play.components.*;
+import me.ichun.mods.clef.common.util.abc.play.components.BarLine;
+import me.ichun.mods.clef.common.util.abc.play.components.Chord;
+import me.ichun.mods.clef.common.util.abc.play.components.Note;
+import net.minecraft.network.Packet;
 import org.apache.commons.io.IOUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class AbcParser
 {
     //The order of abc constructs for a note is: <grace notes>, <chord symbols>, <annotations>/<decorations> (e.g. Irish roll, staccato marker or up/downbow), <accidentals>, <note>, <octave>, <note length>, i.e. ~^c'3 or even "Gm7"v.=G,2.
-    public static final char[] graceNotes = new char[] { '{', '}' };
-    public static final char[] chords = new char[] { '[', ']' };
     public static final char[] accidentals = new char[] { '^', '=', '_' };
-
     public static final char[] notes = new char[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'z', 'x', 'Z', 'X' };
     public static final char[] octaves = new char[] { ',', '\'' };
-
     public static final char[] numbers = new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-    public static final char operator = '/';
-    public static final char space = ' ';
-
-    public static final char[] barLines = new char[] { '|', ':' };
-
-    public static final char[] ignored = new char[] { '-', '(', ')', '~', 'H', 'L', 'M', 'O', 'P', 'S', 'T', 'u', 'v', '\\' }; //ties = 3, decorations = 10, continue on next line = 1
+    public static final char[] ignored = new char[] { '-', '(', ')', '~', 'H', 'L', 'M', 'O', 'P', 'S', 'T', 'u', 'v' }; //ties = 3, decorations = 10
 
     //TODO there are some strings that we need to ignore. Some start with % and some start with others. Look them up.
-    public static String[] ignoredStarts = new String[] { "%", "[r:", "O:", "N:", "G:", "H:" };//TODO ignore remarks in ABC where when looking for chords
+    public static String[] ignoredStarts = new String[] { "%", "r:", "O:", "N:", "G:", "H:", "+:" };//TODO ignore remarks in ABC where when looking for chords
 
     public static String[] rejectFiles = new String[] { "P:", "V:" };
 
     public static TrackInfo parse(File file)
     {
-        //TODO log if we don't know what we're reading.
         try(FileInputStream stream = new FileInputStream(file))
         {
-            AbcObject abc = new AbcObject();
+            TrackInfo abc = new TrackInfo();
+            abc.setFileTitle(file.getName().substring(0, file.getName().length() - 4));
+            ArrayList<Note> trackNotes = new ArrayList<>();
 
             boolean readKeys = false;
-            boolean unknownLine = false; //TODO use this.
             List<String> lines = IOUtils.readLines(stream);
-            boolean reject = false;
-            for(String line : lines)
+            for(int l = 0; l < lines.size(); l++)
             {
-                for(String s : rejectFiles)
+                String lineA = lines.get(l);
+
+                //Discard comments first
+                if(lineA.contains("%"))
                 {
-                    if(line.trim().startsWith(s))
-                    {
-                        reject = true;
-                        break;
-                    }
+                    lineA = lineA.substring(0, lineA.indexOf("%"));
                 }
-                if(reject)
-                {
-                    break;
-                }
-            }
-            if(reject)
-            {
-                Clef.LOGGER.warn("This track is unsupported, it may play incorrectly: " + file.getName());
-            }
-            for(String lineA : lines)
-            {
-                boolean handledLine = false;
+
                 String line = lineA.trim();
-                if(line.startsWith("L:"))
+
+                if(line.isEmpty())
                 {
-                    //note length. Can be anywhere before key.
-                    String[] s = line.substring(2).split("/");
-                    if(s.length == 1)
-                    {
-                        abc.constructs.add(new UnitNoteLength(Integer.parseInt(s[0].trim())));
-                    }
-                    else if(s.length == 2)
-                    {
-                        abc.constructs.add(new UnitNoteLength(Integer.parseInt(s[0].trim()) / (double)Integer.parseInt(s[1].trim())));
-                    }
-                    handledLine = true;
+                    continue; //ignore empty lines
                 }
-                else if(line.startsWith("Q:"))
+
+                boolean handledLine = readCommand(trackNotes, line);
+                if(line.startsWith("K:"))
                 {
-                    abc.constructs.add(new Tempo(line.substring(2).trim()));
-                    handledLine = true;
-                }
-                else if(line.startsWith("M:"))
-                {
-                    String[] s = line.substring(2).split("/");
-                    if(s.length == 1)
-                    {
-                        abc.constructs.add(new Meter(Integer.parseInt(s[0].trim())));
-                    }
-                    else if(s.length == 2)
-                    {
-                        abc.constructs.add(new Meter(Integer.parseInt(s[0].trim()) / (double)Integer.parseInt(s[1].trim())));
-                    }
-                    handledLine = true;
-                }
-                else if(line.startsWith("K:"))
-                {
-                    handledLine = true;
-                    abc.constructs.add(new Key(line.substring(2).trim()));
                     readKeys = true;
-                }
-                else
-                {
-                    for(String ig : ignoredStarts)
-                    {
-                        if(line.startsWith(ig))
-                        {
-                            handledLine = true;
-                            break;
-                        }
-                    }
                 }
                 if(!handledLine)
                 {
                     if(!readKeys)
                     {
-                        if(line.startsWith("%abc"))
-                        {
-                            //version. Ignore for now
-                            continue;
-                        }
-                        else if(line.startsWith("X:"))
+                        if(line.startsWith("X:"))
                         {
                             if(abc.referenceNumber == -1)
                             {
@@ -143,7 +88,7 @@ public class AbcParser
                         }
                         else if(line.startsWith("T:"))
                         {
-                            abc.title = line.substring(2).trim();
+                            abc.setTitle(line.substring(2).trim());
                         }
                         else if(line.startsWith("C:"))
                         {
@@ -153,166 +98,568 @@ public class AbcParser
                         {
                             abc.transcriber = line.substring(2).trim();
                         }
-                        else if(!line.isEmpty() && !line.startsWith("%") && !line.startsWith("[r:"))
+                        else
                         {
-                            unknownLine = true;
-                            Clef.LOGGER.info("Unknown abc line - " + lineA);
-                            break;
+                            Clef.LOGGER.info("Unknown abc line in " + file.getName() + " - " + lineA);
+                            continue;
                         }
                     }
                     else
                     {
                         //The order of abc constructs for a note is: <grace notes>, <chord symbols>, <annotations>/<decorations> (e.g. Irish roll, staccato marker or up/downbow), <accidentals>, <note>, <octave>, <note length>, i.e. ~^c'3 or even "Gm7"v.=G,2.
-                        for(int i = 0; i < line.length(); i++)
+                        //WE should be reading the tune now.
+
+                        if(line.endsWith("\\")) //ends with a "continues on next line"
                         {
-                            char key = line.charAt(i);
-                            boolean handled = false;
-                            for(char c : graceNotes)
+                            if(l < lines.size() - 1) //add this line to the next line
                             {
-                                if(c == key)
+                                String newLine = line.substring(0, line.length() - 1) + lines.get(l + 1);
+                                lines.remove(l + 1);
+                                lines.add(l + 1, newLine);
+                                continue;
+                            }
+                            else
+                            {
+                                line = line.substring(0, line.length() - 1);
+                            }
+                        }
+
+                        //Split the line by measures
+                        ArrayList<String> partsBarLines = new ArrayList<>();
+                        partsBarLines.add(line);
+                        String[] patterns = new String[] { "::", ":\\|", "\\|:", "[\\[]\\|", "\\|\\|", "\\|[\\]]", "\\|", "\\|[\\[]", "\\| [\\[]" }; //last three are repeats
+                        for(int j = 0; j < patterns.length; j++)
+                        {
+                            for(int i = partsBarLines.size() - 1; i >= 0; i--)
+                            {
+                                String s = partsBarLines.get(i);
+                                partsBarLines.remove(i);
+                                partsBarLines.addAll(Splitter.onPattern(patterns[j]).trimResults().splitToList(s));
+                            }
+                        }
+
+                        //Wrap the parts with a bar line each.
+                        for(int v = 0; v < partsBarLines.size(); v++)
+                        {
+                            String partPerBar = partsBarLines.get(v);
+                            if(partPerBar.isEmpty())
+                            {
+                                trackNotes.add(new BarLine());
+                                continue;
+                            }
+                            while(true) //remove repeated segments
+                            {
+                                try
                                 {
-                                    abc.constructs.add(new Grace());
-                                    handled = true;
+                                    Integer.parseInt(partPerBar.substring(0, 1)); //Try to parse the first char as a number and trim if it is.
+                                    partPerBar = partPerBar.substring(1);
+                                }
+                                catch(NumberFormatException e)
+                                {
                                     break;
                                 }
                             }
 
-                            if(!handled)
+                            //split by graces, then chords, then notes.
+                            ArrayList<String> partsGraces = new ArrayList<>();
+                            partsGraces.add(partPerBar);
+                            patterns = new String[] { "[{].*[}]", "[\"].*[\"]", "[!].*[!]", "[+].*[+]" };
+                            for(int j = 0; j < patterns.length; j++)
                             {
-                                for(char c : chords)
+                                for(int i = partsGraces.size() - 1; i >= 0; i--)
                                 {
-                                    if(c == key)
+                                    String s = partsGraces.get(i);
+                                    partsGraces.remove(i);
+                                    partsGraces.addAll(Splitter.onPattern(patterns[j]).omitEmptyStrings().trimResults().splitToList(s));
+                                }
+                            }
+
+                            for(int k = 0; k < partsGraces.size(); k++) // Note has to be processed in this loop due to internal commands.
+                            {
+                                String partPerGrace = partsGraces.get(k);
+
+                                if(partPerGrace.contains("[") && partPerGrace.indexOf("[") < partPerGrace.indexOf(":") && partPerGrace.indexOf("]") > partPerGrace.indexOf(":")) //Looking for commands
+                                {
+                                    partsGraces.remove(k);
+                                    partsGraces.add(k, partPerGrace.substring(0, partPerGrace.indexOf("[")));
+                                    partsGraces.add(k + 1, partPerGrace.substring(partPerGrace.indexOf("["), partPerGrace.indexOf("]") + 1));
+                                    partsGraces.add(k + 2, partPerGrace.substring(partPerGrace.indexOf("]") + 1, partPerGrace.length()));
+                                    k--;
+
+                                    continue;
+                                }
+
+                                if(partPerGrace.contains(":") && partPerGrace.startsWith("[") && partPerGrace.endsWith("]")) //this is a command. It should be on it's own line.
+                                {
+                                    readCommand(trackNotes, partPerGrace.substring(1, partPerGrace.length() - 1));
+                                    continue;
+                                }
+
+                                char[] endOfNoteChars = new char[] { ',', '\'', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '/', ']' };
+                                char[] notes = new char[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'z', 'x', 'Z', 'X' };
+
+                                ArrayList<String> partsNotes = new ArrayList<>();
+                                partsNotes.addAll(Splitter.onPattern(" ").omitEmptyStrings().trimResults().splitToList(partPerGrace));
+                                //From here on, all we have are chords and notes
+                                Chord chord = null;
+                                for(int o = 0; o < partsNotes.size(); o++) //end of notes only have octaves, note lengths and chord symbols.
+                                {
+                                    ArrayList<String> note = new ArrayList<>(); //this keeps each individual note.
+
+                                    String partNote = partsNotes.get(o);
+                                    int noteIndex = partNote.length();
+                                    boolean foundStartOfNote = false;
+                                    for(int x = partNote.length() - 1; x >= 0; x--)
                                     {
-                                        handled = true;
-                                        if(key == '[' && i < line.length() - 1 && line.charAt(i + 1) == '|' || key == ']' && i > 0 && line.charAt(i - 1) == '|')
+                                        char key = partNote.charAt(x);
+                                        boolean startNote = true;
+                                        for(char c : notes)
                                         {
-                                            abc.constructs.add(new BarLine());
-                                            handled = true;
-                                            break;
+                                            if(key == c) // WE FOUND THE NOTE.
+                                            {
+                                                if(foundStartOfNote) //THIS IS A NEW NOTE.
+                                                {
+                                                    note.add(0, partNote.substring(x + 1, noteIndex));
+                                                    noteIndex = x + 1;
+                                                    foundStartOfNote = false;
+                                                }
+                                            }
                                         }
-                                        if(key == '[' && i < line.length() - 1 && line.charAt(i + 1) == 'r')//remark
+                                        for(char c : endOfNoteChars)
                                         {
-                                            while(i < line.length() && line.charAt(++i) != ']'){} //intended
+                                            if(key == c) // we're still in the tail of the note.
+                                            {
+                                                if(foundStartOfNote) //THIS IS A NEW NOTE.
+                                                {
+                                                    note.add(0, partNote.substring(x + 1, noteIndex));
+                                                    noteIndex = x + 1;
+                                                    foundStartOfNote = false;
+                                                }
+                                                startNote = false;
+                                            }
                                         }
-                                        //TODO fields in within [];
-                                        abc.constructs.add(new Chord(key));
-                                        break;
+                                        if(startNote)
+                                        {
+                                            foundStartOfNote = true;
+                                        }
+                                        if(x == 0) //start of string
+                                        {
+                                            note.add(0, partNote.substring(x, noteIndex));
+                                            foundStartOfNote = false;
+                                        }
                                     }
-                                }
-                            }
 
-                            if(!handled)
-                            {
-                                for(char c : barLines) //TODO repeat sections?
-                                {
-                                    if(c == key)
+                                    for(String singleNoteString : note)
                                     {
-                                        abc.constructs.add(new BarLine());
-                                        handled = true;
-                                        break;
+                                        //Only Note splices including chord starts and ends. No spaces.
+                                        SingleNote singleNote = new SingleNote();
+                                        boolean added = false;
+                                        for(int r = 0; r < singleNoteString.length(); r++)
+                                        {
+                                            char key = singleNoteString.charAt(r);
+                                            if(key == '[')//chord start
+                                            {
+                                                if(chord != null)
+                                                {
+                                                    Clef.LOGGER.warn("Uh oh, we found a malformed chord in: " + file.getName());
+                                                    Clef.LOGGER.warn("Line: " + line);
+                                                }
+                                                else
+                                                {
+                                                    chord = new Chord();
+                                                }
+                                            }
+                                            else if(key == ']') //chord end
+                                            {
+                                                //Find the duration of the chord;
+                                                r++;
+                                                int chordNum = -1;
+                                                int chordDom = -1;
+                                                boolean foundOperator = false;
+                                                while(r < singleNoteString.length())
+                                                {
+                                                    char key1 = singleNoteString.charAt(r);
+                                                    if(key1 == '/') //we found the operator.
+                                                    {
+                                                        foundOperator = true;
+                                                        if(chordNum == -1) //we found the operator but the numerator wasn't set. Default it.
+                                                        {
+                                                            chordNum = 1;
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        boolean notANumber = true;
+                                                        for(char c : numbers)
+                                                        {
+                                                            if(c == key) // we found a number.
+                                                            {
+                                                                notANumber = false;
+                                                                if(foundOperator) //we're working on the denominator now
+                                                                {
+                                                                    if(chordDom == -1)
+                                                                    {
+                                                                        chordDom = Integer.parseInt(Character.toString(c));
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        chordDom *= 10;
+                                                                        chordDom += Integer.parseInt(Character.toString(c));
+                                                                    }
+                                                                }
+                                                                else //we're working on the numerator now
+                                                                {
+                                                                    if(chordNum == -1)
+                                                                    {
+                                                                        chordNum = Integer.parseInt(Character.toString(c));
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        chordNum *= 10;
+                                                                        chordNum += Integer.parseInt(Character.toString(c));
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                        if(notANumber)
+                                                        {
+                                                            Clef.LOGGER.warn("Uh oh, we found a problem looking for the note duration in " + file.getName() + ". Found key: " + Character.toString(key));
+                                                            Clef.LOGGER.warn("Line: " + line);
+                                                        }
+                                                    }
+                                                    r++;
+                                                }
+                                                if(chordDom == -1)
+                                                {
+                                                    if(foundOperator) // we found the operator but not the denominator. Default it.
+                                                    {
+                                                        chordDom = 2;
+                                                    }
+                                                    else //we didn't find an operator. number is a whole. Not a fraction.
+                                                    {
+                                                        chordDom = 1;
+                                                    }
+                                                }
+                                                if(chordNum == -1) //we didn't find any numbers at all. set the numerator to 1
+                                                {
+                                                    chordNum = 1;
+                                                }
+                                                chord.duration = chordNum / (float)chordDom;
+
+                                                //add the chord and reset
+                                                chord.notes.add(singleNote);
+                                                added = true;
+                                                trackNotes.add(chord);
+                                                chord = null;
+                                            }
+                                            else //we are reading the actual note.
+                                            {
+                                                boolean handled = false;
+                                                for(char c : ignored)
+                                                {
+                                                    if(key == c)
+                                                    {
+                                                        handled = true;
+                                                        break;
+                                                    }
+                                                }
+                                                for(char c : accidentals)
+                                                {
+                                                    if(key == c)
+                                                    {
+                                                        handled = true;
+                                                        singleNote.constructs.add(new Accidental(key));
+                                                        break;
+                                                    }
+                                                }
+                                                for(char c : notes)
+                                                {
+                                                    if(key == c)
+                                                    {
+                                                        handled = true;
+                                                        singleNote.constructs.add(new me.ichun.mods.clef.common.util.abc.construct.Note(key));
+                                                        break;
+                                                    }
+                                                }
+                                                for(char c : octaves)
+                                                {
+                                                    if(key == c)
+                                                    {
+                                                        handled = true;
+                                                        singleNote.constructs.add(new Octave(key));
+                                                        break;
+                                                    }
+                                                }
+                                                if(!handled) //we've already found everything else. Presume this is a number or operator.
+                                                {
+                                                    //Find the duration of the note;
+                                                    int noteNum = -1;
+                                                    int noteDom = -1;
+                                                    boolean foundOperator = false;
+                                                    while(r < singleNoteString.length())
+                                                    {
+                                                        char key1 = singleNoteString.charAt(r);
+                                                        if(key1 == '/') //we found the operator.
+                                                        {
+                                                            foundOperator = true;
+                                                            if(noteNum == -1) //we found the operator but the numerator wasn't set. Default it.
+                                                            {
+                                                                noteNum = 1;
+                                                            }
+                                                        }
+                                                        else if(key1 == ']')//we found the chord end.
+                                                        {
+                                                            //Find the duration of the chord;
+                                                            r++;
+                                                            int chordNum = -1;
+                                                            int chordDom = -1;
+                                                            boolean foundOperator2 = false;
+                                                            while(r < singleNoteString.length())
+                                                            {
+                                                                char key2 = singleNoteString.charAt(r);
+                                                                if(key2 == '/') //we found the operator.
+                                                                {
+                                                                    foundOperator2 = true;
+                                                                    if(chordNum == -1) //we found the operator but the numerator wasn't set. Default it.
+                                                                    {
+                                                                        chordNum = 1;
+                                                                    }
+                                                                }
+                                                                else
+                                                                {
+                                                                    boolean notANumber = true;
+                                                                    for(char c : numbers)
+                                                                    {
+                                                                        if(c == key2) // we found a number.
+                                                                        {
+                                                                            notANumber = false;
+                                                                            if(foundOperator2) //we're working on the denominator now
+                                                                            {
+                                                                                if(chordDom == -1)
+                                                                                {
+                                                                                    chordDom = Integer.parseInt(Character.toString(c));
+                                                                                }
+                                                                                else
+                                                                                {
+                                                                                    chordDom *= 10;
+                                                                                    chordDom += Integer.parseInt(Character.toString(c));
+                                                                                }
+                                                                            }
+                                                                            else //we're working on the numerator now
+                                                                            {
+                                                                                if(chordNum == -1)
+                                                                                {
+                                                                                    chordNum = Integer.parseInt(Character.toString(c));
+                                                                                }
+                                                                                else
+                                                                                {
+                                                                                    chordNum *= 10;
+                                                                                    chordNum += Integer.parseInt(Character.toString(c));
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                    if(notANumber)
+                                                                    {
+                                                                        Clef.LOGGER.warn("Uh oh, we found a problem looking for the chord duration in " + file.getName() + ". Found key: " + Character.toString(key));
+                                                                        Clef.LOGGER.warn("Line: " + line);
+                                                                    }
+                                                                }
+                                                                r++;
+                                                            }
+                                                            if(chordDom == -1)
+                                                            {
+                                                                if(foundOperator2) // we found the operator but not the denominator. Default it.
+                                                                {
+                                                                    chordDom = 2;
+                                                                }
+                                                                else //we didn't find an operator. number is a whole. Not a fraction.
+                                                                {
+                                                                    chordDom = 1;
+                                                                }
+                                                            }
+                                                            if(chordNum == -1) //we didn't find any numbers at all. set the numerator to 1
+                                                            {
+                                                                chordNum = 1;
+                                                            }
+                                                            chord.duration = chordNum / (float)chordDom;
+
+                                                            //add the chord and reset
+                                                            chord.notes.add(singleNote);
+                                                            added = true;
+                                                            trackNotes.add(chord);
+                                                            chord = null;
+                                                        }
+                                                        else
+                                                        {
+                                                            boolean notANumber = true;
+                                                            for(char c : numbers)
+                                                            {
+                                                                if(c == key1) // we found a number.
+                                                                {
+                                                                    notANumber = false;
+                                                                    if(foundOperator) //we're working on the denominator now
+                                                                    {
+                                                                        if(noteDom == -1)
+                                                                        {
+                                                                            noteDom = Integer.parseInt(Character.toString(c));
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            noteDom *= 10;
+                                                                            noteDom += Integer.parseInt(Character.toString(c));
+                                                                        }
+                                                                    }
+                                                                    else //we're working on the numerator now
+                                                                    {
+                                                                        if(noteNum == -1)
+                                                                        {
+                                                                            noteNum = Integer.parseInt(Character.toString(c));
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            noteNum *= 10;
+                                                                            noteNum += Integer.parseInt(Character.toString(c));
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                            if(notANumber)
+                                                            {
+                                                                Clef.LOGGER.warn("Uh oh, we found a problem looking for the note duration in " + file.getName() + ". Found key: " + Character.toString(key));
+                                                                Clef.LOGGER.warn("Line: " + line);
+                                                            }
+                                                        }
+                                                        r++;
+                                                    }
+                                                    if(noteDom == -1)
+                                                    {
+                                                        if(foundOperator) // we found the operator but not the denominator. Default it.
+                                                        {
+                                                            noteDom = 2;
+                                                        }
+                                                        else //we didn't find an operator. number is a whole. Not a fraction.
+                                                        {
+                                                            noteDom = 1;
+                                                        }
+                                                    }
+                                                    if(noteNum == -1) //we didn't find any numbers at all. set the numerator to 1
+                                                    {
+                                                        noteNum = 1;
+                                                    }
+                                                    singleNote.duration = noteNum / (float)noteDom;
+                                                }
+                                            }
+                                        }
+                                        if(!added && !singleNote.constructs.isEmpty())
+                                        {
+                                            if(chord != null)
+                                            {
+                                                chord.notes.add(singleNote);
+                                            }
+                                            else
+                                            {
+                                                trackNotes.add(singleNote);
+                                            }
+                                        }
                                     }
                                 }
                             }
-
-                            if(!handled)
+                            if(v + 1 < partsBarLines.size())
                             {
-                                for(char c : accidentals)
-                                {
-                                    if(c == key)
-                                    {
-                                        abc.constructs.add(new Accidental(c));
-                                        handled = true;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if(!handled)
-                            {
-                                for(char c : notes)
-                                {
-                                    if(c == key)
-                                    {
-                                        abc.constructs.add(new Note(c));
-                                        handled = true;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if(!handled)
-                            {
-                                for(char c : octaves)
-                                {
-                                    if(c == key)
-                                    {
-                                        abc.constructs.add(new Octave(c));
-                                        handled = true;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if(!handled)
-                            {
-                                for(char c : numbers)
-                                {
-                                    if(c == key)
-                                    {
-                                        abc.constructs.add(new Number(Integer.parseInt(Character.toString(c))));
-                                        handled = true;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if(!handled)
-                            {
-                                if(key == '!' && i < line.length() - 1)//named decoration
-                                {
-                                    while(i < line.length() && line.charAt(++i) != '!'){} //intended
-                                }
-
-                                if(operator == key)
-                                {
-                                    abc.constructs.add(new Operator());
-                                    handled = true;
-                                }
-                                if(space == key)
-                                {
-                                    abc.constructs.add(new Space());
-                                    handled = true;
-                                }
-                            }
-
-                            if(!handled)
-                            {
-                                for(char c : ignored)
-                                {
-                                    if(c == key)
-                                    {
-                                        handled = true;
-                                        break;
-                                    }
-                                }
-                                if(!handled)
-                                {
-                                    Clef.LOGGER.info("Uh oh at line: " + lineA);
-                                    Clef.LOGGER.info("We don't know how to handle this: " + Character.toString(key));
-                                }
+                                trackNotes.add(new BarLine()); //last line.
                             }
                         }
-                        abc.constructs.add(new Space());
                     }
                 }
             }
-            //Finish reading the file
-            return TrackInfo.buildTrack(abc, file.getName().substring(0, file.getName().length() - 4));
+            //OVER HERE
+
+            if(trackNotes.isEmpty())
+            {
+                return null; //If the track has no notes, don't bother creating an "empty track".
+            }
+
+            double[] info = new double[] {
+                    20D, //ticks per beat
+                    0.125D, //unit note length
+                    1D, //meter
+                    0D, //key.. unused.
+                    0.125D //tempo split
+            };
+            HashMap<Integer, Integer> keySignatures = new HashMap<>();
+            HashMap<Integer, Integer> keyAccidentals = new HashMap<>();
+            int currentTick = 0;
+            for(Note note : trackNotes)
+            {
+                ArrayList<Note> noteAtTime = abc.notes.computeIfAbsent(currentTick, v -> new ArrayList<>());
+                if(note.setup(info, keyAccidentals, keySignatures))//if true, not a special note, move to next spot.
+                {
+                    noteAtTime.add(note); //only add the actual notes. No specials.
+                    abc.trackLength = currentTick + note.durationInTicks; // adds to the length of the note.
+                    currentTick += note.durationInTicks;
+                }
+            }
+
+            return abc;
         }
         catch(IOException | NumberFormatException e)
         {
-
         }
         return null;
+    }
+
+    public static boolean readCommand(ArrayList<Note> notes, String line)
+    {
+        boolean handledLine = false;
+        if(line.startsWith("L:"))
+        {
+            //note length. Can be anywhere before key.
+            String[] s = line.substring(2).split("/");
+            if(s.length == 1)
+            {
+                notes.add(new Special(new UnitNoteLength(Integer.parseInt(s[0].trim()))));
+            }
+            else if(s.length == 2)
+            {
+                notes.add(new Special(new UnitNoteLength(Integer.parseInt(s[0].trim()) / (double)Integer.parseInt(s[1].trim()))));
+            }
+            handledLine = true;
+        }
+        else if(line.startsWith("Q:"))
+        {
+            notes.add(new Special(new Tempo(line.substring(2).trim())));
+            handledLine = true;
+        }
+        else if(line.startsWith("M:"))
+        {
+            String[] s = line.substring(2).split("/");
+            if(s.length == 1)
+            {
+                notes.add(new Special(new Meter(Integer.parseInt(s[0].trim()))));
+            }
+            else if(s.length == 2)
+            {
+                notes.add(new Special(new Meter(Integer.parseInt(s[0].trim()) / (double)Integer.parseInt(s[1].trim()))));
+            }
+            handledLine = true;
+        }
+        else if(line.startsWith("K:"))
+        {
+            handledLine = true;
+            notes.add(new Special(new Key(line.substring(2).trim())));
+        }
+        else
+        {
+            for(String ig : ignoredStarts)
+            {
+                if(line.startsWith(ig))
+                {
+                    handledLine = true;
+                    break;
+                }
+            }
+        }
+        return handledLine;
     }
 }
