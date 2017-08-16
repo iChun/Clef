@@ -17,7 +17,7 @@ public class InstrumentSound extends PositionedSound implements ITickableSound
     public int falloffTime;
 
     public int playTime;
-    public boolean donePlaying;
+    public boolean endTheNote;
     public Object noteLocationObject;
 
     public InstrumentSound(String id, SoundEvent soundIn, SoundCategory categoryIn, int duration, int falloffTime, float volume, float pitch, Object noteLocationObject)
@@ -49,7 +49,7 @@ public class InstrumentSound extends PositionedSound implements ITickableSound
             volume = MathHelper.clamp_float(startVolume * ((falloffTime - (playTime - duration)) / (float)falloffTime), 0F, 100F);
             if(playTime > (duration + falloffTime + 600))
             {
-                donePlaying = true;
+                endTheNote = true;
             }
         }
     }
@@ -57,7 +57,7 @@ public class InstrumentSound extends PositionedSound implements ITickableSound
     @Override
     public boolean isDonePlaying()
     {
-        return donePlaying;
+        return endTheNote;
     }
 
     public void updateNoteLocation()

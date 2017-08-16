@@ -57,7 +57,27 @@ public class GuiTrackList extends GuiScrollingList
             TrackFile track = tracks.get(idx);
             GlStateManager.pushMatrix();
             GlStateManager.scale(0.5F, 0.5F, 1F);
-            font.drawString(font.trimStringToWidth(track.track.getTitle(), (listWidth - 10) * 2), (this.left + 2) * 2, top * 2, idx % 2 == 0 ? 0xFFFFFF : 0xAAAAAA);
+            String trim = font.trimStringToWidth(track.track.getTitle(), (listWidth - 10) * 2);
+            if(isSelected(idx) && !track.track.getTitle().endsWith(trim))
+            {
+                int lengthDiff = (int)Math.ceil((track.track.getTitle().length() - trim.length()) * 1.4D);
+                String newString = track.track.getTitle().substring(lengthDiff);
+                int val = ((parent.scrollTicker % (lengthDiff * 2 + 40)) / 2) - 10;
+                if(val < 0)
+                {
+                    val = 0;
+                }
+                String newTrim = font.trimStringToWidth(track.track.getTitle().substring(val), (listWidth - 10) * 2);
+                if(newString.length() > newTrim.length())
+                {
+                    trim = newString;
+                }
+                else
+                {
+                    trim = newTrim;
+                }
+            }
+            font.drawString(trim, (this.left + 2) * 2, top * 2, idx % 2 == 0 ? 0xFFFFFF : 0xAAAAAA);
             GlStateManager.popMatrix();
         }
     }

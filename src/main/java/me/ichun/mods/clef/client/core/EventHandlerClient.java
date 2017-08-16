@@ -95,6 +95,18 @@ public class EventHandlerClient
         }
     }
 
+    public Track findTrackByBand(String bandName)
+    {
+        for(Track track : tracksPlaying)
+        {
+            if(track.getBandName().equalsIgnoreCase(bandName))
+            {
+                return track;
+            }
+        }
+        return null;
+    }
+
     public Track getTrackPlayedByPlayer(EntityPlayer player)
     {
         for(Track track : tracksPlaying)

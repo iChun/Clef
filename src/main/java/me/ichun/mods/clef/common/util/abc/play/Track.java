@@ -139,7 +139,7 @@ public class Track
                 {
                     Map.Entry<EntityPlayer, Integer> e = playerIte.next();
                     EntityPlayer player = e.getKey();
-                    if(player.isEntityAlive() && player.getDistanceToEntity(mcPlayer) < 256D)
+                    if(player.isEntityAlive() && player.getDistanceToEntity(mcPlayer) < 64D)
                     {
                         ItemStack is = ItemInstrument.getUsableInstrument(player);
                         if(is != null)
@@ -178,7 +178,7 @@ public class Track
                 {
                     for(BlockPos pos : poses)
                     {
-                        if(mcPlayer.getDistance(pos.getX(), pos.getY(), pos.getZ()) < 256D)
+                        if(mcPlayer.getDistance(pos.getX(), pos.getY(), pos.getZ()) < 64D)
                         {
                             TileEntity te = mcPlayer.worldObj.getTileEntity(pos);
                             if(te instanceof TileEntityInstrumentPlayer)
@@ -209,7 +209,7 @@ public class Track
                 {
                     Integer i = ite1.next();
                     Entity ent = mcPlayer.worldObj.getEntityByID(i);
-                    if(ent instanceof EntityZombie && ent.isEntityAlive())
+                    if(ent instanceof EntityZombie && ent.isEntityAlive() && mcPlayer.getDistanceToEntity(ent) < 64D)
                     {
                         ItemStack is = ItemInstrument.getUsableInstrument((EntityZombie)ent);
                         if(is != null)
@@ -362,7 +362,7 @@ public class Track
         {
             for(BlockPos pos : poses)
             {
-                if(Minecraft.getMinecraft().thePlayer.getDistance(pos.getX(), pos.getY(), pos.getZ()) < 256D)
+                if(Minecraft.getMinecraft().thePlayer.getDistance(pos.getX(), pos.getY(), pos.getZ()) < 64D)
                 {
                     return true;
                 }

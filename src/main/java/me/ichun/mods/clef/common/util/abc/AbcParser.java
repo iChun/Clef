@@ -279,7 +279,7 @@ public class AbcParser
                                             {
                                                 if(chord != null)
                                                 {
-                                                    Clef.LOGGER.warn("Uh oh, we found a malformed chord in: " + file.getName());
+                                                    Clef.LOGGER.warn("Uh oh, we found a malformed chord start in: " + file.getName());
                                                     Clef.LOGGER.warn("Line: " + line);
                                                 }
                                                 else
@@ -289,104 +289,112 @@ public class AbcParser
                                             }
                                             else if(key == ']') //chord end
                                             {
-                                                //Find the duration of the chord;
-                                                r++;
-                                                int chordNum = -1;
-                                                int chordDom = -1;
-                                                boolean foundOperator = false;
-                                                while(r < singleNoteString.length())
+                                                if(chord == null)
                                                 {
-                                                    char key1 = singleNoteString.charAt(r);
-                                                    if(key1 == '/') //we found the operator.
-                                                    {
-                                                        foundOperator = true;
-                                                        if(chordNum == -1) //we found the operator but the numerator wasn't set. Default it.
-                                                        {
-                                                            chordNum = 1;
-                                                        }
-                                                    }
-                                                    else
-                                                    {
-                                                        boolean notANumber = true;
-                                                        for(char c : numbers)
-                                                        {
-                                                            if(c == key) // we found a number.
-                                                            {
-                                                                notANumber = false;
-                                                                if(foundOperator) //we're working on the denominator now
-                                                                {
-                                                                    if(chordDom == -1)
-                                                                    {
-                                                                        chordDom = Integer.parseInt(Character.toString(c));
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        chordDom *= 10;
-                                                                        chordDom += Integer.parseInt(Character.toString(c));
-                                                                    }
-                                                                }
-                                                                else //we're working on the numerator now
-                                                                {
-                                                                    if(chordNum == -1)
-                                                                    {
-                                                                        chordNum = Integer.parseInt(Character.toString(c));
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        chordNum *= 10;
-                                                                        chordNum += Integer.parseInt(Character.toString(c));
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                        if(notANumber)
-                                                        {
-                                                            Clef.LOGGER.warn("Uh oh, we found a problem looking for the note duration in " + file.getName() + ". Found key: " + Character.toString(key));
-                                                            Clef.LOGGER.warn("Line: " + line);
-                                                        }
-                                                    }
+                                                    Clef.LOGGER.warn("Uh oh, we found a malformed chord end in: " + file.getName());
+                                                    Clef.LOGGER.warn("Line: " + line);
+                                                }
+                                                else
+                                                {
+                                                    //Find the duration of the chord;
                                                     r++;
-                                                }
-                                                if(chordDom == -1)
-                                                {
-                                                    if(foundOperator) // we found the operator but not the denominator. Default it.
+                                                    int chordNum = -1;
+                                                    int chordDom = -1;
+                                                    boolean foundOperator = false;
+                                                    while(r < singleNoteString.length())
                                                     {
-                                                        chordDom = 2;
-                                                    }
-                                                    else //we didn't find an operator. number is a whole. Not a fraction.
-                                                    {
-                                                        chordDom = 1;
-                                                    }
-                                                }
-                                                if(chordNum == -1) //we didn't find any numbers at all. set the numerator to 1
-                                                {
-                                                    chordNum = 1;
-                                                }
-                                                chord.duration = chordNum / (float)chordDom;
-
-                                                //add the chord and reset
-                                                if(brokenRhythmValue != 0)
-                                                {
-                                                    ArrayList<Note> trackNotes1 = chord.notes;
-                                                    if(!trackNotes1.isEmpty() && trackNotes1.get(trackNotes1.size() - 1) instanceof SingleNote)
-                                                    {
-                                                        SingleNote referenceNote =  (SingleNote)trackNotes1.get(trackNotes1.size() - 1);
-                                                        if(brokenRhythmValue == 1)//give more to this and take from previous
+                                                        char key1 = singleNoteString.charAt(r);
+                                                        if(key1 == '/') //we found the operator.
                                                         {
-                                                            singleNote.duration += referenceNote.duration / 2D;
-                                                            referenceNote.duration /= 2D;
+                                                            foundOperator = true;
+                                                            if(chordNum == -1) //we found the operator but the numerator wasn't set. Default it.
+                                                            {
+                                                                chordNum = 1;
+                                                            }
                                                         }
                                                         else
                                                         {
-                                                            referenceNote.duration += singleNote.duration / 2D;
-                                                            singleNote.duration /= 2D;
+                                                            boolean notANumber = true;
+                                                            for(char c : numbers)
+                                                            {
+                                                                if(c == key) // we found a number.
+                                                                {
+                                                                    notANumber = false;
+                                                                    if(foundOperator) //we're working on the denominator now
+                                                                    {
+                                                                        if(chordDom == -1)
+                                                                        {
+                                                                            chordDom = Integer.parseInt(Character.toString(c));
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            chordDom *= 10;
+                                                                            chordDom += Integer.parseInt(Character.toString(c));
+                                                                        }
+                                                                    }
+                                                                    else //we're working on the numerator now
+                                                                    {
+                                                                        if(chordNum == -1)
+                                                                        {
+                                                                            chordNum = Integer.parseInt(Character.toString(c));
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            chordNum *= 10;
+                                                                            chordNum += Integer.parseInt(Character.toString(c));
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                            if(notANumber)
+                                                            {
+                                                                Clef.LOGGER.warn("Uh oh, we found a problem looking for the chord duration in " + file.getName() + ". Found key: " + Character.toString(key));
+                                                                Clef.LOGGER.warn("Line: " + line);
+                                                            }
+                                                        }
+                                                        r++;
+                                                    }
+                                                    if(chordDom == -1)
+                                                    {
+                                                        if(foundOperator) // we found the operator but not the denominator. Default it.
+                                                        {
+                                                            chordDom = 2;
+                                                        }
+                                                        else //we didn't find an operator. number is a whole. Not a fraction.
+                                                        {
+                                                            chordDom = 1;
                                                         }
                                                     }
+                                                    if(chordNum == -1) //we didn't find any numbers at all. set the numerator to 1
+                                                    {
+                                                        chordNum = 1;
+                                                    }
+                                                    chord.duration = chordNum / (float)chordDom;
+
+                                                    //add the chord and reset
+                                                    if(brokenRhythmValue != 0)
+                                                    {
+                                                        ArrayList<Note> trackNotes1 = chord.notes;
+                                                        if(!trackNotes1.isEmpty() && trackNotes1.get(trackNotes1.size() - 1) instanceof SingleNote)
+                                                        {
+                                                            SingleNote referenceNote = (SingleNote)trackNotes1.get(trackNotes1.size() - 1);
+                                                            if(brokenRhythmValue == 1)//give more to this and take from previous
+                                                            {
+                                                                singleNote.duration += referenceNote.duration / 2D;
+                                                                referenceNote.duration /= 2D;
+                                                            }
+                                                            else
+                                                            {
+                                                                referenceNote.duration += singleNote.duration / 2D;
+                                                                singleNote.duration /= 2D;
+                                                            }
+                                                        }
+                                                    }
+                                                    chord.notes.add(singleNote);
+                                                    added = true;
+                                                    trackNotes.add(chord);
+                                                    chord = null;
                                                 }
-                                                chord.notes.add(singleNote);
-                                                added = true;
-                                                trackNotes.add(chord);
-                                                chord = null;
                                             }
                                             else //we are reading the actual note.
                                             {
@@ -454,104 +462,112 @@ public class AbcParser
                                                         }
                                                         else if(key1 == ']')//we found the chord end.
                                                         {
-                                                            //Find the duration of the chord;
-                                                            r++;
-                                                            int chordNum = -1;
-                                                            int chordDom = -1;
-                                                            boolean foundOperator2 = false;
-                                                            while(r < singleNoteString.length())
+                                                            if(chord == null)
                                                             {
-                                                                char key2 = singleNoteString.charAt(r);
-                                                                if(key2 == '/') //we found the operator.
-                                                                {
-                                                                    foundOperator2 = true;
-                                                                    if(chordNum == -1) //we found the operator but the numerator wasn't set. Default it.
-                                                                    {
-                                                                        chordNum = 1;
-                                                                    }
-                                                                }
-                                                                else
-                                                                {
-                                                                    boolean notANumber = true;
-                                                                    for(char c : numbers)
-                                                                    {
-                                                                        if(c == key2) // we found a number.
-                                                                        {
-                                                                            notANumber = false;
-                                                                            if(foundOperator2) //we're working on the denominator now
-                                                                            {
-                                                                                if(chordDom == -1)
-                                                                                {
-                                                                                    chordDom = Integer.parseInt(Character.toString(c));
-                                                                                }
-                                                                                else
-                                                                                {
-                                                                                    chordDom *= 10;
-                                                                                    chordDom += Integer.parseInt(Character.toString(c));
-                                                                                }
-                                                                            }
-                                                                            else //we're working on the numerator now
-                                                                            {
-                                                                                if(chordNum == -1)
-                                                                                {
-                                                                                    chordNum = Integer.parseInt(Character.toString(c));
-                                                                                }
-                                                                                else
-                                                                                {
-                                                                                    chordNum *= 10;
-                                                                                    chordNum += Integer.parseInt(Character.toString(c));
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                    if(notANumber)
-                                                                    {
-                                                                        Clef.LOGGER.warn("Uh oh, we found a problem looking for the chord duration in " + file.getName() + ". Found key: " + Character.toString(key));
-                                                                        Clef.LOGGER.warn("Line: " + line);
-                                                                    }
-                                                                }
+                                                                Clef.LOGGER.warn("Uh oh, we found a malformed chord end in: " + file.getName());
+                                                                Clef.LOGGER.warn("Line: " + line);
+                                                            }
+                                                            else
+                                                            {
+                                                                //Find the duration of the chord;
                                                                 r++;
-                                                            }
-                                                            if(chordDom == -1)
-                                                            {
-                                                                if(foundOperator2) // we found the operator but not the denominator. Default it.
+                                                                int chordNum = -1;
+                                                                int chordDom = -1;
+                                                                boolean foundOperator2 = false;
+                                                                while(r < singleNoteString.length())
                                                                 {
-                                                                    chordDom = 2;
-                                                                }
-                                                                else //we didn't find an operator. number is a whole. Not a fraction.
-                                                                {
-                                                                    chordDom = 1;
-                                                                }
-                                                            }
-                                                            if(chordNum == -1) //we didn't find any numbers at all. set the numerator to 1
-                                                            {
-                                                                chordNum = 1;
-                                                            }
-                                                            chord.duration = chordNum / (float)chordDom;
-
-                                                            //add the chord and reset
-                                                            if(brokenRhythmValue != 0)
-                                                            {
-                                                                ArrayList<Note> trackNotes1 = chord.notes;
-                                                                if(!trackNotes1.isEmpty() && trackNotes1.get(trackNotes1.size() - 1) instanceof SingleNote)
-                                                                {
-                                                                    SingleNote referenceNote =  (SingleNote)trackNotes1.get(trackNotes1.size() - 1);
-                                                                    if(brokenRhythmValue == 1)//give more to this and take from previous
+                                                                    char key2 = singleNoteString.charAt(r);
+                                                                    if(key2 == '/') //we found the operator.
                                                                     {
-                                                                        singleNote.duration += referenceNote.duration / 2D;
-                                                                        referenceNote.duration /= 2D;
+                                                                        foundOperator2 = true;
+                                                                        if(chordNum == -1) //we found the operator but the numerator wasn't set. Default it.
+                                                                        {
+                                                                            chordNum = 1;
+                                                                        }
                                                                     }
                                                                     else
                                                                     {
-                                                                        referenceNote.duration += singleNote.duration / 2D;
-                                                                        singleNote.duration /= 2D;
+                                                                        boolean notANumber = true;
+                                                                        for(char c : numbers)
+                                                                        {
+                                                                            if(c == key2) // we found a number.
+                                                                            {
+                                                                                notANumber = false;
+                                                                                if(foundOperator2) //we're working on the denominator now
+                                                                                {
+                                                                                    if(chordDom == -1)
+                                                                                    {
+                                                                                        chordDom = Integer.parseInt(Character.toString(c));
+                                                                                    }
+                                                                                    else
+                                                                                    {
+                                                                                        chordDom *= 10;
+                                                                                        chordDom += Integer.parseInt(Character.toString(c));
+                                                                                    }
+                                                                                }
+                                                                                else //we're working on the numerator now
+                                                                                {
+                                                                                    if(chordNum == -1)
+                                                                                    {
+                                                                                        chordNum = Integer.parseInt(Character.toString(c));
+                                                                                    }
+                                                                                    else
+                                                                                    {
+                                                                                        chordNum *= 10;
+                                                                                        chordNum += Integer.parseInt(Character.toString(c));
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                        if(notANumber)
+                                                                        {
+                                                                            Clef.LOGGER.warn("Uh oh, we found a problem looking for the chord duration in " + file.getName() + ". Found key: " + Character.toString(key));
+                                                                            Clef.LOGGER.warn("Line: " + line);
+                                                                        }
+                                                                    }
+                                                                    r++;
+                                                                }
+                                                                if(chordDom == -1)
+                                                                {
+                                                                    if(foundOperator2) // we found the operator but not the denominator. Default it.
+                                                                    {
+                                                                        chordDom = 2;
+                                                                    }
+                                                                    else //we didn't find an operator. number is a whole. Not a fraction.
+                                                                    {
+                                                                        chordDom = 1;
                                                                     }
                                                                 }
+                                                                if(chordNum == -1) //we didn't find any numbers at all. set the numerator to 1
+                                                                {
+                                                                    chordNum = 1;
+                                                                }
+                                                                chord.duration = chordNum / (float)chordDom;
+
+                                                                //add the chord and reset
+                                                                if(brokenRhythmValue != 0)
+                                                                {
+                                                                    ArrayList<Note> trackNotes1 = chord.notes;
+                                                                    if(!trackNotes1.isEmpty() && trackNotes1.get(trackNotes1.size() - 1) instanceof SingleNote)
+                                                                    {
+                                                                        SingleNote referenceNote = (SingleNote)trackNotes1.get(trackNotes1.size() - 1);
+                                                                        if(brokenRhythmValue == 1)//give more to this and take from previous
+                                                                        {
+                                                                            singleNote.duration += referenceNote.duration / 2D;
+                                                                            referenceNote.duration /= 2D;
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            referenceNote.duration += singleNote.duration / 2D;
+                                                                            singleNote.duration /= 2D;
+                                                                        }
+                                                                    }
+                                                                }
+                                                                chord.notes.add(singleNote);
+                                                                added = true;
+                                                                trackNotes.add(chord);
+                                                                chord = null;
                                                             }
-                                                            chord.notes.add(singleNote);
-                                                            added = true;
-                                                            trackNotes.add(chord);
-                                                            chord = null;
                                                         }
                                                         else
                                                         {
@@ -686,6 +702,11 @@ public class AbcParser
         }
         catch(IOException | NumberFormatException e)
         {
+        }
+        catch(Exception e)
+        {
+            Clef.LOGGER.warn("Error reading ABC file: " + file.getName());
+            e.printStackTrace();
         }
         return null;
     }

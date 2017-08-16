@@ -60,6 +60,9 @@ public class GuiPlayTrack extends GuiScreen
     public ArrayList<TrackFile> tracks;
     public String bandNameString = "";
 
+    public int scrollTicker = 0;
+    public int bandIndex = 0;
+
     public boolean disableListWhenSyncTrack = true;
 
     public GuiPlayTrack()
@@ -134,6 +137,7 @@ public class GuiPlayTrack extends GuiScreen
     @Override
     public void updateScreen()
     {
+        scrollTicker++;
         doneTimeout--;
         bandName.updateCursorCounter();
     }
@@ -238,14 +242,14 @@ public class GuiPlayTrack extends GuiScreen
 
         trackList.drawScreen(mouseX, mouseY, partialTicks);
 
+        super.drawScreen(mouseX, mouseY, partialTicks);
+
+        drawReloadButtons();
+
         if(syncTrack == 1 && disableListWhenSyncTrack && !bandName.getText().isEmpty())
         {
             Gui.drawRect(guiLeft + 6, guiTop + 16, guiLeft + 166, trackListBottom + 1, -1072689136);
         }
-
-        super.drawScreen(mouseX, mouseY, partialTicks);
-
-        drawReloadButtons();
     }
 
     public void drawText()
@@ -269,6 +273,12 @@ public class GuiPlayTrack extends GuiScreen
 
     public void drawReloadButtons()
     {
+        disableListWhenSyncTrack = true;
+        if(!bandName.getText().isEmpty())
+        {
+            disableListWhenSyncTrack = Clef.eventHandlerClient.findTrackByBand(bandName.getText()) != null;
+        }
+
         fontRendererObj.drawString(I18n.translateToLocal("clef.gui.reload"), guiLeft + 179, guiTop + 126, 16777215, true);
         if(doneTimeout > 0)
         {
@@ -318,7 +328,11 @@ public class GuiPlayTrack extends GuiScreen
                     }
                     if(!bands.isEmpty())
                     {
-                        bandName.setText(bands.get(mc.theWorld.rand.nextInt(bands.size())));
+                        if(bandIndex >= bands.size())
+                        {
+                            bandIndex = 0;
+                        }
+                        bandName.setText(bands.get(bandIndex));
                         syncPlay = 1;
                         syncTrack = 1;
                         for(GuiButton btn1 : buttonList)
@@ -334,6 +348,7 @@ public class GuiPlayTrack extends GuiScreen
                                 btn1.displayString = I18n.translateToLocal(syncTrack == 1 ? "gui.yes" : "gui.no");
                             }
                         }
+                        bandIndex++;
                     }
                 }
                 else
@@ -418,6 +433,7 @@ public class GuiPlayTrack extends GuiScreen
 
     public void setIndex(int i)
     {
+        scrollTicker = 0;
         index = i;
     }
 
