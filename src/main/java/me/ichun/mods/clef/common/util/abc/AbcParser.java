@@ -1,19 +1,14 @@
 package me.ichun.mods.clef.common.util.abc;
 
-import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
-import com.google.common.collect.Iterables;
 import me.ichun.mods.clef.common.Clef;
-import me.ichun.mods.clef.common.util.abc.construct.*;
+import me.ichun.mods.clef.common.util.abc.construct.Accidental;
+import me.ichun.mods.clef.common.util.abc.construct.Octave;
 import me.ichun.mods.clef.common.util.abc.construct.special.Key;
 import me.ichun.mods.clef.common.util.abc.construct.special.Meter;
 import me.ichun.mods.clef.common.util.abc.construct.special.Tempo;
 import me.ichun.mods.clef.common.util.abc.construct.special.UnitNoteLength;
 import me.ichun.mods.clef.common.util.abc.play.components.*;
-import me.ichun.mods.clef.common.util.abc.play.components.BarLine;
-import me.ichun.mods.clef.common.util.abc.play.components.Chord;
-import me.ichun.mods.clef.common.util.abc.play.components.Note;
-import net.minecraft.network.Packet;
 import org.apache.commons.io.IOUtils;
 
 import java.io.File;
@@ -21,9 +16,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class AbcParser
 {
@@ -33,9 +27,15 @@ public class AbcParser
     public static final char[] octaves = new char[] { ',', '\'' };
     public static final char[] numbers = new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
     public static final char[] ignored = new char[] { '-', '(', ')', '~', 'H', 'L', 'M', 'O', 'P', 'S', 'T', 'u', 'v' }; //ties = 3, decorations = 10
+    public static final char[] brokenRhythm = new char[] { '<', '>' };
+
+    public static final char[] endOfNoteChars = new char[] { ',', '\'', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '/', ']' };
+
+    public static final String[] barLinePattern = new String[] { "::", ":\\|", "\\|:", "[\\[]\\|", "\\|\\|", "\\|[\\]]", "\\|", "\\|[\\[]", "\\| [\\[]" }; //last three are repeats
+    public static final String[] ignoredInfoPattern = new String[] { "[{].*[}]", "[\"].*[\"]", "[!].*[!]", "[+].*[+]" };
 
     //TODO there are some strings that we need to ignore. Some start with % and some start with others. Look them up.
-    public static String[] ignoredStarts = new String[] { "%", "r:", "O:", "N:", "G:", "H:", "+:" };//TODO ignore remarks in ABC where when looking for chords
+    public static String[] ignoredStarts = new String[] { "%", "r:", "O:", "N:", "G:", "H:", "+:", "I:" };//TODO ignore remarks in ABC where when looking for chords
 
     public static String[] rejectFiles = new String[] { "P:", "V:" };
 
@@ -66,8 +66,9 @@ public class AbcParser
                     continue; //ignore empty lines
                 }
 
+                String lineLower = line.toLowerCase();
                 boolean handledLine = readCommand(trackNotes, line);
-                if(line.startsWith("K:"))
+                if(lineLower.startsWith("k:"))
                 {
                     readKeys = true;
                 }
@@ -75,7 +76,7 @@ public class AbcParser
                 {
                     if(!readKeys)
                     {
-                        if(line.startsWith("X:"))
+                        if(lineLower.startsWith("x:"))
                         {
                             if(abc.referenceNumber == -1)
                             {
@@ -83,18 +84,18 @@ public class AbcParser
                             }
                             else
                             {
-                                Clef.LOGGER.info("More than one reference number? - " + file.getName()); //TODO possibly more than 1 tune in a single ABC?
+                                Clef.LOGGER.info("More than one reference number? - " + file.getName());
                             }
                         }
-                        else if(line.startsWith("T:"))
+                        else if(lineLower.startsWith("t:"))
                         {
                             abc.setTitle(line.substring(2).trim());
                         }
-                        else if(line.startsWith("C:"))
+                        else if(lineLower.startsWith("c:"))
                         {
                             abc.composer = line.substring(2).trim();
                         }
-                        else if(line.startsWith("Z:"))
+                        else if(lineLower.startsWith("z:"))
                         {
                             abc.transcriber = line.substring(2).trim();
                         }
@@ -106,6 +107,11 @@ public class AbcParser
                     }
                     else
                     {
+                        if(line.startsWith("X:"))
+                        {
+                            Clef.LOGGER.warn("We don't support abc files with more than one tune: " + file.getName());
+                            break;
+                        }
                         //The order of abc constructs for a note is: <grace notes>, <chord symbols>, <annotations>/<decorations> (e.g. Irish roll, staccato marker or up/downbow), <accidentals>, <note>, <octave>, <note length>, i.e. ~^c'3 or even "Gm7"v.=G,2.
                         //WE should be reading the tune now.
 
@@ -127,14 +133,13 @@ public class AbcParser
                         //Split the line by measures
                         ArrayList<String> partsBarLines = new ArrayList<>();
                         partsBarLines.add(line);
-                        String[] patterns = new String[] { "::", ":\\|", "\\|:", "[\\[]\\|", "\\|\\|", "\\|[\\]]", "\\|", "\\|[\\[]", "\\| [\\[]" }; //last three are repeats
-                        for(int j = 0; j < patterns.length; j++)
+                        for(int j = 0; j < barLinePattern.length; j++)
                         {
                             for(int i = partsBarLines.size() - 1; i >= 0; i--)
                             {
                                 String s = partsBarLines.get(i);
                                 partsBarLines.remove(i);
-                                partsBarLines.addAll(Splitter.onPattern(patterns[j]).trimResults().splitToList(s));
+                                partsBarLines.addAll(Splitter.onPattern(barLinePattern[j]).trimResults().splitToList(s));
                             }
                         }
 
@@ -163,14 +168,13 @@ public class AbcParser
                             //split by graces, then chords, then notes.
                             ArrayList<String> partsGraces = new ArrayList<>();
                             partsGraces.add(partPerBar);
-                            patterns = new String[] { "[{].*[}]", "[\"].*[\"]", "[!].*[!]", "[+].*[+]" };
-                            for(int j = 0; j < patterns.length; j++)
+                            for(int j = 0; j < ignoredInfoPattern.length; j++)
                             {
                                 for(int i = partsGraces.size() - 1; i >= 0; i--)
                                 {
                                     String s = partsGraces.get(i);
                                     partsGraces.remove(i);
-                                    partsGraces.addAll(Splitter.onPattern(patterns[j]).omitEmptyStrings().trimResults().splitToList(s));
+                                    partsGraces.addAll(Splitter.onPattern(ignoredInfoPattern[j]).omitEmptyStrings().trimResults().splitToList(s));
                                 }
                             }
 
@@ -194,9 +198,6 @@ public class AbcParser
                                     readCommand(trackNotes, partPerGrace.substring(1, partPerGrace.length() - 1));
                                     continue;
                                 }
-
-                                char[] endOfNoteChars = new char[] { ',', '\'', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '/', ']' };
-                                char[] notes = new char[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'z', 'x', 'Z', 'X' };
 
                                 ArrayList<String> partsNotes = new ArrayList<>();
                                 partsNotes.addAll(Splitter.onPattern(" ").omitEmptyStrings().trimResults().splitToList(partPerGrace));
@@ -254,6 +255,7 @@ public class AbcParser
                                         //Only Note splices including chord starts and ends. No spaces.
                                         SingleNote singleNote = new SingleNote();
                                         boolean added = false;
+                                        int brokenRhythmValue = 0;
                                         for(int r = 0; r < singleNoteString.length(); r++)
                                         {
                                             char key = singleNoteString.charAt(r);
@@ -347,6 +349,24 @@ public class AbcParser
                                                 chord.duration = chordNum / (float)chordDom;
 
                                                 //add the chord and reset
+                                                if(brokenRhythmValue != 0)
+                                                {
+                                                    ArrayList<Note> trackNotes1 = chord.notes;
+                                                    if(!trackNotes1.isEmpty() && trackNotes1.get(trackNotes1.size() - 1) instanceof SingleNote)
+                                                    {
+                                                        SingleNote referenceNote =  (SingleNote)trackNotes1.get(trackNotes1.size() - 1);
+                                                        if(brokenRhythmValue == 1)//give more to this and take from previous
+                                                        {
+                                                            singleNote.duration += referenceNote.duration / 2D;
+                                                            referenceNote.duration /= 2D;
+                                                        }
+                                                        else
+                                                        {
+                                                            referenceNote.duration += singleNote.duration / 2D;
+                                                            singleNote.duration /= 2D;
+                                                        }
+                                                    }
+                                                }
                                                 chord.notes.add(singleNote);
                                                 added = true;
                                                 trackNotes.add(chord);
@@ -387,6 +407,15 @@ public class AbcParser
                                                     {
                                                         handled = true;
                                                         singleNote.constructs.add(new Octave(key));
+                                                        break;
+                                                    }
+                                                }
+                                                for(char c : brokenRhythm)
+                                                {
+                                                    if(key == c)
+                                                    {
+                                                        handled = true;
+                                                        brokenRhythmValue = key == '<' ? 1 : -1;
                                                         break;
                                                     }
                                                 }
@@ -485,6 +514,24 @@ public class AbcParser
                                                             chord.duration = chordNum / (float)chordDom;
 
                                                             //add the chord and reset
+                                                            if(brokenRhythmValue != 0)
+                                                            {
+                                                                ArrayList<Note> trackNotes1 = chord.notes;
+                                                                if(!trackNotes1.isEmpty() && trackNotes1.get(trackNotes1.size() - 1) instanceof SingleNote)
+                                                                {
+                                                                    SingleNote referenceNote =  (SingleNote)trackNotes1.get(trackNotes1.size() - 1);
+                                                                    if(brokenRhythmValue == 1)//give more to this and take from previous
+                                                                    {
+                                                                        singleNote.duration += referenceNote.duration / 2D;
+                                                                        referenceNote.duration /= 2D;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        referenceNote.duration += singleNote.duration / 2D;
+                                                                        singleNote.duration /= 2D;
+                                                                    }
+                                                                }
+                                                            }
                                                             chord.notes.add(singleNote);
                                                             added = true;
                                                             trackNotes.add(chord);
@@ -551,6 +598,24 @@ public class AbcParser
                                                 }
                                             }
                                         }
+                                        if(brokenRhythmValue != 0)
+                                        {
+                                            ArrayList<Note> trackNotes1 = chord != null ? chord.notes : trackNotes;
+                                            if(!trackNotes1.isEmpty() && trackNotes1.get(trackNotes1.size() - 1) instanceof SingleNote)
+                                            {
+                                                SingleNote referenceNote =  (SingleNote)trackNotes1.get(trackNotes1.size() - 1);
+                                                if(brokenRhythmValue == 1)//give more to this and take from previous
+                                                {
+                                                    singleNote.duration += referenceNote.duration / 2D;
+                                                    referenceNote.duration /= 2D;
+                                                }
+                                                else
+                                                {
+                                                    referenceNote.duration += singleNote.duration / 2D;
+                                                    singleNote.duration /= 2D;
+                                                }
+                                            }
+                                        }
                                         if(!added && !singleNote.constructs.isEmpty())
                                         {
                                             if(chord != null)
@@ -592,7 +657,7 @@ public class AbcParser
             int currentTick = 0;
             for(Note note : trackNotes)
             {
-                ArrayList<Note> noteAtTime = abc.notes.computeIfAbsent(currentTick, v -> new ArrayList<>());
+                HashSet<Note> noteAtTime = abc.notes.computeIfAbsent(currentTick, v -> new HashSet<>());
                 if(note.setup(info, keyAccidentals, keySignatures))//if true, not a special note, move to next spot.
                 {
                     noteAtTime.add(note); //only add the actual notes. No specials.
@@ -611,8 +676,9 @@ public class AbcParser
 
     public static boolean readCommand(ArrayList<Note> notes, String line)
     {
+        String lineLower = line.toLowerCase();
         boolean handledLine = false;
-        if(line.startsWith("L:"))
+        if(lineLower.startsWith("l:"))
         {
             //note length. Can be anywhere before key.
             String[] s = line.substring(2).split("/");
@@ -626,12 +692,12 @@ public class AbcParser
             }
             handledLine = true;
         }
-        else if(line.startsWith("Q:"))
+        else if(lineLower.startsWith("q:"))
         {
             notes.add(new Special(new Tempo(line.substring(2).trim())));
             handledLine = true;
         }
-        else if(line.startsWith("M:"))
+        else if(lineLower.startsWith("m:"))
         {
             String[] s = line.substring(2).split("/");
             if(s.length == 1)
@@ -644,7 +710,7 @@ public class AbcParser
             }
             handledLine = true;
         }
-        else if(line.startsWith("K:"))
+        else if(lineLower.startsWith("k:"))
         {
             handledLine = true;
             notes.add(new Special(new Key(line.substring(2).trim())));
@@ -653,7 +719,7 @@ public class AbcParser
         {
             for(String ig : ignoredStarts)
             {
-                if(line.startsWith(ig))
+                if(lineLower.startsWith(ig.toLowerCase()))
                 {
                     handledLine = true;
                     break;

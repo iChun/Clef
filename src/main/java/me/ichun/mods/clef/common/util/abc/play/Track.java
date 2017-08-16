@@ -11,7 +11,6 @@ import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import me.ichun.mods.ichunutil.common.iChunUtil;
-import me.ichun.mods.ichunutil.common.item.ItemHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.monster.EntityZombie;
@@ -20,12 +19,14 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
-import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 
 public class Track
 {
@@ -146,7 +147,7 @@ public class Track
                                 Instrument instrument = InstrumentLibrary.getInstrumentByName(tag.getString("itemName"));
                                 if(instrument != null)
                                 {
-                                    ArrayList<Note> notes = track.notes.get(playProg);
+                                    HashSet<Note> notes = track.notes.get(playProg);
                                     for(Note note : notes)
                                     {
                                         int time = note.playNote(this, playProg, instrument, player);
@@ -188,7 +189,7 @@ public class Track
                                         Instrument instrument = InstrumentLibrary.getInstrumentByName(is.getTagCompound().getString("itemName"));
                                         if(instrument != null)
                                         {
-                                            ArrayList<Note> notes = track.notes.get(playProg);
+                                            HashSet<Note> notes = track.notes.get(playProg);
                                             for(Note note : notes)
                                             {
                                                 note.playNote(this, playProg, instrument, player.getPos());
@@ -216,14 +217,10 @@ public class Track
                                 Instrument instrument = InstrumentLibrary.getInstrumentByName(tag.getString("itemName"));
                                 if(instrument != null)
                                 {
-                                    ArrayList<Note> notes = track.notes.get(playProg);
+                                    HashSet<Note> notes = track.notes.get(playProg);
                                     for(Note note : notes)
                                     {
-                                        int time = note.playNote(this, playProg, instrument, ent);
-                                        if(time > timeToSilence)
-                                        {
-                                            timeToSilence = time;
-                                        }
+                                        note.playNote(this, playProg, instrument, ent);
                                     }
                                 }
                                 else

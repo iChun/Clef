@@ -3,7 +3,7 @@ package me.ichun.mods.clef.common.util.abc.play.components;
 import com.google.common.collect.Ordering;
 import me.ichun.mods.clef.common.Clef;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.TreeMap;
 
 public class TrackInfo
@@ -14,7 +14,7 @@ public class TrackInfo
     public String composer = ""; //C
     public String transcriber = ""; //Z
 
-    public TreeMap<Integer, ArrayList<Note>> notes = new TreeMap<>(Ordering.natural());
+    public TreeMap<Integer, HashSet<Note>> notes = new TreeMap<>(Ordering.natural());
     public int trackLength = 0;
 
     public TrackInfo()

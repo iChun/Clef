@@ -25,7 +25,7 @@ public class Config extends ConfigBase
 
     @ConfigProp(useSession = true)
     @IntBool
-    public int allowOneHandedTwoHandedInstrumentUse = 0;
+    public int allowOneHandedTwoHandedInstrumentUse = 1;
 
     @ConfigProp
     @IntBool

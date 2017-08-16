@@ -37,9 +37,6 @@ public class PlayedNote
     public boolean played;
 
     //TODO handle corrupt sound files somehow.
-    //TODO make the played sound play from in front of the player if possible so it doesn't sound as awkward
-    //TODO config option to read file name as title or title as title.
-    //TODO instrument creator.
 
     public PlayedNote(Instrument instrument, int startTick, int duration, int key, SoundCategory category, Object noteLocation)
     {
