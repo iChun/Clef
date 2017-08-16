@@ -35,7 +35,7 @@ public class AbcParser
     public static final String[] ignoredInfoPattern = new String[] { "[{].*[}]", "[\"].*[\"]", "[!].*[!]", "[+].*[+]" };
 
     //TODO there are some strings that we need to ignore. Some start with % and some start with others. Look them up.
-    public static String[] ignoredStarts = new String[] { "%", "r:", "O:", "N:", "G:", "H:", "+:", "I:" };//TODO ignore remarks in ABC where when looking for chords
+    public static String[] ignoredStarts = new String[] { "%", "r:", "A:", "O:", "N:", "G:", "H:", "+:", "I:" };//TODO ignore remarks in ABC where when looking for chords
 
     public static String[] rejectFiles = new String[] { "P:", "V:" };
 
@@ -63,6 +63,10 @@ public class AbcParser
 
                 if(line.isEmpty())
                 {
+                    if(abc.referenceNumber != -1)
+                    {
+                        readKeys = true;
+                    }
                     continue; //ignore empty lines
                 }
 
@@ -107,9 +111,9 @@ public class AbcParser
                     }
                     else
                     {
-                        if(line.startsWith("X:"))
+                        if(lineLower.startsWith("x:"))
                         {
-                            Clef.LOGGER.warn("We don't support abc files with more than one tune: " + file.getName());
+                            Clef.LOGGER.warn("Clef doesn't support abc files with more than one tune yet, only reading the first tune: " + file.getName());
                             break;
                         }
                         //The order of abc constructs for a note is: <grace notes>, <chord symbols>, <annotations>/<decorations> (e.g. Irish roll, staccato marker or up/downbow), <accidentals>, <note>, <octave>, <note length>, i.e. ~^c'3 or even "Gm7"v.=G,2.
@@ -193,9 +197,16 @@ public class AbcParser
                                     continue;
                                 }
 
-                                if(partPerGrace.contains(":") && partPerGrace.startsWith("[") && partPerGrace.endsWith("]")) //this is a command. It should be on it's own line.
+                                if(partPerGrace.contains(":")) //this is a command. It should be on it's own line.
                                 {
-                                    readCommand(trackNotes, partPerGrace.substring(1, partPerGrace.length() - 1));
+                                    if(partPerGrace.startsWith("[") && partPerGrace.endsWith("]"))
+                                    {
+                                        readCommand(trackNotes, partPerGrace.substring(1, partPerGrace.length() - 1));
+                                    }
+                                    else
+                                    {
+                                        readCommand(trackNotes, partPerGrace);
+                                    }
                                     continue;
                                 }
 
@@ -253,6 +264,11 @@ public class AbcParser
                                     for(String singleNoteString : note)
                                     {
                                         //Only Note splices including chord starts and ends. No spaces.
+                                        if(singleNoteString.startsWith("[") && singleNoteString.length() > 1 && singleNoteString.substring(1, 2).matches("\\d"))
+                                        {
+                                            //this is a repeat section.
+                                            singleNoteString = singleNoteString.substring(2);
+                                        }
                                         SingleNote singleNote = new SingleNote();
                                         boolean added = false;
                                         int brokenRhythmValue = 0;
