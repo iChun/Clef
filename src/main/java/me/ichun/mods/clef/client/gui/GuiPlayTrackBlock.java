@@ -158,7 +158,7 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
     {
         for (int i = 0; i < this.containerInstrumentPlayer.inventorySlots.size(); ++i)
         {
-            Slot slot = (Slot)this.containerInstrumentPlayer.inventorySlots.get(i);
+            Slot slot = this.containerInstrumentPlayer.inventorySlots.get(i);
 
             if (this.isMouseOverSlot(slot, x, y))
             {

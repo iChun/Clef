@@ -64,7 +64,7 @@ public class SingleNote extends Note
                 if(c == 'Z' || c == 'X') //Multi Measure rests
                 {
                     rest = true;
-                    //TODO this
+                    duration *= info[2] / info[1];
                 }
                 else if(c == 'z' || c == 'x')
                 {

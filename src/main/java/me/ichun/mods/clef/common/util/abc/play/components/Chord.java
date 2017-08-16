@@ -1,7 +1,6 @@
 package me.ichun.mods.clef.common.util.abc.play.components;
 
 import me.ichun.mods.clef.common.util.abc.construct.Construct;
-import me.ichun.mods.clef.common.util.abc.play.PlayedNote;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
 
@@ -34,6 +33,10 @@ public class Chord extends Note
         {
             note.duration *= duration;
             note.setup(info, keyAccidentals, keySignature);
+            if(note.key != NOTE_REST)
+            {
+                key = note.key;
+            }
         }
         double tempDur = 1000D;
         for(Note note : notes) //a rest in a chord denotes the duration of the chord.

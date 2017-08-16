@@ -90,7 +90,6 @@ public class Track
         return track;
     }
 
-    //TODO popup title similarly to records when a track starts.
     public boolean update() //returns false if it's time to stop playing.
     {
         if(track == null)
@@ -117,6 +116,10 @@ public class Track
 
         if(isRemote)
         {
+            if(playProg == 0 && Clef.config.showRecordPlayingMessageForTracks == 1)
+            {
+                showNowPlaying();
+            }
             if(timeToSilence > 0)
             {
                 timeToSilence--;
@@ -151,7 +154,7 @@ public class Track
                                     for(Note note : notes)
                                     {
                                         int time = note.playNote(this, playProg, instrument, player);
-                                        if(time > timeToSilence)
+                                        if(time > timeToSilence && note.key != Note.NOTE_REST)
                                         {
                                             timeToSilence = time;
                                         }
@@ -317,11 +320,7 @@ public class Track
     @Override
     public boolean equals(Object o)
     {
-        if(o instanceof Track)
-        {
-            return id.equals(((Track)o).id);
-        }
-        return false;
+        return o instanceof Track && id.equals(((Track)o).id);
     }
 
     @Override
@@ -347,6 +346,12 @@ public class Track
                 }
             }
         }
+    }
+
+    @SideOnly(Side.CLIENT)
+    public void showNowPlaying()
+    {
+        Minecraft.getMinecraft().ingameGUI.setRecordPlayingMessage(track.getTitle());
     }
 
     @SideOnly(Side.CLIENT)

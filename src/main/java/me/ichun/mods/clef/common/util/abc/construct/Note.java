@@ -18,10 +18,6 @@ public class Note extends Construct
     @Override
     public boolean equals(Object o)
     {
-        if(o instanceof Note)
-        {
-            return ((Note)o).type == type;
-        }
-        return false;
+        return o instanceof Note && ((Note)o).type == type;
     }
 }

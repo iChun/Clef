@@ -11,7 +11,6 @@ import me.ichun.mods.clef.common.util.instrument.component.InstrumentModPackInfo
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentPackInfo;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentTuning;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.TextureUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
@@ -139,7 +138,7 @@ public class InstrumentLibrary
                         Clef.LOGGER.warn("Error loading instrument " + info.itemName + " from pack " + file.getName());
                         continue;
                     }
-                    try(InputStream iconStm = zipFile.getInputStream(icon); InputStream handStm = zipFile.getInputStream(hand); InputStream tuningStm = zipFile.getInputStream(tuning);)
+                    try(InputStream iconStm = zipFile.getInputStream(icon); InputStream handStm = zipFile.getInputStream(hand); InputStream tuningStm = zipFile.getInputStream(tuning))
                     {
                         Instrument instrument = new Instrument(info, ImageIO.read(iconStm), ImageIO.read(handStm));
 

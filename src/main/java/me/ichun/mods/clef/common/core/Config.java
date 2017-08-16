@@ -23,6 +23,10 @@ public class Config extends ConfigBase
     @IntMinMax(min = 0, max = 100)
     public int instrumentVolume = 100;
 
+    @ConfigProp(category = "clientOnly", side = Side.CLIENT)
+    @IntBool
+    public int showRecordPlayingMessageForTracks = 0;
+
     @ConfigProp(useSession = true)
     @IntBool
     public int allowOneHandedTwoHandedInstrumentUse = 1;
@@ -52,8 +56,8 @@ public class Config extends ConfigBase
     public String[] disabledInstruments = new String[0];
 
     @ConfigProp
-    @IntMinMax(min = 0, max = 100)
-    public int lootSpawnRate = 5;
+    @IntMinMax(min = 0, max = 20)
+    public int lootSpawnRate = 1;
 
     @ConfigProp
     @StringValues

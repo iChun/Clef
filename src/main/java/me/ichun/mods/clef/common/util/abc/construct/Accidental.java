@@ -18,10 +18,6 @@ public class Accidental extends Construct
     @Override
     public boolean equals(Object o)
     {
-        if(o instanceof Accidental)
-        {
-            return ((Accidental)o).type == type;
-        }
-        return false;
+        return o instanceof Accidental && ((Accidental)o).type == type;
     }
 }

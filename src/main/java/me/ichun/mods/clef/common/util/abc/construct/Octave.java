@@ -18,10 +18,6 @@ public class Octave extends Construct
     @Override
     public boolean equals(Object o)
     {
-        if(o instanceof Octave)
-        {
-            return ((Octave)o).type == type;
-        }
-        return false;
+        return o instanceof Octave && ((Octave)o).type == type;
     }
 }

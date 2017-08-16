@@ -12,15 +12,16 @@ import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import me.ichun.mods.ichunutil.common.core.util.IOUtil;
 import me.ichun.mods.ichunutil.common.iChunUtil;
 import net.minecraft.entity.item.EntityItem;
-import net.minecraft.entity.monster.EntityMob;
 import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumHand;
+import net.minecraft.world.storage.loot.*;
+import net.minecraft.world.storage.loot.conditions.LootCondition;
+import net.minecraft.world.storage.loot.functions.LootFunction;
 import net.minecraftforge.event.LootTableLoadEvent;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingSpawnEvent;
@@ -33,6 +34,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Random;
 
 public class EventHandlerServer
 {
@@ -144,16 +146,27 @@ public class EventHandlerServer
     @SubscribeEvent
     public void onLootTableEvent(LootTableLoadEvent event)
     {
-        for(String s : Clef.config.disabledLootChests)
+        if(Clef.config.lootSpawnRate > 0)
         {
-            if(event.getName().toString().equals(s))
+            for(String s : Clef.config.disabledLootChests)
             {
-                return;
+                if(event.getName().toString().equals(s))
+                {
+                    return;
+                }
             }
-        }
-        if(event.getName().getResourceDomain().contains("chest"))
-        {
-            System.out.println(event.getName());
+            if(event.getName().getResourcePath().contains("chest"))
+            {
+                event.getTable().addPool(new LootPool(new LootEntry[] { new LootEntryItem(Clef.itemInstrument, Clef.config.lootSpawnRate, 0, new LootFunction[] { new LootFunction(new LootCondition[0])
+                {
+                    @Override
+                    public ItemStack apply(ItemStack stack, Random rand, LootContext context)
+                    {
+                        InstrumentLibrary.assignRandomInstrument(stack);
+                        return stack;
+                    }
+                } }, new LootCondition[0], "clef_instrument_pool") }, new LootCondition[0], new RandomValueRange(1), new RandomValueRange(0), "clef_instrument"));
+            }
         }
     }
 

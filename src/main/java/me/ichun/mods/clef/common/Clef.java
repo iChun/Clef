@@ -28,7 +28,7 @@ import java.io.File;
         dependencies = "required-after:ichunutil@[" + iChunUtil.VERSION_MAJOR +".4.0," + (iChunUtil.VERSION_MAJOR + 1) + ".0.0)",
         acceptableRemoteVersions = "[" + iChunUtil.VERSION_MAJOR +".0.0," + iChunUtil.VERSION_MAJOR + ".1.0)"
 )
-public class Clef //TODO cleanup code.
+public class Clef
 {
     public static final String MOD_NAME = "Clef";
     public static final String MOD_ID = "clef";

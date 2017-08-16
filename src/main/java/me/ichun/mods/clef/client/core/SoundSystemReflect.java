@@ -1,8 +1,6 @@
 package me.ichun.mods.clef.client.core;
 
 import me.ichun.mods.clef.common.Clef;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.SoundManager;
 import paulscode.sound.SoundSystem;
 
 import java.lang.reflect.Method;

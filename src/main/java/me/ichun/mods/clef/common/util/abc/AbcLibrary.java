@@ -15,20 +15,65 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class AbcLibrary
 {
     public static ArrayList<TrackFile> tracks = new ArrayList<>();
 
-    //TODO extract files from mod zip
-    //TODO tracks needs at least one ABC
-
     public static void init()
     {
         tracks.clear();
+        File defaultAbc = new File(Clef.getResourceHelper().abcDir, "files.extracted");
+        if(!defaultAbc.exists())
+        {
+            try(InputStream in = Clef.class.getResourceAsStream("/abc.zip"); ZipInputStream zipStream = new ZipInputStream(in))
+            {
+                ZipEntry entry;
+                int extractCount = 0;
+
+                while((entry = zipStream.getNextEntry()) != null)
+                {
+                    File file = new File(Clef.getResourceHelper().abcDir, entry.getName());
+                    if(file.exists() && file.length() > 3L)
+                    {
+                        continue;
+                    }
+                    FileOutputStream out = new FileOutputStream(file);
+
+                    byte[] buffer = new byte[8192];
+                    int len;
+                    while((len = zipStream.read(buffer)) != -1)
+                    {
+                        out.write(buffer, 0, len);
+                    }
+                    out.close();
+
+                    extractCount++;
+                }
+
+                if(extractCount > 0)
+                {
+                    Clef.LOGGER.info("Extracted " + Integer.toString(extractCount) + (extractCount == 1 ? " file" : " files" + " from mod zip."));
+                }
+            }
+            catch(IOException ignored){}
+        }
         Clef.LOGGER.info("Loading abc files");
         Clef.LOGGER.info("Loaded " + readAbcs(Clef.getResourceHelper().abcDir, tracks) + " abc files");
+        if(tracks.isEmpty())
+        {
+            TrackInfo track = new TrackInfo();
+            track.setTitle("You have no tracks");
+            track.setFileTitle("You have no tracks");
+            track.trackLength = 10;
+            tracks.add(new TrackFile(track, new File(Clef.getResourceHelper().abcDir, "You have no tracks.abc"), ""));
+        }
     }
 
     private static int readAbcs(File dir, ArrayList<TrackFile> tracks)
@@ -79,7 +124,16 @@ public class AbcLibrary
         ArrayList<TrackFile> tracks = new ArrayList<>();
         Clef.LOGGER.info("Reloading abc files");
         Clef.LOGGER.info("Reloaded " + readAbcs(Clef.getResourceHelper().abcDir, tracks) + " abc files");
+        if(tracks.isEmpty())
+        {
+            TrackInfo track = new TrackInfo();
+            track.setTitle("You have no tracks");
+            track.setFileTitle("You have no tracks");
+            track.trackLength = 10;
+            tracks.add(new TrackFile(track, new File(Clef.getResourceHelper().abcDir, "You have no tracks.abc"), ""));
+        }
         AbcLibrary.tracks = tracks;
+
         gui.tracks = tracks;
         gui.index = -1;
         gui.doneTimeout = 20;

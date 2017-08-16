@@ -5,11 +5,9 @@ import me.ichun.mods.clef.common.util.abc.construct.special.Key;
 import me.ichun.mods.clef.common.util.abc.construct.special.Meter;
 import me.ichun.mods.clef.common.util.abc.construct.special.Tempo;
 import me.ichun.mods.clef.common.util.abc.construct.special.UnitNoteLength;
-import me.ichun.mods.clef.common.util.abc.play.PlayedNote;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Special extends Note

@@ -38,6 +38,7 @@ public class AbcParser
 
     public static String[] rejectFiles = new String[] { "P:", "V:" };
 
+    //TODO parse V: and multi-tune ABCs for another time.
     public static TrackInfo parse(File file)
     {
         try(FileInputStream stream = new FileInputStream(file))
