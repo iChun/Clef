@@ -90,7 +90,7 @@ public class SingleNote extends Note
             }
         }
 
-        this.durationInTicks = (int)Math.round(info[0] * duration * (info[1] / info[4])); //tempo * duration * (unit note length / tempo splits)
+        this.durationInTicks = (int)Math.round(info[0] * (info[1] / info[4]) * duration); //tempo * duration * (unit note length / tempo splits)
         if(hasNote)
         {
             if(!rest)

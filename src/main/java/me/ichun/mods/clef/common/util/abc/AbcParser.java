@@ -666,7 +666,7 @@ public class AbcParser
                     0.125D, //unit note length
                     1D, //meter
                     0D, //key.. unused.
-                    0.125D //tempo split
+                    0.25D //tempo split
             };
             HashMap<Integer, Integer> keySignatures = new HashMap<>();
             HashMap<Integer, Integer> keyAccidentals = new HashMap<>();

@@ -53,7 +53,7 @@ public class Chord extends Note
                 }
             }
         }
-        this.durationInTicks = (int)Math.round(info[0] * duration * (info[1] / info[4])); //tempo * duration * (unit note length / tempo splits)
+        this.durationInTicks = (int)Math.round(info[0] * (info[1] / info[4]) * tempDur); //tempo * duration * (unit note length / tempo splits)
         return true;
     }
 }
