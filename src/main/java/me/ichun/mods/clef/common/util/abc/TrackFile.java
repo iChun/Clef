@@ -23,8 +23,8 @@ public class TrackFile
     {
         if(file.getParentFile().getAbsolutePath().equals(o.file.getParentFile().getAbsolutePath()))
         {
-            return track.getTitle().compareTo(o.track.getTitle());
+            return track.getTitle().toLowerCase().compareTo(o.track.getTitle().toLowerCase());
         }
-        return file.getParentFile().getAbsolutePath().compareTo(o.file.getParentFile().getAbsolutePath());
+        return file.getParentFile().getAbsolutePath().toLowerCase().compareTo(o.file.getParentFile().getAbsolutePath().toLowerCase());
     }
 }

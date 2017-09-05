@@ -59,11 +59,11 @@ public class Instrument
     @Override
     public int compareTo(Instrument o)
     {
-        if(packInfo.packName.equals(o.packInfo.packName))
+        if(packInfo.packName.toLowerCase().equals(o.packInfo.packName.toLowerCase()))
         {
-            return info.shortdescription.compareTo(o.info.shortdescription);
+            return info.shortdescription.toLowerCase().compareTo(o.info.shortdescription.toLowerCase());
         }
-        return packInfo.packName.compareTo(o.packInfo.packName);
+        return packInfo.packName.toLowerCase().compareTo(o.packInfo.packName.toLowerCase());
     }
 
     public ByteArrayOutputStream getAsBAOS()

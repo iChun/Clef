@@ -37,11 +37,11 @@ public class Config extends ConfigBase
 
     @ConfigProp
     @IntMinMax(min = 0, max = 10000)
-    public int zombieSpawnRate = 50;
+    public int zombieSpawnRate = 100;
 
     @ConfigProp
     @IntMinMax(min = 0, max = 10000)
-    public int mobDropRate = 50;
+    public int mobDropRate = 100;
 
     @ConfigProp
     @IntBool
