@@ -8,6 +8,7 @@ import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import me.ichun.mods.ichunutil.common.item.DualHandedItemCallback;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -19,6 +20,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumHand;
+import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.translation.I18n;
 import net.minecraft.world.World;
@@ -26,6 +28,8 @@ import net.minecraftforge.fml.client.FMLClientHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 
 public class ItemInstrument extends Item
@@ -43,16 +47,18 @@ public class ItemInstrument extends Item
         return true;
     }
 
+    @Nonnull
     @Override
-    public ActionResult<ItemStack> onItemRightClick(ItemStack is, World world, EntityPlayer player, EnumHand hand)
+    public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand)
     {
+        ItemStack is = player.getHeldItem(hand);
         if(is.getTagCompound() == null && !world.isRemote)
         {
             InstrumentLibrary.assignRandomInstrument(is);
         }
         if(getUsableInstrument(player) == is)
         {
-            if(player.worldObj.isRemote)
+            if(player.world.isRemote)
             {
                 Track track = Clef.eventHandlerClient.getTrackPlayedByPlayer(player);
                 if(track == null)
@@ -80,29 +86,28 @@ public class ItemInstrument extends Item
     @SideOnly(Side.CLIENT)
     public void openGui()
     {
-        FMLClientHandler.instance().displayGuiScreen(Minecraft.getMinecraft().thePlayer, new GuiPlayTrack());
+        FMLClientHandler.instance().displayGuiScreen(Minecraft.getMinecraft().player, new GuiPlayTrack());
     }
 
-    @SideOnly(Side.CLIENT)
     @Override
-    public void getSubItems(Item itemIn, CreativeTabs tab, List<ItemStack> subItems)
+    public void getSubItems(@Nonnull CreativeTabs tab, @Nonnull NonNullList<ItemStack> items)
     {
-        if(tab == null || tab == Clef.creativeTabInstruments)
+        if(tab == Clef.creativeTabInstruments)
         {
             for(Instrument intrument : InstrumentLibrary.instruments)
             {
-                ItemStack stack = new ItemStack(itemIn, 1, 0);
+                ItemStack stack = new ItemStack(this, 1, 0);
                 NBTTagCompound stackTag = new NBTTagCompound();
                 stackTag.setString("itemName", intrument.info.itemName);
                 stack.setTagCompound(stackTag);
-                subItems.add(stack);
+                items.add(stack);
             }
         }
     }
 
     @SideOnly(Side.CLIENT)
     @Override
-    public void addInformation(ItemStack is, EntityPlayer player, List<String> list, boolean flag)
+    public void addInformation(ItemStack is, @Nullable World worldIn, List<String> list, ITooltipFlag flagIn)
     {
         NBTTagCompound tag = is.getTagCompound();
         if(tag != null)
@@ -122,6 +127,7 @@ public class ItemInstrument extends Item
         }
     }
 
+    @Nonnull
     @Override
     public String getUnlocalizedName(ItemStack is)
     {
@@ -141,6 +147,7 @@ public class ItemInstrument extends Item
         return super.getUnlocalizedName(is);
     }
 
+    @Nonnull
     @Override
     public EnumAction getItemUseAction(ItemStack par1ItemStack)
     {
@@ -168,7 +175,7 @@ public class ItemInstrument extends Item
         public boolean shouldItemBeHeldLikeBow(ItemStack is, EntityLivingBase ent)
         {
             ItemStack is1 = getUsableInstrument(ent);
-            if(is1 == null)
+            if(is1.isEmpty())
             {
                 return false;
             }
@@ -185,34 +192,35 @@ public class ItemInstrument extends Item
         }
     }
 
+    @Nonnull
     public static ItemStack getUsableInstrument(EntityLivingBase entity)
     {
         ItemStack is = entity.getHeldItemMainhand();
-        if(is != null && is.getItem() == Clef.itemInstrument)
+        if(!is.isEmpty() && is.getItem() == Clef.itemInstrument)
         {
             NBTTagCompound tag = is.getTagCompound();
             if(tag != null)
             {
                 Instrument instrument = InstrumentLibrary.getInstrumentByName(tag.getString("itemName"));
-                if(instrument != null && (!instrument.info.twoHanded || Clef.config.allowOneHandedTwoHandedInstrumentUse == 1 || entity.getHeldItemOffhand() == null))
+                if(instrument != null && (!instrument.info.twoHanded || Clef.config.allowOneHandedTwoHandedInstrumentUse == 1 || entity.getHeldItemOffhand().isEmpty()))
                 {
                     return is;
                 }
             }
         }
         is = entity.getHeldItemOffhand();
-        if(is != null && is.getItem() == Clef.itemInstrument)
+        if(!is.isEmpty() && is.getItem() == Clef.itemInstrument)
         {
             NBTTagCompound tag = is.getTagCompound();
             if(tag != null)
             {
                 Instrument instrument = InstrumentLibrary.getInstrumentByName(tag.getString("itemName"));
-                if(instrument != null && (!instrument.info.twoHanded || Clef.config.allowOneHandedTwoHandedInstrumentUse == 1 || entity.getHeldItemMainhand() == null))
+                if(instrument != null && (!instrument.info.twoHanded || Clef.config.allowOneHandedTwoHandedInstrumentUse == 1 || entity.getHeldItemMainhand().isEmpty()))
                 {
                     return is;
                 }
             }
         }
-        return null;
+        return ItemStack.EMPTY;
     }
 }

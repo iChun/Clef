@@ -25,7 +25,7 @@ import java.io.File;
 @Mod(modid = Clef.MOD_ID, name = Clef.MOD_NAME,
         version = Clef.VERSION,
         guiFactory = "me.ichun.mods.ichunutil.common.core.config.GenericModGuiFactory",
-        dependencies = "required-after:ichunutil@[" + iChunUtil.VERSION_MAJOR +".5.0," + (iChunUtil.VERSION_MAJOR + 1) + ".0.0)",
+        dependencies = "required-after:ichunutil@[" + iChunUtil.VERSION_MAJOR +".0.0," + (iChunUtil.VERSION_MAJOR + 1) + ".0.0)",
         acceptableRemoteVersions = "[" + iChunUtil.VERSION_MAJOR +".0.0," + iChunUtil.VERSION_MAJOR + ".1.0)"
 )
 public class Clef

@@ -57,14 +57,14 @@ public class PacketCreateInstrument extends AbstractPacket
             return null;
         }
 
-        TileEntity te = player.worldObj.getTileEntity(pos);
+        TileEntity te = player.world.getTileEntity(pos);
         if(te instanceof TileEntityInstrumentPlayer)
         {
             TileEntityInstrumentPlayer player1 = (TileEntityInstrumentPlayer)te;
             boolean full = true;
             for(int i = 0; i < 9 ; i++)
             {
-                if(player1.getStackInSlot(i) == null)
+                if(player1.getStackInSlot(i).isEmpty())
                 {
                     full = false;
                     break;
@@ -73,7 +73,7 @@ public class PacketCreateInstrument extends AbstractPacket
             if(full)
             {
                 ItemStack is1 = player.getHeldItemMainhand();
-                if(is1 != null && is1.getItem() == Items.NAME_TAG && is1.hasDisplayName())
+                if(!is1.isEmpty() && is1.getItem() == Items.NAME_TAG && is1.hasDisplayName())
                 {
                     Instrument ins = null;
                     for(Instrument instrument : InstrumentLibrary.instruments)
@@ -98,16 +98,16 @@ public class PacketCreateInstrument extends AbstractPacket
 
                     for(int i = 0; i < 9; i++)
                     {
-                        player1.setInventorySlotContents(i, null);
+                        player1.setInventorySlotContents(i, ItemStack.EMPTY);
                     }
                     ItemStack is = new ItemStack(Clef.itemInstrument, 1, 0);
                     NBTTagCompound tag = new NBTTagCompound();
                     tag.setString("itemName", instrumentName);
                     is.setTagCompound(tag);
-                    InventoryHelper.spawnItemStack(player.worldObj, pos.getX() + 0.5D, pos.getY() + 1D, pos.getZ() + 0.5D, is);
-                    player.worldObj.playSound(null, pos.getX() + 0.5D, pos.getY() + 1D, pos.getZ() + 0.5D, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 0.2F, ((player.worldObj.rand.nextFloat() - player.worldObj.rand.nextFloat()) * 0.7F + 1.0F) * 2.0F);
+                    InventoryHelper.spawnItemStack(player.world, pos.getX() + 0.5D, pos.getY() + 1D, pos.getZ() + 0.5D, is);
+                    player.world.playSound(null, pos.getX() + 0.5D, pos.getY() + 1D, pos.getZ() + 0.5D, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 0.2F, ((player.world.rand.nextFloat() - player.world.rand.nextFloat()) * 0.7F + 1.0F) * 2.0F);
                     player1.markDirty();
-                    player.setHeldItem(EnumHand.MAIN_HAND, null);
+                    player.setHeldItem(EnumHand.MAIN_HAND, ItemStack.EMPTY);
                     player.inventory.markDirty();
                     player1.justCreatedInstrument = true;
                 }

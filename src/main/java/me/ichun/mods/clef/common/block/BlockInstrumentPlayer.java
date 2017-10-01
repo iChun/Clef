@@ -28,7 +28,7 @@ import net.minecraftforge.fml.common.network.internal.FMLNetworkHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 
 public class BlockInstrumentPlayer extends BlockContainer
 {
@@ -39,13 +39,13 @@ public class BlockInstrumentPlayer extends BlockContainer
     }
 
     @Override
-    public TileEntity createNewTileEntity(World worldIn, int meta)
+    public TileEntity createNewTileEntity(@Nonnull World world, int meta)
     {
         return new TileEntityInstrumentPlayer();
     }
 
     @Override
-    public void neighborChanged(IBlockState state, World worldIn, BlockPos pos, Block blockIn)
+    public void neighborChanged(IBlockState state, World worldIn, BlockPos pos, Block blockIn, BlockPos fromPos)
     {
         if(!worldIn.isRemote)
         {
@@ -64,9 +64,8 @@ public class BlockInstrumentPlayer extends BlockContainer
             }
         }
     }
-
     @Override
-    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, @Nullable ItemStack heldItem, EnumFacing side, float hitX, float hitY, float hitZ)
+    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, EnumFacing side, float hitX, float hitY, float hitZ)
     {
         TileEntity te = worldIn.getTileEntity(pos);
         if(te instanceof TileEntityInstrumentPlayer)
@@ -74,7 +73,7 @@ public class BlockInstrumentPlayer extends BlockContainer
             TileEntityInstrumentPlayer player = (TileEntityInstrumentPlayer)te;
             boolean hasSlot = false;
             ItemStack is = playerIn.getHeldItemMainhand();
-            if(is != null)
+            if(!is.isEmpty())
             {
                 if(is.getItem() == Clef.itemInstrument && !playerIn.isSneaking())
                 {
@@ -86,7 +85,7 @@ public class BlockInstrumentPlayer extends BlockContainer
                     for(int i = 0; i < player.getSizeInventory(); i++)
                     {
                         ItemStack is1 = player.getStackInSlot(i);
-                        if(is1 == null)
+                        if(is1.isEmpty())
                         {
                             hasSlot = true;
                             worldIn.playSound(null, pos.getX() + 0.5D, pos.getY() + 1D, pos.getZ() + 0.5D, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 0.2F, ((worldIn.rand.nextFloat() - worldIn.rand.nextFloat()) * 0.7F + 1.0F) * 2.0F);
@@ -94,7 +93,7 @@ public class BlockInstrumentPlayer extends BlockContainer
                             {
                                 player.setInventorySlotContents(i, is);
                                 player.markDirty();
-                                playerIn.setHeldItem(EnumHand.MAIN_HAND, null);
+                                playerIn.setHeldItem(EnumHand.MAIN_HAND, ItemStack.EMPTY);
                                 playerIn.inventory.markDirty();
                                 worldIn.notifyBlockUpdate(pos, state, state, 3);
                             }
@@ -107,7 +106,7 @@ public class BlockInstrumentPlayer extends BlockContainer
                     boolean full = true;
                     for(int i = 0; i < 9 ; i++)
                     {
-                        if(player.getStackInSlot(i) == null)
+                        if(player.getStackInSlot(i).isEmpty())
                         {
                             full = false;
                             break;
@@ -141,7 +140,7 @@ public class BlockInstrumentPlayer extends BlockContainer
     }
 
     @Override
-    public void breakBlock(World worldIn, BlockPos pos, IBlockState state)
+    public void breakBlock(World worldIn, @Nonnull BlockPos pos, @Nonnull IBlockState state)
     {
         TileEntity tileentity = worldIn.getTileEntity(pos);
 
@@ -155,7 +154,7 @@ public class BlockInstrumentPlayer extends BlockContainer
     }
 
     @Override
-    public void dropBlockAsItemWithChance(World worldIn, BlockPos pos, IBlockState state, float chance, int fortune)
+    public void dropBlockAsItemWithChance(World worldIn, @Nonnull BlockPos pos, @Nonnull IBlockState state, float chance, int fortune)
     {
         if (!worldIn.isRemote)
         {
@@ -163,6 +162,7 @@ public class BlockInstrumentPlayer extends BlockContainer
         }
     }
 
+    @Nonnull
     @Override
     public EnumBlockRenderType getRenderType(IBlockState state)
     {
@@ -172,6 +172,6 @@ public class BlockInstrumentPlayer extends BlockContainer
     @SideOnly(Side.CLIENT)
     public void openGui(TileEntityInstrumentPlayer player)
     {
-        FMLClientHandler.instance().displayGuiScreen(Minecraft.getMinecraft().thePlayer, new GuiPlayTrackBlock(player));
+        FMLClientHandler.instance().displayGuiScreen(Minecraft.getMinecraft().player, new GuiPlayTrackBlock(player));
     }
 }
