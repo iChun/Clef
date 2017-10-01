@@ -77,7 +77,7 @@ public class PacketInstrumentPlayerInfo extends AbstractPacket
     @Override
     public AbstractPacket execute(Side side, EntityPlayer player)
     {
-        TileEntity te = player.worldObj.getTileEntity(pos);
+        TileEntity te = player.world.getTileEntity(pos);
         if(te instanceof TileEntityInstrumentPlayer)
         {
             TileEntityInstrumentPlayer instrumentPlayer = (TileEntityInstrumentPlayer)te;
@@ -101,8 +101,8 @@ public class PacketInstrumentPlayerInfo extends AbstractPacket
             instrumentPlayer.repeat = repeat;
             instrumentPlayer.shuffle = shuffle;
             instrumentPlayer.markDirty();
-            IBlockState state = player.worldObj.getBlockState(pos);
-            player.worldObj.notifyBlockUpdate(pos, state, state, 3);
+            IBlockState state = player.world.getBlockState(pos);
+            player.world.notifyBlockUpdate(pos, state, state, 3);
         }
         return null;
     }

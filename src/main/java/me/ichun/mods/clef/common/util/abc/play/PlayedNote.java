@@ -1,7 +1,6 @@
 package me.ichun.mods.clef.common.util.abc.play;
 
 import io.netty.util.internal.ThreadLocalRandom;
-import me.ichun.mods.clef.client.core.SoundSystemReflect;
 import me.ichun.mods.clef.client.sound.InstrumentSound;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
@@ -16,7 +15,6 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -46,7 +44,7 @@ public class PlayedNote
         this.duration = duration;
         this.noteLocation = noteLocation;
 
-        uniqueId = MathHelper.getRandomUuid(ThreadLocalRandom.current()).toString();
+        uniqueId = MathHelper.getRandomUUID(ThreadLocalRandom.current()).toString();
 
         InstrumentTuning.TuningInfo tuning = instrument.tuning.keyToTuningMap.get(key);
         float pitch = (float)Math.pow(2.0D, (double)tuning.keyOffset / 12.0D);
@@ -77,20 +75,12 @@ public class PlayedNote
             InstrumentTuning.TuningInfo tuning = instrument.tuning.keyToTuningMap.get(key);
             float f2 = (float)Math.pow(2.0D, (double)tuning.keyOffset / 12.0D);
 
-            try
-            {
-                SoundSystemReflect.ssNewSource.invoke(soundManager.sndSystem, false, uniqueId, getURLForSoundResource(instrument, key - tuning.keyOffset), "clef:" + instrument.info.itemName + ":" + (key - tuning.keyOffset) + ".ogg", false, instrumentSound.getXPosF(), instrumentSound.getYPosF(), instrumentSound.getZPosF(), instrumentSound.getAttenuationType().getTypeInt(), f);
-                net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.sound.PlaySoundSourceEvent(soundManager, instrumentSound, uniqueId));
+            soundManager.sndSystem.newSource(false, uniqueId, getURLForSoundResource(instrument, key - tuning.keyOffset), "clef:" + instrument.info.itemName + ":" + (key - tuning.keyOffset) + ".ogg", false, instrumentSound.getXPosF(), instrumentSound.getYPosF(), instrumentSound.getZPosF(), instrumentSound.getAttenuationType().getTypeInt(), f);
+            net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.sound.PlaySoundSourceEvent(soundManager, instrumentSound, uniqueId));
 
-                SoundSystemReflect.ssSetPitch.invoke(soundManager.sndSystem, uniqueId, f2);
-                SoundSystemReflect.ssSetVolume.invoke(soundManager.sndSystem, uniqueId, f1);
-                SoundSystemReflect.ssPlay.invoke(soundManager.sndSystem, uniqueId);
-            }
-            catch(InvocationTargetException | IllegalAccessException e)
-            {
-                Clef.LOGGER.warn("Error playing instrument sound.");
-                e.printStackTrace();
-            }
+            soundManager.sndSystem.setPitch(uniqueId, f2);
+            soundManager.sndSystem.setVolume(uniqueId, f1);
+            soundManager.sndSystem.play(uniqueId);
             soundManager.playingSoundsStopTime.put(uniqueId, soundManager.playTime + duration + (int)(instrument.tuning.fadeout * 20F) + 20);
             soundManager.playingSounds.put(uniqueId, instrumentSound);
 

@@ -2,6 +2,7 @@ package me.ichun.mods.clef.common.util.abc;
 
 import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 
 public class TrackFile
@@ -19,7 +20,7 @@ public class TrackFile
     }
 
     @Override
-    public int compareTo(TrackFile o)
+    public int compareTo(@Nonnull TrackFile o)
     {
         if(file.getParentFile().getAbsolutePath().equals(o.file.getParentFile().getAbsolutePath()))
         {

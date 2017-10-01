@@ -10,13 +10,12 @@ import me.ichun.mods.clef.common.tileentity.TileEntityInstrumentPlayer;
 import me.ichun.mods.ichunutil.common.core.network.PacketChannel;
 import me.ichun.mods.ichunutil.common.item.ItemHandler;
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.registry.GameRegistry;
+
+import javax.annotation.Nonnull;
 
 public class ProxyCommon
 {
@@ -24,29 +23,26 @@ public class ProxyCommon
     {
         (new ThreadReadFiles()).start();
 
-        Clef.itemInstrument = GameRegistry.register((new ItemInstrument()).setFull3D().setRegistryName("clef", "instrument").setUnlocalizedName("clef.item.instrument"));
+        Clef.itemInstrument = (new ItemInstrument()).setFull3D().setRegistryName("clef", "instrument").setUnlocalizedName("clef.item.instrument");
 
         Clef.creativeTabInstruments = new CreativeTabs("clef") {
+            @Nonnull
             @Override
-            public Item getTabIconItem()
+            public ItemStack getTabIconItem()
             {
-                return Clef.itemInstrument;
+                return new ItemStack(Clef.itemInstrument);
             }
         };
 
         Clef.itemInstrument.setCreativeTab(Clef.creativeTabInstruments);
 
-        Clef.blockInstrumentPlayer = GameRegistry.register(new BlockInstrumentPlayer().setRegistryName("clef", "block_instrument_player").setUnlocalizedName("clef.item.instrumentPlayer"));
-        GameRegistry.register(new ItemBlock(Clef.blockInstrumentPlayer).setRegistryName(Clef.blockInstrumentPlayer.getRegistryName()));
+        Clef.blockInstrumentPlayer = new BlockInstrumentPlayer().setRegistryName("clef", "block_instrument_player").setUnlocalizedName("clef.item.instrumentPlayer");
 
         GameRegistry.registerTileEntity(TileEntityInstrumentPlayer.class, "Clef:InstrumentPlayer");
 
         NetworkRegistry.INSTANCE.registerGuiHandler(Clef.instance, new GuiPlayTrackBlockHandler());
 
         ItemHandler.registerDualHandedItem(ItemInstrument.class, new ItemInstrument.DualHandedInstrumentCallback());
-
-        GameRegistry.addRecipe(new ItemStack(Clef.blockInstrumentPlayer, 1),
-                "WCW", "WNW", "WRW", 'W', Blocks.PLANKS, 'C', Blocks.CHEST, 'N', Blocks.NOTEBLOCK, 'R', Blocks.REDSTONE_TORCH);
 
         Clef.eventHandlerServer = new EventHandlerServer();
         MinecraftForge.EVENT_BUS.register(Clef.eventHandlerServer);

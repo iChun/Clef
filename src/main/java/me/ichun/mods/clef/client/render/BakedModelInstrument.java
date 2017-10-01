@@ -19,10 +19,11 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
-import net.minecraftforge.client.model.IPerspectiveAwareModel;
+import net.minecraftforge.client.model.PerspectiveMapWrapper;
 import net.minecraftforge.common.model.TRSRTransformation;
 import org.apache.commons.lang3.tuple.Pair;
 
+import javax.annotation.Nonnull;
 import javax.vecmath.Matrix4f;
 import javax.vecmath.Quat4f;
 import javax.vecmath.Vector3f;
@@ -30,7 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public class BakedModelInstrument
-        implements IPerspectiveAwareModel
+        implements IBakedModel
 {
     private final ImmutableList<BakedQuad> quads;
     private final TextureAtlasSprite particle;
@@ -47,12 +48,20 @@ public class BakedModelInstrument
         this.instTx = instTx;
     }
 
+    @Override
     public boolean isAmbientOcclusion() { return true; }
+    @Override
     public boolean isGui3d() { return false; }
+    @Override
     public boolean isBuiltInRenderer() { return false; }
+    @Override
+    @Nonnull
     public TextureAtlasSprite getParticleTexture() { return particle; }
-    public ItemCameraTransforms getItemCameraTransforms() { return ItemCameraTransforms.DEFAULT; }
+    @Override
+    @Nonnull
     public ItemOverrideList getOverrides() { return BakedModelInstrument.ItemOverrideListHandler.INSTANCE; }
+    @Override
+    @Nonnull
     public List<BakedQuad> getQuads(IBlockState state, EnumFacing side, long rand)
     {
         if(side == null)
@@ -66,18 +75,20 @@ public class BakedModelInstrument
         return ImmutableList.of();
     }
 
-    public Pair<? extends IBakedModel, Matrix4f> handlePerspective(ItemCameraTransforms.TransformType type)
+    @Nonnull
+    @Override
+    public Pair<? extends IBakedModel, Matrix4f> handlePerspective(@Nonnull ItemCameraTransforms.TransformType type)
     {
         if(instrument != null)
         {
             HashMap<ItemCameraTransforms.TransformType, TRSRTransformation> map = new HashMap<>();
             map.put(ItemCameraTransforms.TransformType.FIRST_PERSON_LEFT_HAND, new TRSRTransformation(new Vector3f(1F, 0F, 1F), TRSRTransformation.quatFromXYZDegrees(new Vector3f(0F, 180F, 0F)), new Vector3f(1F, 1F, 1F), new Quat4f()));
-            map.put(ItemCameraTransforms.TransformType.THIRD_PERSON_LEFT_HAND, new TRSRTransformation(new Vector3f(0.1F, 0F + (instrument.handImg.getHeight() <= 16F ? 0F : MathHelper.clamp_float((float)instrument.info.activeHandPosition[1], -0.3F, 0.3F)), 0.025F - (instrument.handImg.getWidth() <= 16F ? 0F : MathHelper.clamp_float((float)instrument.info.activeHandPosition[0], -0.5F, 0.5F))), TRSRTransformation.quatFromXYZDegrees(new Vector3f(0F, 80F, 0F)), new Vector3f(-1F, 1F, 1F),  TRSRTransformation.quatFromXYZDegrees(new Vector3f(0F, 0F, 0F))));
-            map.put(ItemCameraTransforms.TransformType.THIRD_PERSON_RIGHT_HAND, new TRSRTransformation(new Vector3f(-0.1F, 0F + (instrument.handImg.getHeight() <= 16F ? 0F : MathHelper.clamp_float((float)instrument.info.activeHandPosition[1], -0.3F, 0.3F)), 1F - (instrument.handImg.getWidth() <= 16F ? 0F : MathHelper.clamp_float((float)instrument.info.activeHandPosition[0], -0.5F, 0.5F))), TRSRTransformation.quatFromXYZDegrees(new Vector3f(0F, 80F, 0F)), new Vector3f(1F, 1F, 1F), TRSRTransformation.quatFromXYZDegrees(new Vector3f(0F, 0F, 0F))));
+            map.put(ItemCameraTransforms.TransformType.THIRD_PERSON_LEFT_HAND, new TRSRTransformation(new Vector3f(0.1F, 0F + (instrument.handImg.getHeight() <= 16F ? 0F : MathHelper.clamp((float)instrument.info.activeHandPosition[1], -0.3F, 0.3F)), 0.025F - (instrument.handImg.getWidth() <= 16F ? 0F : MathHelper.clamp((float)instrument.info.activeHandPosition[0], -0.5F, 0.5F))), TRSRTransformation.quatFromXYZDegrees(new Vector3f(0F, 80F, 0F)), new Vector3f(-1F, 1F, 1F),  TRSRTransformation.quatFromXYZDegrees(new Vector3f(0F, 0F, 0F))));
+            map.put(ItemCameraTransforms.TransformType.THIRD_PERSON_RIGHT_HAND, new TRSRTransformation(new Vector3f(-0.1F, 0F + (instrument.handImg.getHeight() <= 16F ? 0F : MathHelper.clamp((float)instrument.info.activeHandPosition[1], -0.3F, 0.3F)), 1F - (instrument.handImg.getWidth() <= 16F ? 0F : MathHelper.clamp((float)instrument.info.activeHandPosition[0], -0.5F, 0.5F))), TRSRTransformation.quatFromXYZDegrees(new Vector3f(0F, 80F, 0F)), new Vector3f(1F, 1F, 1F), TRSRTransformation.quatFromXYZDegrees(new Vector3f(0F, 0F, 0F))));
             ImmutableMap<ItemCameraTransforms.TransformType, TRSRTransformation> transforms = ImmutableMap.copyOf(map);
-            return IPerspectiveAwareModel.MapWrapper.handlePerspective(ModelBaseWrapper.isEntityRender(type) ? instrument.handModel : instrument.iconModel, transforms, type);
+            return PerspectiveMapWrapper.handlePerspective(ModelBaseWrapper.isEntityRender(type) ? instrument.handModel : instrument.iconModel, transforms, type);
         }
-        return IPerspectiveAwareModel.MapWrapper.handlePerspective(this, transforms, type);
+        return PerspectiveMapWrapper.handlePerspective(this, transforms, type);
     }
 
     private static final class ItemOverrideListHandler extends ItemOverrideList
@@ -89,8 +100,9 @@ public class BakedModelInstrument
             super(ImmutableList.of());
         }
 
+        @Nonnull
         @Override
-        public IBakedModel handleItemState(IBakedModel originalModel, ItemStack stack, World world, EntityLivingBase entity)
+        public IBakedModel handleItemState(@Nonnull IBakedModel originalModel, @Nonnull ItemStack stack, World world, EntityLivingBase entity)
         {
             NBTTagCompound tag = stack.getTagCompound();
             if(tag != null)

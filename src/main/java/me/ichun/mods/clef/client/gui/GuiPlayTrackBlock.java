@@ -69,7 +69,7 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
         trackListBottom -= 22;
         trackList = new GuiTrackList(this, 158, ySize - 22, guiTop + 17, trackListBottom, guiLeft + 7, 8, playlistView ? playlist : tracks);
 
-        this.mc.thePlayer.openContainer = this.containerInstrumentPlayer;
+        this.mc.player.openContainer = this.containerInstrumentPlayer;
 
         for(GuiButton btn : buttonList)
         {
@@ -106,14 +106,14 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
     {
         if(!playlistView)
         {
-            fontRendererObj.drawString(I18n.translateToLocal("clef.gui.block.playlist") + ":", guiLeft + 9, guiTop + 211, 16777215, true);
+            fontRenderer.drawString(I18n.translateToLocal("clef.gui.block.playlist") + ":", guiLeft + 9, guiTop + 211, 16777215, true);
             super.drawText();
         }
         else
         {
-            fontRendererObj.drawString(I18n.translateToLocal("clef.gui.block.playlist") + " (" + playlist.size() + ")", guiLeft + 6, guiTop + 5, 16777215, true);
-            fontRendererObj.drawString(I18n.translateToLocal("clef.gui.block.repeat"), guiLeft + 179, guiTop + 40, 16777215, true);
-            fontRendererObj.drawString(I18n.translateToLocal("clef.gui.block.shuffle"), guiLeft + 179, guiTop + 83, 16777215, true);
+            fontRenderer.drawString(I18n.translateToLocal("clef.gui.block.playlist") + " (" + playlist.size() + ")", guiLeft + 6, guiTop + 5, 16777215, true);
+            fontRenderer.drawString(I18n.translateToLocal("clef.gui.block.repeat"), guiLeft + 179, guiTop + 40, 16777215, true);
+            fontRenderer.drawString(I18n.translateToLocal("clef.gui.block.shuffle"), guiLeft + 179, guiTop + 83, 16777215, true);
         }
     }
 
@@ -135,12 +135,12 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
             Slot slot = this.containerInstrumentPlayer.inventorySlots.get(i1);
             this.drawSlot(slot);
 
-            if (this.isMouseOverSlot(slot, mouseX, mouseY) && slot.canBeHovered())
+            if (this.isMouseOverSlot(slot, mouseX, mouseY) && slot.isEnabled())
             {
                 GlStateManager.disableLighting();
                 GlStateManager.disableDepth();
-                int j1 = slot.xDisplayPosition;
-                int k1 = slot.yDisplayPosition;
+                int j1 = slot.xPos;
+                int k1 = slot.yPos;
                 GlStateManager.colorMask(true, true, true, false);
                 this.drawGradientRect(j1, k1, j1 + 16, k1 + 16, -2130706433, -2130706433);
                 GlStateManager.colorMask(true, true, true, true);
@@ -171,7 +171,7 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
 
     protected void handleMouseClick(Slot slotIn, int slotId, int mouseButton, ClickType type)
     {
-        this.mc.playerController.windowClick(this.containerInstrumentPlayer.windowId, slotId, mouseButton, type, this.mc.thePlayer);
+        this.mc.playerController.windowClick(this.containerInstrumentPlayer.windowId, slotId, mouseButton, type, this.mc.player);
     }
 
     @Override
@@ -324,12 +324,12 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
     @Override
     public void closeScreen()
     {
-        mc.thePlayer.closeScreen();
+        mc.player.closeScreen();
     }
 
     private boolean isMouseOverSlot(Slot slotIn, int mouseX, int mouseY)
     {
-        return this.isPointInRegion(slotIn.xDisplayPosition, slotIn.yDisplayPosition, 16, 16, mouseX, mouseY);
+        return this.isPointInRegion(slotIn.xPos, slotIn.yPos, 16, 16, mouseX, mouseY);
     }
 
     protected boolean isPointInRegion(int rectX, int rectY, int rectWidth, int rectHeight, int pointX, int pointY)
@@ -343,8 +343,8 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
 
     private void drawSlot(Slot slotIn)
     {
-        int i = slotIn.xDisplayPosition;
-        int j = slotIn.yDisplayPosition;
+        int i = slotIn.xPos;
+        int j = slotIn.yPos;
         ItemStack itemstack = slotIn.getStack();
         boolean flag = false;
         boolean flag1 = false;
@@ -353,7 +353,7 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
         this.zLevel = 100.0F;
         this.itemRender.zLevel = 100.0F;
 
-        if (itemstack == null && slotIn.canBeHovered())
+        if (!itemstack.isEmpty() && slotIn.isEnabled())
         {
             TextureAtlasSprite textureatlassprite = slotIn.getBackgroundSprite();
 
@@ -375,8 +375,8 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
             }
 
             GlStateManager.enableDepth();
-            this.itemRender.renderItemAndEffectIntoGUI(this.mc.thePlayer, itemstack, i, j);
-            this.itemRender.renderItemOverlayIntoGUI(this.fontRendererObj, itemstack, i, j, s);
+            this.itemRender.renderItemAndEffectIntoGUI(this.mc.player, itemstack, i, j);
+            this.itemRender.renderItemOverlayIntoGUI(this.fontRenderer, itemstack, i, j, s);
         }
 
         this.itemRender.zLevel = 0.0F;

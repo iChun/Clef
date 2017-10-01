@@ -46,7 +46,7 @@ public class InstrumentSound extends PositionedSound implements ITickableSound
         playTime++;
         if(playTime > duration)
         {
-            volume = MathHelper.clamp_float(startVolume * ((falloffTime - (playTime - duration)) / (float)falloffTime), 0F, 100F);
+            volume = MathHelper.clamp(startVolume * ((falloffTime - (playTime - duration)) / (float)falloffTime), 0F, 100F);
             if(playTime > (duration + falloffTime + 600))
             {
                 endTheNote = true;
@@ -66,9 +66,9 @@ public class InstrumentSound extends PositionedSound implements ITickableSound
         {
             EntityLivingBase living = (EntityLivingBase)noteLocationObject;
             Vec3d view = living.getLookVec();
-            this.xPosF = (float)(living.posX + view.xCoord * 0.3D) + (float)living.motionX;
-            this.yPosF = (float)(living.posY + living.getEyeHeight() + view.yCoord * 0.3D) + (float)living.motionY;
-            this.zPosF = (float)(living.posZ + view.zCoord * 0.3D) + (float)living.motionZ;
+            this.xPosF = (float)(living.posX + view.x * 0.3D) + (float)living.motionX;
+            this.yPosF = (float)(living.posY + living.getEyeHeight() + view.y * 0.3D) + (float)living.motionY;
+            this.zPosF = (float)(living.posZ + view.z * 0.3D) + (float)living.motionZ;
         }
         else if(noteLocationObject instanceof BlockPos)
         {

@@ -17,13 +17,15 @@ import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ITickable;
+import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import org.apache.commons.lang3.RandomStringUtils;
 
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 public class TileEntityInstrumentPlayer extends TileEntity
         implements ITickable, IInventory
@@ -40,7 +42,7 @@ public class TileEntityInstrumentPlayer extends TileEntity
     public int playlistIndex = 0;
     public HashSet<String> playedTracks = new HashSet<>(); //for shuffle
 
-    private ItemStack[] contents = new ItemStack[9];
+    private List<ItemStack> contents = NonNullList.withSize(9, ItemStack.EMPTY);
     public boolean previousRedstoneState;
 
     public boolean justCreatedInstrument;
@@ -83,7 +85,7 @@ public class TileEntityInstrumentPlayer extends TileEntity
                 boolean hasInst = false;
                 for(ItemStack is : contents)
                 {
-                    if(is != null && is.getItem() == Clef.itemInstrument)
+                    if(!is.isEmpty() && is.getItem() == Clef.itemInstrument)
                     {
                         hasInst = true;
                         break;
@@ -215,6 +217,7 @@ public class TileEntityInstrumentPlayer extends TileEntity
         }
     }
 
+    @Nonnull
     @Override
     public NBTTagCompound getUpdateTag()
     {
@@ -233,19 +236,20 @@ public class TileEntityInstrumentPlayer extends TileEntity
         readFromNBT(pkt.getNbtCompound());
     }
 
+    @Nonnull
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound tag)
     {
         super.writeToNBT(tag);
         NBTTagList nbttaglist = new NBTTagList();
 
-        for (int i = 0; i < this.contents.length; ++i)
+        for (int i = 0; i < this.contents.size(); ++i)
         {
-            if (this.contents[i] != null)
+            if (!this.contents.get(i).isEmpty())
             {
                 NBTTagCompound nbttagcompound = new NBTTagCompound();
                 nbttagcompound.setByte("Slot", (byte)i);
-                this.contents[i].writeToNBT(nbttagcompound);
+                this.contents.get(i).writeToNBT(nbttagcompound);
                 nbttaglist.appendTag(nbttagcompound);
             }
         }
@@ -283,7 +287,7 @@ public class TileEntityInstrumentPlayer extends TileEntity
     public void readFromNBT(NBTTagCompound tag)
     {
         super.readFromNBT(tag);
-        this.contents = new ItemStack[this.getSizeInventory()];
+        this.contents = NonNullList.withSize(this.getSizeInventory(), ItemStack.EMPTY);
         NBTTagList nbttaglist = tag.getTagList("Items", 10);
 
         for (int i = 0; i < nbttaglist.tagCount(); ++i)
@@ -291,9 +295,9 @@ public class TileEntityInstrumentPlayer extends TileEntity
             NBTTagCompound nbttagcompound = nbttaglist.getCompoundTagAt(i);
             int j = nbttagcompound.getByte("Slot") & 255;
 
-            if (j >= 0 && j < this.contents.length)
+            if (j >= 0 && j < this.contents.size())
             {
-                this.contents[j] = ItemStack.loadItemStackFromNBT(nbttagcompound);
+                this.contents.set(j, new ItemStack(nbttagcompound));
             }
         }
         this.previousRedstoneState = tag.getBoolean("powered");
@@ -320,9 +324,10 @@ public class TileEntityInstrumentPlayer extends TileEntity
         repeat = tag.getInteger("repeat");
         shuffle = tag.getBoolean("shuffle");
 
-        playlistIndex = MathHelper.clamp_int(tag.getInteger("playlistIndex"), 0, tracks.size());
+        playlistIndex = MathHelper.clamp(tag.getInteger("playlistIndex"), 0, tracks.size());
     }
 
+    @Nonnull
     @Override
     public String getName()
     {
@@ -341,20 +346,33 @@ public class TileEntityInstrumentPlayer extends TileEntity
         return 9;
     }
 
-    @Nullable
+    @Override
+    public boolean isEmpty() {
+        boolean empty = true;
+        for (ItemStack stack : this.contents)
+        {
+            if (!stack.isEmpty())
+            {
+                empty = false;
+            }
+        }
+        return empty;
+    }
+
+    @Nonnull
     @Override
     public ItemStack getStackInSlot(int index)
     {
-        return this.contents[index];
+        return this.contents.get(index);
     }
 
-    @Nullable
+    @Nonnull
     @Override
     public ItemStack decrStackSize(int index, int count)
     {
         ItemStack itemstack = ItemStackHelper.getAndSplit(this.contents, index, count);
 
-        if (itemstack != null)
+        if (!itemstack.isEmpty())
         {
             this.markDirty();
         }
@@ -362,7 +380,7 @@ public class TileEntityInstrumentPlayer extends TileEntity
         return itemstack;
     }
 
-    @Nullable
+    @Nonnull
     @Override
     public ItemStack removeStackFromSlot(int index)
     {
@@ -370,13 +388,13 @@ public class TileEntityInstrumentPlayer extends TileEntity
     }
 
     @Override
-    public void setInventorySlotContents(int index, @Nullable ItemStack stack)
+    public void setInventorySlotContents(int index, @Nonnull ItemStack stack)
     {
-        this.contents[index] = stack;
+        this.contents.set(index, stack);
 
-        if (stack != null && stack.stackSize > this.getInventoryStackLimit())
+        if (!stack.isEmpty() && stack.getCount() > this.getInventoryStackLimit())
         {
-            stack.stackSize = this.getInventoryStackLimit();
+            stack.setCount(this.getInventoryStackLimit());
         }
 
         this.markDirty();
@@ -389,23 +407,23 @@ public class TileEntityInstrumentPlayer extends TileEntity
     }
 
     @Override
-    public boolean isUseableByPlayer(EntityPlayer player)
+    public boolean isUsableByPlayer(@Nonnull EntityPlayer player)
     {
-        return this.worldObj.getTileEntity(this.pos) == this && player.getDistanceSq((double)this.pos.getX() + 0.5D, (double)this.pos.getY() + 0.5D, (double)this.pos.getZ() + 0.5D) <= 64.0D;
+        return this.world.getTileEntity(this.pos) == this && player.getDistanceSq((double)this.pos.getX() + 0.5D, (double)this.pos.getY() + 0.5D, (double)this.pos.getZ() + 0.5D) <= 64.0D;
     }
 
     @Override
-    public void openInventory(EntityPlayer player)
-    {
-    }
-
-    @Override
-    public void closeInventory(EntityPlayer player)
+    public void openInventory(@Nonnull EntityPlayer player)
     {
     }
 
     @Override
-    public boolean isItemValidForSlot(int index, ItemStack stack)
+    public void closeInventory(@Nonnull EntityPlayer player)
+    {
+    }
+
+    @Override
+    public boolean isItemValidForSlot(int index, @Nonnull ItemStack stack)
     {
         return stack.getItem() == Clef.itemInstrument;
     }
@@ -430,9 +448,6 @@ public class TileEntityInstrumentPlayer extends TileEntity
     @Override
     public void clear()
     {
-        for (int i = 0; i < this.contents.length; ++i)
-        {
-            this.contents[i] = null;
-        }
+        this.contents = NonNullList.withSize(this.getSizeInventory(), ItemStack.EMPTY);
     }
 }
