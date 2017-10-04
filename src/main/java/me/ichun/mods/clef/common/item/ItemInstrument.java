@@ -28,6 +28,7 @@ import net.minecraftforge.fml.client.FMLClientHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 
@@ -189,34 +190,34 @@ public class ItemInstrument extends Item
         }
     }
 
-    public static ItemStack getUsableInstrument(EntityLivingBase entity)
+    public static @Nonnull ItemStack getUsableInstrument(EntityLivingBase entity)
     {
         ItemStack is = entity.getHeldItemMainhand();
-        if(is != null && is.getItem() == Clef.itemInstrument)
+        if(is.getItem() == Clef.itemInstrument)
         {
             NBTTagCompound tag = is.getTagCompound();
             if(tag != null)
             {
                 Instrument instrument = InstrumentLibrary.getInstrumentByName(tag.getString("itemName"));
-                if(instrument != null && (!instrument.info.twoHanded || Clef.config.allowOneHandedTwoHandedInstrumentUse == 1 || entity.getHeldItemOffhand() == null))
+                if(instrument != null && (!instrument.info.twoHanded || Clef.config.allowOneHandedTwoHandedInstrumentUse == 1 || entity.getHeldItemOffhand().isEmpty()))
                 {
                     return is;
                 }
             }
         }
         is = entity.getHeldItemOffhand();
-        if(is != null && is.getItem() == Clef.itemInstrument)
+        if(is.getItem() == Clef.itemInstrument)
         {
             NBTTagCompound tag = is.getTagCompound();
             if(tag != null)
             {
                 Instrument instrument = InstrumentLibrary.getInstrumentByName(tag.getString("itemName"));
-                if(instrument != null && (!instrument.info.twoHanded || Clef.config.allowOneHandedTwoHandedInstrumentUse == 1 || entity.getHeldItemMainhand() == null))
+                if(instrument != null && (!instrument.info.twoHanded || Clef.config.allowOneHandedTwoHandedInstrumentUse == 1 || entity.getHeldItemMainhand().isEmpty()))
                 {
                     return is;
                 }
             }
         }
-        return null;
+        return ItemStack.EMPTY;
     }
 }

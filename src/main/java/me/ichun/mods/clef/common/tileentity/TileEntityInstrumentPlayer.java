@@ -337,7 +337,6 @@ public class TileEntityInstrumentPlayer extends TileEntity
         return true;
     }
 
-    @Nullable
     @Override
     public ItemStack getStackInSlot(int index)
     {
@@ -366,7 +365,7 @@ public class TileEntityInstrumentPlayer extends TileEntity
     }
 
     @Override
-    public void setInventorySlotContents(int index, @Nullable ItemStack stack)
+    public void setInventorySlotContents(int index, ItemStack stack)
     {
         this.contents.set(index, stack);
 

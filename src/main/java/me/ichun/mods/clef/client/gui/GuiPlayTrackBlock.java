@@ -353,7 +353,7 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
         this.zLevel = 100.0F;
         this.itemRender.zLevel = 100.0F;
 
-        if (itemstack == null && slotIn.isEnabled())
+        if (itemstack.isEmpty() && slotIn.isEnabled())
         {
             TextureAtlasSprite textureatlassprite = slotIn.getBackgroundSprite();
 

@@ -142,7 +142,7 @@ public class Track
                     if(player.isEntityAlive() && player.getDistance(mcPlayer) < 48D)
                     {
                         ItemStack is = ItemInstrument.getUsableInstrument(player);
-                        if(is != null)
+                        if(!is.isEmpty())
                         {
                             NBTTagCompound tag = is.getTagCompound();
                             if(tag != null)
@@ -187,7 +187,7 @@ public class Track
                                 for(int i = 0; i < 9; i++)
                                 {
                                     ItemStack is = player.getStackInSlot(i);
-                                    if(is != null && is.getItem() == Clef.itemInstrument && is.getTagCompound() != null)
+                                    if(is.getItem() == Clef.itemInstrument && is.getTagCompound() != null)
                                     {
                                         Instrument instrument = InstrumentLibrary.getInstrumentByName(is.getTagCompound().getString("itemName"));
                                         if(instrument != null)
@@ -212,7 +212,7 @@ public class Track
                     if(ent instanceof EntityZombie && ent.isEntityAlive() && mcPlayer.getDistance(ent) < 48D)
                     {
                         ItemStack is = ItemInstrument.getUsableInstrument((EntityZombie)ent);
-                        if(is != null)
+                        if(!is.isEmpty())
                         {
                             NBTTagCompound tag = is.getTagCompound();
                             if(tag != null)
@@ -249,7 +249,7 @@ public class Track
                     e.setValue(e.getValue() + 1);
 
                     ItemStack is = ItemInstrument.getUsableInstrument(player);
-                    if(is != null)
+                    if(!is.isEmpty())
                     {
                         Instrument instrument = InstrumentLibrary.getInstrumentByName(is.getTagCompound().getString("itemName"));
                         if(instrument != null)

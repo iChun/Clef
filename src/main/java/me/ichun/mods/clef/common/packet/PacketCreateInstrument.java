@@ -73,7 +73,7 @@ public class PacketCreateInstrument extends AbstractPacket
             if(full)
             {
                 ItemStack is1 = player.getHeldItemMainhand();
-                if(is1 != null && is1.getItem() == Items.NAME_TAG && is1.hasDisplayName())
+                if(is1.getItem() == Items.NAME_TAG && is1.hasDisplayName())
                 {
                     Instrument ins = null;
                     for(Instrument instrument : InstrumentLibrary.instruments)
@@ -107,7 +107,7 @@ public class PacketCreateInstrument extends AbstractPacket
                     InventoryHelper.spawnItemStack(player.world, pos.getX() + 0.5D, pos.getY() + 1D, pos.getZ() + 0.5D, is);
                     player.world.playSound(null, pos.getX() + 0.5D, pos.getY() + 1D, pos.getZ() + 0.5D, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 0.2F, ((player.world.rand.nextFloat() - player.world.rand.nextFloat()) * 0.7F + 1.0F) * 2.0F);
                     player1.markDirty();
-                    player.setHeldItem(EnumHand.MAIN_HAND, null);
+                    player.setHeldItem(EnumHand.MAIN_HAND, ItemStack.EMPTY);
                     player.inventory.markDirty();
                     player1.justCreatedInstrument = true;
                 }

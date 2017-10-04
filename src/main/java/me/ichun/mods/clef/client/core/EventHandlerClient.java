@@ -133,7 +133,7 @@ public class EventHandlerClient
     public void onLeftClickEmpty(PlayerInteractEvent.LeftClickEmpty event)
     {
         ItemStack is = ItemInstrument.getUsableInstrument(event.getEntityPlayer());
-        if(is != null && !(event.getEntityPlayer().getHeldItemMainhand() != null && event.getEntityPlayer().getHeldItemOffhand() != null))
+        if(!is.isEmpty() && !(!event.getEntityPlayer().getHeldItemMainhand().isEmpty() && !event.getEntityPlayer().getHeldItemOffhand().isEmpty()))
         {
             stopPlayingTrack(event.getEntityPlayer());
         }
@@ -143,7 +143,7 @@ public class EventHandlerClient
     public void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event)
     {
         ItemStack is = ItemInstrument.getUsableInstrument(event.getEntityPlayer());
-        if(is != null && !(event.getEntityPlayer().getHeldItemMainhand() != null && event.getEntityPlayer().getHeldItemOffhand() != null))
+        if(!is.isEmpty() && !(!event.getEntityPlayer().getHeldItemMainhand().isEmpty() && !event.getEntityPlayer().getHeldItemOffhand().isEmpty()))
         {
             stopPlayingTrack(event.getEntityPlayer());
         }

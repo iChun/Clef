@@ -72,8 +72,6 @@ public class BlockInstrumentPlayer extends BlockContainer
             TileEntityInstrumentPlayer player = (TileEntityInstrumentPlayer)te;
             boolean hasSlot = false;
             ItemStack is = playerIn.getHeldItemMainhand();
-            if(is != null)
-            {
                 if(is.getItem() == Clef.itemInstrument && !playerIn.isSneaking())
                 {
                     if(is.getTagCompound() == null && !worldIn.isRemote)
@@ -92,7 +90,7 @@ public class BlockInstrumentPlayer extends BlockContainer
                             {
                                 player.setInventorySlotContents(i, is);
                                 player.markDirty();
-                                playerIn.setHeldItem(EnumHand.MAIN_HAND, null);
+                                playerIn.setHeldItem(EnumHand.MAIN_HAND, ItemStack.EMPTY);
                                 playerIn.inventory.markDirty();
                                 worldIn.notifyBlockUpdate(pos, state, state, 3);
                             }
@@ -128,7 +126,6 @@ public class BlockInstrumentPlayer extends BlockContainer
                     }
                     return true;
                 }
-            }
             if(!hasSlot && !player.justCreatedInstrument)
             {
                 FMLNetworkHandler.openGui(playerIn, Clef.instance, 0, worldIn, pos.getX(), pos.getY(), pos.getZ());

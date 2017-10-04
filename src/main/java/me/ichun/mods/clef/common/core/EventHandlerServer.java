@@ -86,11 +86,11 @@ public class EventHandlerServer
             {
                 ItemStack isMain = event.player.getHeldItemMainhand();
                 ItemStack isOff = event.player.getHeldItemOffhand();
-                if(isMain != null && isMain.getItem() == Clef.itemInstrument)
+                if(isMain.getItem() == Clef.itemInstrument)
                 {
                     InstrumentLibrary.checkForInstrument(isMain, event.player);
                 }
-                if(isOff != null && isOff.getItem() == Clef.itemInstrument)
+                if(isOff.getItem() == Clef.itemInstrument)
                 {
                     InstrumentLibrary.checkForInstrument(isOff, event.player);
                 }
@@ -139,7 +139,7 @@ public class EventHandlerServer
         if(!event.getEntityLiving().getEntityWorld().isRemote && event.getEntityLiving() instanceof EntityZombie && event.getEntityLiving().getRNG().nextFloat() < (Clef.config.zombieSpawnRate / 10000F))
         {
             EntityZombie zombie = (EntityZombie)event.getEntityLiving();
-            if(zombie.getHeldItemMainhand() == null)
+            if(zombie.getHeldItemMainhand().isEmpty())
             {
                 ItemStack stack = new ItemStack(Clef.itemInstrument, 1, 0);
                 InstrumentLibrary.assignRandomInstrument(stack);
