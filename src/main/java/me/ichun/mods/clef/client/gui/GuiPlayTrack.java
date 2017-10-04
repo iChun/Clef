@@ -8,9 +8,9 @@ import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.*;
+import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.VertexBuffer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.translation.I18n;
@@ -86,7 +86,7 @@ public class GuiPlayTrack extends GuiScreen
         buttonList.add(new GuiButton(ID_CONFIRM, guiLeft + 174, guiTop + 210, 83, 20, I18n.translateToLocal("clef.gui.play")));
         addButtons();
 
-        bandName = new GuiTextField(0, mc.fontRendererObj, this.guiLeft + 181, this.guiTop + 18, 64, mc.fontRendererObj.FONT_HEIGHT);
+        bandName = new GuiTextField(0, mc.fontRenderer, this.guiLeft + 181, this.guiTop + 18, 64, mc.fontRenderer.FONT_HEIGHT);
         bandName.setMaxStringLength(15);
         bandName.setEnableBackgroundDrawing(false);
         bandName.setTextColor(16777215);
@@ -125,7 +125,7 @@ public class GuiPlayTrack extends GuiScreen
 
     public FontRenderer getFontRenderer()
     {
-        return fontRendererObj;
+        return fontRenderer;
     }
 
     @Override
@@ -216,7 +216,7 @@ public class GuiPlayTrack extends GuiScreen
         if(mc == null)
         {
             mc = Minecraft.getMinecraft();
-            fontRendererObj = mc.fontRendererObj;
+            fontRenderer = mc.fontRenderer;
         }
         drawDefaultBackground();
 
@@ -231,11 +231,11 @@ public class GuiPlayTrack extends GuiScreen
             bandName.drawTextBox();
         }
 
-        fontRendererObj.drawString(I18n.translateToLocal("clef.gui.band"), guiLeft + 179, guiTop + 5, 16777215, true);
+        fontRenderer.drawString(I18n.translateToLocal("clef.gui.band"), guiLeft + 179, guiTop + 5, 16777215, true);
 
         if(bandName.getText().isEmpty() && !bandName.isFocused())
         {
-            fontRendererObj.drawString(I18n.translateToLocal("clef.gui.bandSolo"), guiLeft + 182, guiTop + 18, 0xcccccc, false);
+            fontRenderer.drawString(I18n.translateToLocal("clef.gui.bandSolo"), guiLeft + 182, guiTop + 18, 0xcccccc, false);
         }
 
         drawText();
@@ -254,15 +254,15 @@ public class GuiPlayTrack extends GuiScreen
 
     public void drawText()
     {
-        fontRendererObj.drawString(I18n.translateToLocal("clef.gui.chooseSong") + " (" + tracks.size() + ")", guiLeft + 6, guiTop + 5, 16777215, true);
-        fontRendererObj.drawString(I18n.translateToLocal("clef.gui.syncPlayTime"), guiLeft + 179, guiTop + 40, 16777215, true);
-        fontRendererObj.drawString(I18n.translateToLocal("clef.gui.syncTrack"), guiLeft + 179, guiTop + 83, 16777215, true);
+        fontRenderer.drawString(I18n.translateToLocal("clef.gui.chooseSong") + " (" + tracks.size() + ")", guiLeft + 6, guiTop + 5, 16777215, true);
+        fontRenderer.drawString(I18n.translateToLocal("clef.gui.syncPlayTime"), guiLeft + 179, guiTop + 40, 16777215, true);
+        fontRenderer.drawString(I18n.translateToLocal("clef.gui.syncTrack"), guiLeft + 179, guiTop + 83, 16777215, true);
         GlStateManager.pushMatrix();
-        int length = fontRendererObj.getStringWidth(I18n.translateToLocal("clef.gui.moreSongs"));
+        int length = fontRenderer.getStringWidth(I18n.translateToLocal("clef.gui.moreSongs"));
         GlStateManager.translate(guiLeft - 4, guiTop + length + 3, 0);
         GlStateManager.scale(0.5F, 0.5F, 1F);
         GlStateManager.rotate(-90F, 0F, 0F, 1F);
-        fontRendererObj.drawString(I18n.translateToLocal("clef.gui.moreSongs"), 0, 0, 16777215, true);
+        fontRenderer.drawString(I18n.translateToLocal("clef.gui.moreSongs"), 0, 0, 16777215, true);
         GlStateManager.popMatrix();
     }
 
@@ -279,10 +279,10 @@ public class GuiPlayTrack extends GuiScreen
             disableListWhenSyncTrack = Clef.eventHandlerClient.findTrackByBand(bandName.getText()) != null;
         }
 
-        fontRendererObj.drawString(I18n.translateToLocal("clef.gui.reload"), guiLeft + 179, guiTop + 126, 16777215, true);
+        fontRenderer.drawString(I18n.translateToLocal("clef.gui.reload"), guiLeft + 179, guiTop + 126, 16777215, true);
         if(doneTimeout > 0)
         {
-            fontRendererObj.drawString(I18n.translateToLocal("gui.done"), guiLeft + 179 + 2 + fontRendererObj.getStringWidth(I18n.translateToLocal("clef.gui.reload")), guiTop + 126, 16777215, true);
+            fontRenderer.drawString(I18n.translateToLocal("gui.done"), guiLeft + 179 + 2 + fontRenderer.getStringWidth(I18n.translateToLocal("clef.gui.reload")), guiTop + 126, 16777215, true);
         }
 
         GlStateManager.color(1F, 1F, 1F, 1F);
@@ -290,12 +290,12 @@ public class GuiPlayTrack extends GuiScreen
         float x = guiLeft + 179 + 2;
         float y = guiTop + 137 + 2;
         Tessellator tessellator = Tessellator.getInstance();
-        VertexBuffer vertexbuffer = tessellator.getBuffer();
-        vertexbuffer.begin(7, DefaultVertexFormats.POSITION_TEX);
-        vertexbuffer.pos((double)(x + 0), (double)(y + 16), (double)this.zLevel).tex(0F, 1F).endVertex();
-        vertexbuffer.pos((double)(x + 16), (double)(y + 16), (double)this.zLevel).tex(1F, 1F).endVertex();
-        vertexbuffer.pos((double)(x + 16), (double)(y + 0), (double)this.zLevel).tex(1F, 0F).endVertex();
-        vertexbuffer.pos((double)(x + 0), (double)(y + 0), (double)this.zLevel).tex(0F, 0F).endVertex();
+        BufferBuilder bufferbuilder = tessellator.getBuffer();
+        bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX);
+        bufferbuilder.pos((double)(x + 0), (double)(y + 16), (double)this.zLevel).tex(0F, 1F).endVertex();
+        bufferbuilder.pos((double)(x + 16), (double)(y + 16), (double)this.zLevel).tex(1F, 1F).endVertex();
+        bufferbuilder.pos((double)(x + 16), (double)(y + 0), (double)this.zLevel).tex(1F, 0F).endVertex();
+        bufferbuilder.pos((double)(x + 0), (double)(y + 0), (double)this.zLevel).tex(0F, 0F).endVertex();
         tessellator.draw();
 
         this.mc.getTextureManager().bindTexture(texIcons);
@@ -313,7 +313,7 @@ public class GuiPlayTrack extends GuiScreen
         bandName.mouseClicked(mouseX, mouseY, btn);
         if(btn == 1) //RMB
         {
-            boolean flag = mouseX >= bandName.xPosition && mouseX < bandName.xPosition + this.width && mouseY >= bandName.yPosition && mouseY < bandName.yPosition + this.height;
+            boolean flag = mouseX >= bandName.x && mouseX < bandName.x + this.width && mouseY >= bandName.y && mouseY < bandName.y + this.height;
             if(flag)
             {
                 if(bandName.getText().isEmpty())
@@ -464,7 +464,7 @@ public class GuiPlayTrack extends GuiScreen
             for(Object aPar1List : par1List)
             {
                 String s = (String)aPar1List;
-                int l = this.fontRendererObj.getStringWidth(s);
+                int l = this.fontRenderer.getStringWidth(s);
 
                 if(l > k)
                 {
@@ -508,7 +508,7 @@ public class GuiPlayTrack extends GuiScreen
             for (int k2 = 0; k2 < par1List.size(); ++k2)
             {
                 String s1 = (String)par1List.get(k2);
-                this.fontRendererObj.drawStringWithShadow(s1, i1, j1, -1);
+                this.fontRenderer.drawStringWithShadow(s1, i1, j1, -1);
 
                 if (k2 == 0)
                 {

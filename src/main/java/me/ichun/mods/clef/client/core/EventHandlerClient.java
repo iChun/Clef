@@ -1,6 +1,5 @@
 package me.ichun.mods.clef.client.core;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import me.ichun.mods.clef.client.render.BakedModelInstrument;
@@ -16,11 +15,14 @@ import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.event.ModelBakeEvent;
+import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.client.model.ItemLayerModel;
+import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
@@ -29,12 +31,20 @@ import net.minecraftforge.fml.common.network.FMLNetworkEvent;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Optional;
 
 public class EventHandlerClient
 {
     public HashSet<Track> tracksPlaying = new HashSet<>();
 
     public TextureAtlasSprite txInstrument;
+
+    @SubscribeEvent
+    public void onModelRegistry(ModelRegistryEvent event)
+    {
+        ModelLoader.setCustomModelResourceLocation(Clef.itemInstrument, 0, new ModelResourceLocation("clef:instrument", "inventory"));
+        ModelLoader.setCustomModelResourceLocation(Item.getItemFromBlock(Clef.blockInstrumentPlayer), 0, new ModelResourceLocation("clef:block_instrument_player", "inventory"));
+    }
 
     @SubscribeEvent
     public void onTextureStitchedPre(TextureStitchEvent.Pre event)
@@ -46,7 +56,7 @@ public class EventHandlerClient
     public void onModelBake(ModelBakeEvent event)
     {
         ImmutableList.Builder<BakedQuad> builder = ImmutableList.builder();
-        builder.addAll(ItemLayerModel.getQuadsForSprite(0, txInstrument, DefaultVertexFormats.ITEM, Optional.absent()));
+        builder.addAll(ItemLayerModel.getQuadsForSprite(0, txInstrument, DefaultVertexFormats.ITEM, Optional.empty()));
         event.getModelRegistry().putObject(new ModelResourceLocation("clef:instrument", "inventory"), new BakedModelInstrument(builder.build(), txInstrument, ImmutableMap.copyOf(new HashMap<>()), null, null));
     }
 

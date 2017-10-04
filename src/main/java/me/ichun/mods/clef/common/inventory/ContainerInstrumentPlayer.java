@@ -32,7 +32,7 @@ public class ContainerInstrumentPlayer extends Container
     @Override
     public boolean canInteractWith(EntityPlayer playerIn)
     {
-        return this.inventory.isUseableByPlayer(playerIn);
+        return this.inventory.isUsableByPlayer(playerIn);
     }
 
     @Nullable
@@ -42,11 +42,11 @@ public class ContainerInstrumentPlayer extends Container
         {
             if(inventorySlots.get(slotId).getStack() != null)
             {
-                if(!player.worldObj.isRemote)
+                if(!player.world.isRemote)
                 {
-                    InventoryHelper.spawnItemStack(player.worldObj, inventory.getPos().getX() + 0.5D, inventory.getPos().getY() + 1D, inventory.getPos().getZ() + 0.5D, inventorySlots.get(slotId).getStack());
+                    InventoryHelper.spawnItemStack(player.world, inventory.getPos().getX() + 0.5D, inventory.getPos().getY() + 1D, inventory.getPos().getZ() + 0.5D, inventorySlots.get(slotId).getStack());
                 }
-                player.worldObj.playSound(null, inventory.getPos().getX() + 0.5D, inventory.getPos().getY() + 1D, inventory.getPos().getZ() + 0.5D, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 0.2F, ((player.worldObj.rand.nextFloat() - player.worldObj.rand.nextFloat()) * 0.7F + 1.0F) * 2.0F);
+                player.world.playSound(null, inventory.getPos().getX() + 0.5D, inventory.getPos().getY() + 1D, inventory.getPos().getZ() + 0.5D, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 0.2F, ((player.world.rand.nextFloat() - player.world.rand.nextFloat()) * 0.7F + 1.0F) * 2.0F);
                 inventorySlots.get(slotId).putStack(null);
                 inventory.setInventorySlotContents(slotId, null);
                 inventory.markDirty();

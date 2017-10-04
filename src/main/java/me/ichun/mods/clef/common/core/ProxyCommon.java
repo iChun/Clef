@@ -24,21 +24,6 @@ public class ProxyCommon
     {
         (new ThreadReadFiles()).start();
 
-        Clef.itemInstrument = GameRegistry.register((new ItemInstrument()).setFull3D().setRegistryName("clef", "instrument").setUnlocalizedName("clef.item.instrument"));
-
-        Clef.creativeTabInstruments = new CreativeTabs("clef") {
-            @Override
-            public Item getTabIconItem()
-            {
-                return Clef.itemInstrument;
-            }
-        };
-
-        Clef.itemInstrument.setCreativeTab(Clef.creativeTabInstruments);
-
-        Clef.blockInstrumentPlayer = GameRegistry.register(new BlockInstrumentPlayer().setRegistryName("clef", "block_instrument_player").setUnlocalizedName("clef.item.instrumentPlayer"));
-        GameRegistry.register(new ItemBlock(Clef.blockInstrumentPlayer).setRegistryName(Clef.blockInstrumentPlayer.getRegistryName()));
-
         GameRegistry.registerTileEntity(TileEntityInstrumentPlayer.class, "Clef:InstrumentPlayer");
 
         NetworkRegistry.INSTANCE.registerGuiHandler(Clef.instance, new GuiPlayTrackBlockHandler());
@@ -52,11 +37,5 @@ public class ProxyCommon
         MinecraftForge.EVENT_BUS.register(Clef.eventHandlerServer);
 
         Clef.channel = new PacketChannel("Clef", PacketRequestFile.class, PacketFileFragment.class, PacketPlayABC.class, PacketPlayingTracks.class, PacketStopPlayingTrack.class, PacketInstrumentPlayerInfo.class, PacketCreateInstrument.class);
-    }
-
-    public void initMod(){}
-
-    public void postInitMod()
-    {
     }
 }

@@ -28,8 +28,6 @@ import net.minecraftforge.fml.common.network.internal.FMLNetworkHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
-import javax.annotation.Nullable;
-
 public class BlockInstrumentPlayer extends BlockContainer
 {
     public BlockInstrumentPlayer()
@@ -45,7 +43,7 @@ public class BlockInstrumentPlayer extends BlockContainer
     }
 
     @Override
-    public void neighborChanged(IBlockState state, World worldIn, BlockPos pos, Block blockIn)
+    public void neighborChanged(IBlockState state, World worldIn, BlockPos pos, Block blockIn, BlockPos fromPos)
     {
         if(!worldIn.isRemote)
         {
@@ -66,7 +64,7 @@ public class BlockInstrumentPlayer extends BlockContainer
     }
 
     @Override
-    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, @Nullable ItemStack heldItem, EnumFacing side, float hitX, float hitY, float hitZ)
+    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, EnumFacing side, float hitX, float hitY, float hitZ)
     {
         TileEntity te = worldIn.getTileEntity(pos);
         if(te instanceof TileEntityInstrumentPlayer)
@@ -172,6 +170,6 @@ public class BlockInstrumentPlayer extends BlockContainer
     @SideOnly(Side.CLIENT)
     public void openGui(TileEntityInstrumentPlayer player)
     {
-        FMLClientHandler.instance().displayGuiScreen(Minecraft.getMinecraft().thePlayer, new GuiPlayTrackBlock(player));
+        FMLClientHandler.instance().displayGuiScreen(Minecraft.getMinecraft().player, new GuiPlayTrackBlock(player));
     }
 }

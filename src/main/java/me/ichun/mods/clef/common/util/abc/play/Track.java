@@ -139,7 +139,7 @@ public class Track
                 {
                     Map.Entry<EntityPlayer, Integer> e = playerIte.next();
                     EntityPlayer player = e.getKey();
-                    if(player.isEntityAlive() && player.getDistanceToEntity(mcPlayer) < 48D)
+                    if(player.isEntityAlive() && player.getDistance(mcPlayer) < 48D)
                     {
                         ItemStack is = ItemInstrument.getUsableInstrument(player);
                         if(is != null)
@@ -180,7 +180,7 @@ public class Track
                     {
                         if(mcPlayer.getDistance(pos.getX(), pos.getY(), pos.getZ()) < 48D)
                         {
-                            TileEntity te = mcPlayer.worldObj.getTileEntity(pos);
+                            TileEntity te = mcPlayer.world.getTileEntity(pos);
                             if(te instanceof TileEntityInstrumentPlayer)
                             {
                                 TileEntityInstrumentPlayer player = (TileEntityInstrumentPlayer)te;
@@ -208,8 +208,8 @@ public class Track
                 while(ite1.hasNext())
                 {
                     Integer i = ite1.next();
-                    Entity ent = mcPlayer.worldObj.getEntityByID(i);
-                    if(ent instanceof EntityZombie && ent.isEntityAlive() && mcPlayer.getDistanceToEntity(ent) < 48D)
+                    Entity ent = mcPlayer.world.getEntityByID(i);
+                    if(ent instanceof EntityZombie && ent.isEntityAlive() && mcPlayer.getDistance(ent) < 48D)
                     {
                         ItemStack is = ItemInstrument.getUsableInstrument((EntityZombie)ent);
                         if(is != null)
@@ -336,9 +336,9 @@ public class Track
         while(ite.hasNext())
         {
             String s = ite.next();
-            if(Minecraft.getMinecraft().theWorld != null)
+            if(Minecraft.getMinecraft().world != null)
             {
-                EntityPlayer player = Minecraft.getMinecraft().theWorld.getPlayerEntityByName(s);
+                EntityPlayer player = Minecraft.getMinecraft().world.getPlayerEntityByName(s);
                 if(player != null && player.isEntityAlive())
                 {
                     players.put(player, 0);
@@ -357,12 +357,12 @@ public class Track
     @SideOnly(Side.CLIENT)
     public boolean shouldRequestTrack()
     {
-        HashSet<BlockPos> poses = instrumentPlayers.get(Minecraft.getMinecraft().thePlayer.getEntityWorld().provider.getDimension());
+        HashSet<BlockPos> poses = instrumentPlayers.get(Minecraft.getMinecraft().player.getEntityWorld().provider.getDimension());
         if(poses != null)
         {
             for(BlockPos pos : poses)
             {
-                if(Minecraft.getMinecraft().thePlayer.getDistance(pos.getX(), pos.getY(), pos.getZ()) < 48D)
+                if(Minecraft.getMinecraft().player.getDistance(pos.getX(), pos.getY(), pos.getZ()) < 48D)
                 {
                     return true;
                 }
@@ -373,9 +373,9 @@ public class Track
         while(ite.hasNext())
         {
             String s = ite.next();
-            if(Minecraft.getMinecraft().theWorld != null)
+            if(Minecraft.getMinecraft().world != null)
             {
-                EntityPlayer player = Minecraft.getMinecraft().theWorld.getPlayerEntityByName(s);
+                EntityPlayer player = Minecraft.getMinecraft().world.getPlayerEntityByName(s);
                 if(player != null && player.isEntityAlive())
                 {
                     return true;
@@ -387,9 +387,9 @@ public class Track
         while(ite1.hasNext())
         {
             Integer i = ite1.next();
-            if(Minecraft.getMinecraft().theWorld != null)
+            if(Minecraft.getMinecraft().world != null)
             {
-                Entity ent = Minecraft.getMinecraft().theWorld.getEntityByID(i);
+                Entity ent = Minecraft.getMinecraft().world.getEntityByID(i);
                 if(ent != null && ent.isEntityAlive())
                 {
                     return true;

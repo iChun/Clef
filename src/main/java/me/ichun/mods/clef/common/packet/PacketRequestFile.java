@@ -36,7 +36,7 @@ public class PacketRequestFile extends AbstractPacket
     }
 
     @Override
-    public AbstractPacket execute(Side side, EntityPlayer player)
+    public void execute(Side side, EntityPlayer player)
     {
         if(isInstrument)
         {
@@ -46,7 +46,6 @@ public class PacketRequestFile extends AbstractPacket
         {
             AbcLibrary.sendAbc(file, side == Side.SERVER ? player : null);
         }
-        return null;
     }
 
     @Override

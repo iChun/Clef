@@ -1,6 +1,7 @@
 package me.ichun.mods.clef.common.core;
 
 import me.ichun.mods.clef.common.Clef;
+import me.ichun.mods.clef.common.block.BlockInstrumentPlayer;
 import me.ichun.mods.clef.common.item.ItemInstrument;
 import me.ichun.mods.clef.common.packet.PacketPlayingTracks;
 import me.ichun.mods.clef.common.tileentity.TileEntityInstrumentPlayer;
@@ -11,17 +12,24 @@ import me.ichun.mods.clef.common.util.instrument.Instrument;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import me.ichun.mods.ichunutil.common.core.util.IOUtil;
 import me.ichun.mods.ichunutil.common.iChunUtil;
+import net.minecraft.block.Block;
+import net.minecraft.block.material.Material;
+import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumHand;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.storage.loot.*;
 import net.minecraft.world.storage.loot.conditions.LootCondition;
 import net.minecraft.world.storage.loot.functions.LootFunction;
 import net.minecraftforge.event.LootTableLoadEvent;
+import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingSpawnEvent;
@@ -29,6 +37,7 @@ import net.minecraftforge.event.entity.player.PlayerDropsEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import org.apache.commons.lang3.RandomStringUtils;
 
@@ -39,6 +48,34 @@ import java.util.Random;
 public class EventHandlerServer
 {
     public HashSet<Track> tracksPlaying = new HashSet<>();
+
+    @SubscribeEvent
+    public void onRegisterBlock(RegistryEvent.Register<Block> event)
+    {
+        Clef.blockInstrumentPlayer = new BlockInstrumentPlayer().setRegistryName("clef", "block_instrument_player").setUnlocalizedName("clef.item.instrumentPlayer");
+
+        event.getRegistry().register(Clef.blockInstrumentPlayer);
+    }
+
+    @SubscribeEvent
+    public void onRegisterItem(RegistryEvent.Register<Item> event)
+    {
+        Clef.itemInstrument = (new ItemInstrument()).setFull3D().setRegistryName("clef", "instrument").setUnlocalizedName("clef.item.instrument");
+        event.getRegistry().register(Clef.itemInstrument);
+
+        Clef.creativeTabInstruments = new CreativeTabs("clef") {
+            public final ItemStack iconItem = new ItemStack(Clef.itemInstrument);
+
+            @Override
+            public ItemStack getTabIconItem()
+            {
+                return iconItem;
+            }
+        };
+        Clef.itemInstrument.setCreativeTab(Clef.creativeTabInstruments);
+
+        event.getRegistry().register(new ItemBlock(Clef.blockInstrumentPlayer).setRegistryName(Clef.blockInstrumentPlayer.getRegistryName()));
+    }
 
     @SubscribeEvent
     public void onPlayerTick(TickEvent.PlayerTickEvent event)
@@ -68,9 +105,9 @@ public class EventHandlerServer
         {
             for(EntityItem item : event.getDrops())
             {
-                if(item.getEntityItem().getItem() == Clef.itemInstrument)
+                if(item.getItem().getItem() == Clef.itemInstrument)
                 {
-                    NBTTagCompound tag = item.getEntityItem().getTagCompound();
+                    NBTTagCompound tag = item.getItem().getTagCompound();
                     if(tag != null)
                     {
                         String instName = tag.getString("itemName");
@@ -114,7 +151,7 @@ public class EventHandlerServer
     @SubscribeEvent
     public void onLivingUpdate(LivingEvent.LivingUpdateEvent event)
     {
-        if(Clef.config.zombiesCanUseInstruments == 1 && !event.getEntityLiving().worldObj.isRemote && event.getEntityLiving() instanceof EntityZombie)
+        if(Clef.config.zombiesCanUseInstruments == 1 && !event.getEntityLiving().world.isRemote && event.getEntityLiving() instanceof EntityZombie)
         {
             EntityZombie zombie = (EntityZombie)event.getEntityLiving();
             if(zombie.getRNG().nextFloat() < 0.004F &&ItemInstrument.getUsableInstrument(zombie) != null && getTrackPlayedByPlayer(zombie) == null)

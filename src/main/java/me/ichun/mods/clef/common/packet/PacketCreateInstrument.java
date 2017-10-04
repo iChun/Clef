@@ -50,14 +50,14 @@ public class PacketCreateInstrument extends AbstractPacket
     }
 
     @Override
-    public AbstractPacket execute(Side side, EntityPlayer player)
+    public void execute(Side side, EntityPlayer player)
     {
         if(Clef.config.creatableInstruments == 0)
         {
-            return null;
+            return;
         }
 
-        TileEntity te = player.worldObj.getTileEntity(pos);
+        TileEntity te = player.world.getTileEntity(pos);
         if(te instanceof TileEntityInstrumentPlayer)
         {
             TileEntityInstrumentPlayer player1 = (TileEntityInstrumentPlayer)te;
@@ -93,7 +93,7 @@ public class PacketCreateInstrument extends AbstractPacket
                     }
                     else if(Clef.config.creatableInstruments < 2)
                     {
-                        return null;
+                        return;
                     }
 
                     for(int i = 0; i < 9; i++)
@@ -104,8 +104,8 @@ public class PacketCreateInstrument extends AbstractPacket
                     NBTTagCompound tag = new NBTTagCompound();
                     tag.setString("itemName", instrumentName);
                     is.setTagCompound(tag);
-                    InventoryHelper.spawnItemStack(player.worldObj, pos.getX() + 0.5D, pos.getY() + 1D, pos.getZ() + 0.5D, is);
-                    player.worldObj.playSound(null, pos.getX() + 0.5D, pos.getY() + 1D, pos.getZ() + 0.5D, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 0.2F, ((player.worldObj.rand.nextFloat() - player.worldObj.rand.nextFloat()) * 0.7F + 1.0F) * 2.0F);
+                    InventoryHelper.spawnItemStack(player.world, pos.getX() + 0.5D, pos.getY() + 1D, pos.getZ() + 0.5D, is);
+                    player.world.playSound(null, pos.getX() + 0.5D, pos.getY() + 1D, pos.getZ() + 0.5D, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 0.2F, ((player.world.rand.nextFloat() - player.world.rand.nextFloat()) * 0.7F + 1.0F) * 2.0F);
                     player1.markDirty();
                     player.setHeldItem(EnumHand.MAIN_HAND, null);
                     player.inventory.markDirty();
@@ -113,7 +113,7 @@ public class PacketCreateInstrument extends AbstractPacket
                 }
             }
         }
-            return null;
+        return;
     }
 
     @Override

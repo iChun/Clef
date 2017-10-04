@@ -24,9 +24,10 @@ import java.io.File;
 
 @Mod(modid = Clef.MOD_ID, name = Clef.MOD_NAME,
         version = Clef.VERSION,
-        guiFactory = "me.ichun.mods.ichunutil.common.core.config.GenericModGuiFactory",
-        dependencies = "required-after:ichunutil@[" + iChunUtil.VERSION_MAJOR +".5.0," + (iChunUtil.VERSION_MAJOR + 1) + ".0.0)",
-        acceptableRemoteVersions = "[" + iChunUtil.VERSION_MAJOR +".0.0," + iChunUtil.VERSION_MAJOR + ".1.0)"
+        guiFactory = iChunUtil.GUI_CONFIG_FACTORY,
+        dependencies = "required-after:ichunutil@[" + iChunUtil.VERSION_MAJOR +".0.1," + (iChunUtil.VERSION_MAJOR + 1) + ".0.0)",
+        acceptableRemoteVersions = "[" + iChunUtil.VERSION_MAJOR +".0.0," + iChunUtil.VERSION_MAJOR + ".1.0)",
+        acceptedMinecraftVersions = iChunUtil.MC_VERSION_RANGE
 )
 public class Clef
 {
@@ -65,18 +66,6 @@ public class Clef
         proxy.preInitMod();
 
         UpdateChecker.registerMod(new UpdateChecker.ModVersionInfo(MOD_NAME, iChunUtil.VERSION_OF_MC, VERSION, false));
-    }
-
-    @Mod.EventHandler
-    public void init(FMLInitializationEvent event)
-    {
-        proxy.initMod();
-    }
-
-    @Mod.EventHandler
-    public void postInit(FMLPostInitializationEvent event)
-    {
-        proxy.postInitMod();
     }
 
     @Mod.EventHandler

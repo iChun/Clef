@@ -8,6 +8,7 @@ import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import me.ichun.mods.ichunutil.common.item.DualHandedItemCallback;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -19,6 +20,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumHand;
+import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.translation.I18n;
 import net.minecraft.world.World;
@@ -26,6 +28,7 @@ import net.minecraftforge.fml.client.FMLClientHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public class ItemInstrument extends Item
@@ -44,15 +47,16 @@ public class ItemInstrument extends Item
     }
 
     @Override
-    public ActionResult<ItemStack> onItemRightClick(ItemStack is, World world, EntityPlayer player, EnumHand hand)
+    public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, EnumHand hand)
     {
+        ItemStack is = player.getHeldItem(hand);
         if(is.getTagCompound() == null && !world.isRemote)
         {
             InstrumentLibrary.assignRandomInstrument(is);
         }
         if(getUsableInstrument(player) == is)
         {
-            if(player.worldObj.isRemote)
+            if(player.world.isRemote)
             {
                 Track track = Clef.eventHandlerClient.getTrackPlayedByPlayer(player);
                 if(track == null)
@@ -80,29 +84,29 @@ public class ItemInstrument extends Item
     @SideOnly(Side.CLIENT)
     public void openGui()
     {
-        FMLClientHandler.instance().displayGuiScreen(Minecraft.getMinecraft().thePlayer, new GuiPlayTrack());
+        FMLClientHandler.instance().displayGuiScreen(Minecraft.getMinecraft().player, new GuiPlayTrack());
     }
 
     @SideOnly(Side.CLIENT)
     @Override
-    public void getSubItems(Item itemIn, CreativeTabs tab, List<ItemStack> subItems)
+    public void getSubItems(CreativeTabs tab, NonNullList<ItemStack> items)
     {
-        if(tab == null || tab == Clef.creativeTabInstruments)
+        if (this.isInCreativeTab(tab))
         {
             for(Instrument intrument : InstrumentLibrary.instruments)
             {
-                ItemStack stack = new ItemStack(itemIn, 1, 0);
+                ItemStack stack = new ItemStack(this, 1, 0);
                 NBTTagCompound stackTag = new NBTTagCompound();
                 stackTag.setString("itemName", intrument.info.itemName);
                 stack.setTagCompound(stackTag);
-                subItems.add(stack);
+                items.add(stack);
             }
         }
     }
 
     @SideOnly(Side.CLIENT)
     @Override
-    public void addInformation(ItemStack is, EntityPlayer player, List<String> list, boolean flag)
+    public void addInformation(ItemStack is, @Nullable World worldIn, List<String> list, ITooltipFlag flag)
     {
         NBTTagCompound tag = is.getTagCompound();
         if(tag != null)

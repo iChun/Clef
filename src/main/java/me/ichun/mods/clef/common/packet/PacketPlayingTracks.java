@@ -101,13 +101,12 @@ public class PacketPlayingTracks extends AbstractPacket
     }
 
     @Override
-    public AbstractPacket execute(Side side, EntityPlayer player)
+    public void execute(Side side, EntityPlayer player)
     {
         for(int i = 0; i < tracks.length; i++)
         {
             Clef.eventHandlerClient.addTrack(tracks[i]);
         }
-        return null;
     }
 
     @Override

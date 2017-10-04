@@ -43,10 +43,9 @@ public class PacketPlayABC extends AbstractPacket
     }
 
     @Override
-    public AbstractPacket execute(Side side, EntityPlayer player)
+    public void execute(Side side, EntityPlayer player)
     {
         AbcLibrary.playAbc(abc_md5, bandName, syncPlay, syncTrack, player);
-        return null;
     }
 
     @Override

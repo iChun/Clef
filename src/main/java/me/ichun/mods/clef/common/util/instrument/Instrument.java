@@ -1,6 +1,5 @@
 package me.ichun.mods.clef.common.util.instrument;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
@@ -27,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -189,7 +189,7 @@ public class Instrument
             ImmutableList.Builder<BakedQuad> builder = ImmutableList.builder();
             tasi = new TextureAtlasSpriteBufferedImage(this.rl, this.image);
             tasi.load(Minecraft.getMinecraft().getResourceManager(), rl);
-            builder.addAll(ItemLayerModel.getQuadsForSprite(0, tasi, DefaultVertexFormats.ITEM, Optional.absent()));
+            builder.addAll(ItemLayerModel.getQuadsForSprite(0, tasi, DefaultVertexFormats.ITEM, Optional.empty()));
             quads = builder.build();
         }
     }

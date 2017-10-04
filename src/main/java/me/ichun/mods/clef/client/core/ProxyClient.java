@@ -16,14 +16,5 @@ public class ProxyClient extends ProxyCommon
 
         Clef.eventHandlerClient = new EventHandlerClient();
         MinecraftForge.EVENT_BUS.register(Clef.eventHandlerClient);
-
-        ModelLoader.setCustomModelResourceLocation(Clef.itemInstrument, 0, new ModelResourceLocation("clef:instrument", "inventory"));
-        ModelLoader.setCustomModelResourceLocation(Item.getItemFromBlock(Clef.blockInstrumentPlayer), 0, new ModelResourceLocation("clef:block_instrument_player", "inventory"));
-    }
-
-    @Override
-    public void initMod()
-    {
-        SoundSystemReflect.init();
     }
 }
