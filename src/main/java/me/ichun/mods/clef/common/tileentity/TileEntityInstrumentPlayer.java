@@ -238,11 +238,8 @@ public class TileEntityInstrumentPlayer extends TileEntity
     public NBTTagCompound writeToNBT(NBTTagCompound tag)
     {
         super.writeToNBT(tag);
-        NBTTagList nbttaglist = new NBTTagList();
 
         ItemStackHelper.saveAllItems(tag, this.contents);
-
-        tag.setTag("Items", nbttaglist);
         tag.setBoolean("powered", this.previousRedstoneState);
 
         tag.setInteger("trackCount", tracks.size());

@@ -48,7 +48,7 @@ public class ContainerInstrumentPlayer extends Container
                 }
                 player.world.playSound(null, inventory.getPos().getX() + 0.5D, inventory.getPos().getY() + 1D, inventory.getPos().getZ() + 0.5D, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 0.2F, ((player.world.rand.nextFloat() - player.world.rand.nextFloat()) * 0.7F + 1.0F) * 2.0F);
                 inventorySlots.get(slotId).putStack(ItemStack.EMPTY);
-                inventory.setInventorySlotContents(slotId, null);
+                inventory.setInventorySlotContents(slotId, ItemStack.EMPTY);
                 inventory.markDirty();
             }
         }

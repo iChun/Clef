@@ -73,6 +73,7 @@ public class EventHandlerServer
             }
         };
         Clef.itemInstrument.setCreativeTab(Clef.creativeTabInstruments);
+        Clef.blockInstrumentPlayer.setCreativeTab(Clef.creativeTabInstruments);
 
         event.getRegistry().register(new ItemBlock(Clef.blockInstrumentPlayer).setRegistryName(Clef.blockInstrumentPlayer.getRegistryName()));
     }

@@ -25,7 +25,7 @@ import java.io.File;
 @Mod(modid = Clef.MOD_ID, name = Clef.MOD_NAME,
         version = Clef.VERSION,
         guiFactory = iChunUtil.GUI_CONFIG_FACTORY,
-        dependencies = "required-after:ichunutil@[" + iChunUtil.VERSION_MAJOR +".0.1," + (iChunUtil.VERSION_MAJOR + 1) + ".0.0)",
+        dependencies = "required-after:ichunutil@[" + iChunUtil.VERSION_MAJOR +".0.2," + (iChunUtil.VERSION_MAJOR + 1) + ".0.0)",
         acceptableRemoteVersions = "[" + iChunUtil.VERSION_MAJOR +".0.0," + iChunUtil.VERSION_MAJOR + ".1.0)",
         acceptedMinecraftVersions = iChunUtil.MC_VERSION_RANGE
 )

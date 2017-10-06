@@ -47,12 +47,19 @@ public class BakedModelInstrument
         this.instTx = instTx;
     }
 
+    @Override
     public boolean isAmbientOcclusion() { return true; }
+    @Override
     public boolean isGui3d() { return false; }
+    @Override
     public boolean isBuiltInRenderer() { return false; }
+    @Override
     public TextureAtlasSprite getParticleTexture() { return particle; }
+    @Override
     public ItemCameraTransforms getItemCameraTransforms() { return ItemCameraTransforms.DEFAULT; }
+    @Override
     public ItemOverrideList getOverrides() { return BakedModelInstrument.ItemOverrideListHandler.INSTANCE; }
+    @Override
     public List<BakedQuad> getQuads(IBlockState state, EnumFacing side, long rand)
     {
         if(side == null)
@@ -66,6 +73,7 @@ public class BakedModelInstrument
         return ImmutableList.of();
     }
 
+    @Override
     public Pair<? extends IBakedModel, Matrix4f> handlePerspective(ItemCameraTransforms.TransformType type)
     {
         if(instrument != null)
