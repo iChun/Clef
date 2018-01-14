@@ -78,7 +78,10 @@ public class ItemInstrument extends Item
     @Override
     public boolean onLeftClickEntity(ItemStack stack, EntityPlayer player, Entity entity)
     {
-        Clef.eventHandlerClient.stopPlayingTrack(player);
+        if (player.world.isRemote) //is fired on the server as well
+        {
+            Clef.eventHandlerClient.stopPlayingTrack(player);
+        }
         return false;
     }
 

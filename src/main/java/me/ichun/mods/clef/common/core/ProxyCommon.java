@@ -14,9 +14,12 @@ import net.minecraftforge.fml.common.registry.GameRegistry;
 
 public class ProxyCommon
 {
+    private ThreadReadFiles threadReadFiles;
+
     public void preInitMod()
     {
-        (new ThreadReadFiles()).start();
+        threadReadFiles  = new ThreadReadFiles();
+        threadReadFiles.start();
 
         GameRegistry.registerTileEntity(TileEntityInstrumentPlayer.class, "Clef:InstrumentPlayer");
 
@@ -28,5 +31,19 @@ public class ProxyCommon
         MinecraftForge.EVENT_BUS.register(Clef.eventHandlerServer);
 
         Clef.channel = new PacketChannel("Clef", PacketRequestFile.class, PacketFileFragment.class, PacketPlayABC.class, PacketPlayingTracks.class, PacketStopPlayingTrack.class, PacketInstrumentPlayerInfo.class, PacketCreateInstrument.class);
+    }
+
+    public void loadComplete()
+    {
+        Clef.LOGGER.info("Waiting for file reader thread to finish");
+        try
+        {
+            threadReadFiles.latch.await();
+        }
+        catch (InterruptedException e)
+        {
+            Clef.LOGGER.error("Got interrupted while waiting for FileReaderThread to finish");
+            e.printStackTrace();
+        }
     }
 }

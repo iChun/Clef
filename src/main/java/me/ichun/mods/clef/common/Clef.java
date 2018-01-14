@@ -13,7 +13,6 @@ import me.ichun.mods.ichunutil.common.module.update.UpdateChecker;
 import net.minecraft.block.Block;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.*;
@@ -64,6 +63,12 @@ public class Clef
         proxy.preInitMod();
 
         UpdateChecker.registerMod(new UpdateChecker.ModVersionInfo(MOD_NAME, iChunUtil.VERSION_OF_MC, VERSION, false));
+    }
+
+    @Mod.EventHandler
+    public void loadComplete(FMLLoadCompleteEvent event)
+    {
+        proxy.loadComplete();
     }
 
     @Mod.EventHandler
