@@ -1,6 +1,7 @@
 package me.ichun.mods.clef.common.util.abc.play;
 
 import io.netty.util.internal.ThreadLocalRandom;
+import me.ichun.mods.clef.client.core.SoundSystemWatchThread;
 import me.ichun.mods.clef.client.sound.InstrumentSound;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
@@ -75,12 +76,14 @@ public class PlayedNote
             InstrumentTuning.TuningInfo tuning = instrument.tuning.keyToTuningMap.get(key);
             float f2 = (float)Math.pow(2.0D, (double)tuning.keyOffset / 12.0D);
 
+            SoundSystemWatchThread.startPlayingNote();
             soundManager.sndSystem.newSource(false, uniqueId, getURLForSoundResource(instrument, key - tuning.keyOffset), "clef:" + instrument.info.itemName + ":" + (key - tuning.keyOffset) + ".ogg", false, instrumentSound.getXPosF(), instrumentSound.getYPosF(), instrumentSound.getZPosF(), instrumentSound.getAttenuationType().getTypeInt(), f);
             net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.sound.PlaySoundSourceEvent(soundManager, instrumentSound, uniqueId));
 
             soundManager.sndSystem.setPitch(uniqueId, f2);
             soundManager.sndSystem.setVolume(uniqueId, f1);
             soundManager.sndSystem.play(uniqueId);
+            SoundSystemWatchThread.stopPlayingNote();
             soundManager.playingSoundsStopTime.put(uniqueId, soundManager.playTime + duration + (int)(instrument.tuning.fadeout * 20F) + 20);
             soundManager.playingSounds.put(uniqueId, instrumentSound);
 

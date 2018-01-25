@@ -17,4 +17,11 @@ public class ProxyClient extends ProxyCommon
         Clef.eventHandlerClient = new EventHandlerClient();
         MinecraftForge.EVENT_BUS.register(Clef.eventHandlerClient);
     }
+
+    @Override
+    public void loadComplete() {
+        super.loadComplete();
+        SoundSystemWatchThread thread = new SoundSystemWatchThread();
+        thread.start();
+    }
 }
