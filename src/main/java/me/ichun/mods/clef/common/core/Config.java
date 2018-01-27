@@ -27,6 +27,10 @@ public class Config extends ConfigBase
     @IntBool
     public int showRecordPlayingMessageForTracks = 0;
 
+    @ConfigProp(category = "clientOnly", side = Side.CLIENT)
+    @IntMinMax(min = 0, max = 30)
+    public int maxClientTickTime = 6;
+
     @ConfigProp(useSession = true)
     @IntBool
     public int allowOneHandedTwoHandedInstrumentUse = 1;
