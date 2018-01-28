@@ -29,7 +29,7 @@ public class Config extends ConfigBase
 
     @ConfigProp(category = "clientOnly", side = Side.CLIENT)
     @IntMinMax(min = 0, max = 30)
-    public int maxClientTickTime = 6;
+    public int maxClientTickTime = 8;
 
     @ConfigProp(useSession = true)
     @IntBool

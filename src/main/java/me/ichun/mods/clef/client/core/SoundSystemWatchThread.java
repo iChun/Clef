@@ -3,6 +3,7 @@ package me.ichun.mods.clef.client.core;
 import me.ichun.mods.clef.common.Clef;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SoundManager;
+import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import paulscode.sound.CommandThread;
@@ -23,9 +24,11 @@ public class SoundSystemWatchThread extends Thread
 {
     private static final int NOTE_TIMEOUT = 2000; //2 seconds to play a single note is very certain a freeze, restart
     private static Field commandThreadField;
+    private static Field debugUpdateTimeField; //TODO move this to an AT
+    private static Field hasCrashedField;
+    private static boolean didRestartTickTimeout = false;
 
     private static long noteStartTime = -1;
-    private static long tickStartTime;
 
     public SoundSystemWatchThread()
     {
@@ -40,6 +43,10 @@ public class SoundSystemWatchThread extends Thread
         {
             commandThreadField = SoundSystem.class.getDeclaredField("commandThread");
             commandThreadField.setAccessible(true);
+            debugUpdateTimeField = ReflectionHelper.findField(Minecraft.class, "debugUpdateTime", "field_71419_L");
+            debugUpdateTimeField.setAccessible(true);
+            hasCrashedField = ReflectionHelper.findField(Minecraft.class, "hasCrashed", "field_71434_R");
+            hasCrashedField.setAccessible(true);
         }
         catch (ReflectiveOperationException e)
         {
@@ -47,12 +54,52 @@ public class SoundSystemWatchThread extends Thread
         }
     }
 
+    private static boolean hasCrashed()
+    {
+        try
+        {
+            return hasCrashedField.getBoolean(Minecraft.getMinecraft());
+        }
+        catch (IllegalAccessException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static boolean isTickTimeout(int tickTimeout)
+    {
+        Minecraft minecraft = Minecraft.getMinecraft();
+        //Check if we are in a world and fully connected
+        if (minecraft.isGamePaused() || minecraft.world == null || minecraft.player == null || minecraft.player.connection == null)
+        {
+            didRestartTickTimeout = false;
+            return false;
+        }
+
+        long debugUpdateTime;
+        try
+        {
+            debugUpdateTime = debugUpdateTimeField.getLong(Minecraft.getMinecraft()); //Field updated in Minecraft#runGameLoop
+        }
+        catch (IllegalAccessException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        boolean timeout = Minecraft.getSystemTime() > (debugUpdateTime + tickTimeout);
+        if (!timeout)
+        {
+            didRestartTickTimeout = false;
+        }
+        return timeout;
+    }
+
     @Override
     public void run()
     {
         Clef.LOGGER.info("Starting up sound system watch thread");
 
-        while (true)
+        while (!hasCrashed())
         {
             try
             {
@@ -68,11 +115,17 @@ public class SoundSystemWatchThread extends Thread
             {
                 Clef.LOGGER.warn("Hanging note detected. Restarting sound system command thread");
                 restartSoundManager();
+                stopPlayingNote();
             }
-            else if (tickStartTime != -1 && tickTimeout != 0 && (tickStartTime + tickTimeout) < System.currentTimeMillis()) //Sometimes vanilla deadlocks because it can't get the sound lock because the bugged JOrbis codec is blocking it
+            else if (tickTimeout != 0 && isTickTimeout(tickTimeout)) //Sometimes vanilla deadlocks because it can't get the sound lock because the bugged JOrbis codec is blocking it
             {
-                Clef.LOGGER.warn("Long client tick time: " + tickTimeout  + "ms for one tick! Restarting sound system command thread as a precaution");
-                restartSoundManager();
+                if (!didRestartTickTimeout) //only restart once per hang, if this doesn't fix it, it isn't our fault
+                {
+                    //There are still some edge cases where we restart where it isn't needed (resource reload on remote server), but it doesn't seem to cause any issues, as the client is not using the sound system either
+                    Clef.LOGGER.info("Long client tick time: " + tickTimeout + "ms for one tick! Restarting sound system command thread as a precaution");
+                    restartSoundManager();
+                }
+                didRestartTickTimeout = true;
             }
         }
     }
@@ -80,16 +133,15 @@ public class SoundSystemWatchThread extends Thread
     private static void restartSoundManager()
     {
         Minecraft mc = Minecraft.getMinecraft();
-        if (mc.world == null)
-        {
-            Clef.LOGGER.error("Sound System Restart useless: No world present, so the sound system did not cause this hang");
-            return;
-        }
-
         SoundManager soundManager = mc.getSoundHandler().sndManager;
         try
         {
             Thread thread = (Thread) commandThreadField.get(soundManager.sndSystem); // grab the existing command thread
+            if (thread == null) //SoundSystem is currently being reloaded or is stopped, so it isn't the sound system that's freezing the client
+            {
+                Clef.LOGGER.info("Cannot restart sound thread, as it isn't running at the moment");
+                return;
+            }
             thread.stop(); // hard stop it - we need to free the global lock
             CommandThread newThread = new CommandThread(soundManager.sndSystem); //rebuild a new one
             commandThreadField.set(soundManager.sndSystem, newThread); // set the new thread
@@ -110,15 +162,5 @@ public class SoundSystemWatchThread extends Thread
     public static void stopPlayingNote()
     {
         noteStartTime = -1;
-    }
-
-    public static void startTick()
-    {
-        tickStartTime = System.currentTimeMillis();
-    }
-
-    public static void stopTick()
-    {
-        tickStartTime = -1;
     }
 }

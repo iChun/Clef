@@ -63,14 +63,9 @@ public class EventHandlerClient
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event)
     {
-        Minecraft mc = Minecraft.getMinecraft();
-        if(event.phase == TickEvent.Phase.START && !mc.isGamePaused())
+        if(event.phase == TickEvent.Phase.END)
         {
-            SoundSystemWatchThread.startTick();
-        }
-        else if(event.phase == TickEvent.Phase.END)
-        {
-            SoundSystemWatchThread.stopTick();
+            Minecraft mc = Minecraft.getMinecraft();
             if(!mc.isGamePaused())
             {
                 Iterator<Track> ite = tracksPlaying.iterator();
