@@ -20,11 +20,14 @@ import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 import javax.imageio.ImageIO;
 import java.io.*;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.Function;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -81,14 +84,14 @@ public class InstrumentLibrary
             try
             {
                 ZipFile zipFile = new ZipFile(file);
-                Enumeration entriesIte = zipFile.entries();
+                Enumeration<? extends ZipEntry> entriesIte = zipFile.entries();
 
                 InstrumentPackInfo packInfo = new InstrumentPackInfo();
                 ZipEntry packInfoZip = zipFile.getEntry("info.cii");
                 if(packInfoZip != null)
                 {
                     StringWriter writer = new StringWriter();
-                    IOUtils.copy(zipFile.getInputStream(packInfoZip), writer);
+                    IOUtils.copy(zipFile.getInputStream(packInfoZip), writer, Charset.defaultCharset());
                     String jsonString = writer.toString();
                     packInfo = (new Gson()).fromJson(jsonString, InstrumentPackInfo.class);
                 }
@@ -96,11 +99,11 @@ public class InstrumentLibrary
                 ArrayList<ZipEntry> entries = new ArrayList<>();
                 while(entriesIte.hasMoreElements())
                 {
-                    ZipEntry entry = (ZipEntry)entriesIte.nextElement();
+                    ZipEntry entry = entriesIte.nextElement();
                     if(entry.getName().endsWith(".modinfo"))
                     {
                         StringWriter writer = new StringWriter();
-                        IOUtils.copy(zipFile.getInputStream(entry), writer);
+                        IOUtils.copy(zipFile.getInputStream(entry), writer, Charset.defaultCharset());
                         String jsonString = writer.toString();
                         packInfo = InstrumentPackInfo.fromModInfo((new Gson()).fromJson(jsonString, InstrumentModPackInfo.class));
                         continue;
@@ -117,7 +120,7 @@ public class InstrumentLibrary
                     if(entry.getName().startsWith("items/instruments/") && entry.getName().endsWith(".instrument"))
                     {
                         StringWriter writer = new StringWriter();
-                        IOUtils.copy(zipFile.getInputStream(entry), writer);
+                        IOUtils.copy(zipFile.getInputStream(entry), writer, Charset.defaultCharset());
                         String jsonString = writer.toString();
                         instrumentInfos.add((new Gson()).fromJson(jsonString, InstrumentInfo.class));
                         entries.remove(i);
@@ -143,7 +146,7 @@ public class InstrumentLibrary
                         Instrument instrument = new Instrument(info, ImageIO.read(iconStm), ImageIO.read(handStm));
 
                         StringWriter writer = new StringWriter();
-                        IOUtils.copy(tuningStm, writer);
+                        IOUtils.copy(tuningStm, writer, Charset.defaultCharset());
                         String jsonString = writer.toString();
 
                         InstrumentTuning tuning1 = (new Gson()).fromJson(jsonString, InstrumentTuning.class);
@@ -165,12 +168,12 @@ public class InstrumentLibrary
 
                         for(Map.Entry<Integer, String[]> e : tuningInfo.entrySet())
                         {
-                            InputStream[] streams = null;
+                            List<Function<Void, InputStream>> streams = null;
                             boolean mute = false;
                             if(e.getValue() != null)
                             {
                                 String[] files = e.getValue();
-                                ArrayList<InputStream> streamList = new ArrayList<>();
+                                ArrayList<Function<Void, InputStream>> streamList = new ArrayList<>();
                                 for(int i = 0; i < files.length; i++)
                                 {
                                     String s = files[i];
@@ -204,19 +207,22 @@ public class InstrumentLibrary
                                     }
                                     baos.flush();
 
-                                    streamList.add(new ByteArrayInputStream(baos.toByteArray()));
-                                    tuning1.audioToOutputStream.put(fileName, baos);
+                                    byte[] data = baos.toByteArray();
+                                    baos.close();
+                                    streamList.add(aVoid -> new ByteArrayInputStream(data));
+                                    tuning1.audioToOutputStream.put(fileName, data);
                                 }
                                 if(!streamList.isEmpty())
                                 {
-                                    streams = streamList.toArray(new InputStream[streamList.size()]);
+                                    streamList.trimToSize();
+                                    streams = streamList;
                                 }
                             }
                             if(streams != null)
                             {
                                 if(mute)
                                 {
-                                    tuning1.keyToTuningMap.put(e.getKey(), new InstrumentTuning.TuningInfo(new InputStream[0], 0));
+                                    tuning1.keyToTuningMap.put(e.getKey(), new InstrumentTuning.TuningInfo(0, Collections.emptyList()));
                                 }
                                 else
                                 {
@@ -224,7 +230,7 @@ public class InstrumentLibrary
                                     {
                                         if(!tuning1.keyToTuningMap.containsKey(e.getKey() + i))
                                         {
-                                            tuning1.keyToTuningMap.put(e.getKey() + i, new InstrumentTuning.TuningInfo(streams, i));
+                                            tuning1.keyToTuningMap.put(e.getKey() + i, new InstrumentTuning.TuningInfo(i, streams));
                                         }
                                     }
                                 }
