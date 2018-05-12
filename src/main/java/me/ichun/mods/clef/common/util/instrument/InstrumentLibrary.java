@@ -20,14 +20,25 @@ import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.ArrayUtils;
 
 import javax.imageio.ImageIO;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.function.Function;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -168,12 +179,12 @@ public class InstrumentLibrary
 
                         for(Map.Entry<Integer, String[]> e : tuningInfo.entrySet())
                         {
-                            List<Function<Void, InputStream>> streams = null;
+                            List<byte[]> streamData = null;
                             boolean mute = false;
                             if(e.getValue() != null)
                             {
                                 String[] files = e.getValue();
-                                ArrayList<Function<Void, InputStream>> streamList = new ArrayList<>();
+                                ArrayList<byte[]> streamDataList = new ArrayList<>();
                                 for(int i = 0; i < files.length; i++)
                                 {
                                     String s = files[i];
@@ -209,16 +220,16 @@ public class InstrumentLibrary
 
                                     byte[] data = baos.toByteArray();
                                     baos.close();
-                                    streamList.add(aVoid -> new ByteArrayInputStream(data));
+                                    streamDataList.add(data);
                                     tuning1.audioToOutputStream.put(fileName, data);
                                 }
-                                if(!streamList.isEmpty())
+                                if(!streamDataList.isEmpty())
                                 {
-                                    streamList.trimToSize();
-                                    streams = streamList;
+                                    streamDataList.trimToSize();
+                                    streamData = streamDataList;
                                 }
                             }
-                            if(streams != null)
+                            if(streamData != null)
                             {
                                 if(mute)
                                 {
@@ -230,7 +241,7 @@ public class InstrumentLibrary
                                     {
                                         if(!tuning1.keyToTuningMap.containsKey(e.getKey() + i))
                                         {
-                                            tuning1.keyToTuningMap.put(e.getKey() + i, new InstrumentTuning.TuningInfo(i, streams));
+                                            tuning1.keyToTuningMap.put(e.getKey() + i, new InstrumentTuning.TuningInfo(i, streamData));
                                         }
                                     }
                                 }

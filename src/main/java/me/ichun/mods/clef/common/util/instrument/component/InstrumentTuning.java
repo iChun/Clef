@@ -2,11 +2,11 @@ package me.ichun.mods.clef.common.util.instrument.component;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 public class InstrumentTuning
 {
@@ -20,17 +20,17 @@ public class InstrumentTuning
 
     public static class TuningInfo
     {
-        private final List<Function<Void, InputStream>> streams;
+        private final List<byte[]> streams;
         public final int keyOffset;
 
-        public TuningInfo(int keyOffset, List<Function<Void, InputStream>> streams)
+        public TuningInfo(int keyOffset, List<byte[]> streams)
         {
             this.streams = streams;
             this.keyOffset = keyOffset;
         }
 
         public InputStream get(int i) {
-            return streams.get(i).apply(null);
+            return new ByteArrayInputStream(streams.get(i));
         }
 
         public int streamsLength() {
