@@ -28,8 +28,8 @@ public class Config extends ConfigBase
     public int showRecordPlayingMessageForTracks = 0;
 
     @ConfigProp(category = "clientOnly", side = Side.CLIENT)
-    @IntMinMax(min = 0, max = 30)
-    public int maxClientTickTime = 8;
+    @IntBool
+    public boolean increaseMaxSoundChannels = true;
 
     @ConfigProp(useSession = true)
     @IntBool
