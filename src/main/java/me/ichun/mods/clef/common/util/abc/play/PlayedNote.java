@@ -98,7 +98,7 @@ public class PlayedNote
 
     private static URL getURLForSoundResource(final Instrument instrument, final int key)
     {
-        int randKey = rand.nextInt(instrument.tuning.keyToTuningMap.get(key).stream.length);
+        int randKey = rand.nextInt(instrument.tuning.keyToTuningMap.get(key).streamsLength());
         String s = String.format("%s:%s:%s", "clef", instrument.info.itemName, key + ":" + randKey + ".ogg");
         URLStreamHandler urlstreamhandler = new URLStreamHandler()
         {
@@ -111,7 +111,7 @@ public class PlayedNote
                     }
                     public InputStream getInputStream() throws IOException
                     {
-                        return instrument.tuning.keyToTuningMap.get(key).stream[randKey];
+                        return instrument.tuning.keyToTuningMap.get(key).get(randKey);
                     }
                 };
             }

@@ -2,9 +2,10 @@ package me.ichun.mods.clef.common.util.instrument.component;
 
 import com.google.gson.annotations.SerializedName;
 
-import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class InstrumentTuning
@@ -13,19 +14,27 @@ public class InstrumentTuning
     public Map<String, TuningInt> mapping;
 
     public transient HashMap<Integer, TuningInfo> keyToTuningMap = new HashMap<>();
-    public transient HashMap<String, ByteArrayOutputStream> audioToOutputStream = new HashMap<>(); //this is so we can re-archive the sound and send the files
+    public transient HashMap<String, byte[]> audioToOutputStream = new HashMap<>(); //this is so we can re-archive the sound and send the files
 
     public InstrumentTuning(){}
 
     public static class TuningInfo
     {
-        public final InputStream[] stream;
+        private final List<byte[]> streams;
         public final int keyOffset;
 
-        public TuningInfo(InputStream[] stream, int keyOffset)
+        public TuningInfo(int keyOffset, List<byte[]> streams)
         {
-            this.stream = stream;
+            this.streams = streams;
             this.keyOffset = keyOffset;
+        }
+
+        public InputStream get(int i) {
+            return new ByteArrayInputStream(streams.get(i));
+        }
+
+        public int streamsLength() {
+            return streams.size();
         }
     }
 

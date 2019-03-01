@@ -696,8 +696,8 @@ public class AbcParser
                     abc.trackLength = currentTick + note.durationInTicks; // adds to the length of the note.
                     currentTick += note.durationInTicks;
                 }
+                note.constructs.trimToSize();
             }
-
             return abc;
         }
         catch(IOException | NumberFormatException e)

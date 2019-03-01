@@ -46,6 +46,7 @@ clef.config.prop.onlyHostileMobSpawn.name=Only Hostile Mob Drops
 clef.config.prop.lootSpawnRate.name=Instrument Loot Spawn Weight
 clef.config.prop.disabledLootChests.name=Disabled Loot Chests
 clef.config.prop.showRecordPlayingMessageForTracks.name=Show Record Playing Message For Song
+clef.config.prop.maxClientTickTime.name=Max Client Tick Time
 
 clef.config.prop.creatableInstruments.comment=Can players create their own instruments with a name tag and 9 other instruments?\n0 = No\n1 = Only instruments the server doesn't have\n2 = Only instruments the server has\n3 = Any instrument
 clef.config.prop.favoriteBand.comment=Do you have a favourite band? Setting this will always set your band when you start playing a song.
@@ -60,3 +61,4 @@ clef.config.prop.onlyHostileMobSpawn.comment=Only allow hostile mobs to drop ins
 clef.config.prop.lootSpawnRate.comment=Weightage for the spawn chance of instruments in loot chests. Set to 0 to disable.
 clef.config.prop.disabledLootChests.comment=Loot tables for chests that will be disabled. EG: minecraft:chests/stronghold_corridor
 clef.config.prop.showRecordPlayingMessageForTracks.comment=Should we show a message of "Now Playing" for songs, similarly to records.
+clef.config.prop.maxClientTickTime.comment=The time clef will wait when the game is frozen until it tries to restart the sound system to resolve a possible hang\nThis is an additional detection, clef has second method of detecting sound system freezes, but it does not work every time\nSet zero to disable

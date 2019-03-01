@@ -27,6 +27,10 @@ public class Config extends ConfigBase
     @IntBool
     public int showRecordPlayingMessageForTracks = 0;
 
+    @ConfigProp(category = "clientOnly", side = Side.CLIENT)
+    @IntBool
+    public boolean increaseMaxSoundChannels = true;
+
     @ConfigProp(useSession = true)
     @IntBool
     public int allowOneHandedTwoHandedInstrumentUse = 1;

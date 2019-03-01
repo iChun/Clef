@@ -12,6 +12,7 @@ import me.ichun.mods.clef.common.util.instrument.Instrument;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import me.ichun.mods.ichunutil.common.iChunUtil;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.entity.player.EntityPlayer;
@@ -357,7 +358,12 @@ public class Track
     @SideOnly(Side.CLIENT)
     public boolean shouldRequestTrack()
     {
-        HashSet<BlockPos> poses = instrumentPlayers.get(Minecraft.getMinecraft().player.getEntityWorld().provider.getDimension());
+        WorldClient world = Minecraft.getMinecraft().world;
+        if (world == null)
+        {
+            return false;
+        }
+        HashSet<BlockPos> poses = instrumentPlayers.get(world.provider.getDimension());
         if(poses != null)
         {
             for(BlockPos pos : poses)

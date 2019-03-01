@@ -53,7 +53,7 @@ public class Instrument
 
     public boolean hasAvailableKey(int key)
     {
-        return tuning.keyToTuningMap.containsKey(key) && tuning.keyToTuningMap.get(key).stream.length > 0;
+        return tuning.keyToTuningMap.containsKey(key) && tuning.keyToTuningMap.get(key).streamsLength() > 0;
     }
 
     @Override
@@ -112,10 +112,10 @@ public class Instrument
             out.write(data, 0, data.length);
             out.closeEntry();
 
-            for(Map.Entry<String, ByteArrayOutputStream> e : tuning.audioToOutputStream.entrySet())
+            for(Map.Entry<String, byte[]> e : tuning.audioToOutputStream.entrySet())
             {
                 out.putNextEntry(new ZipEntry("sfx/instruments/" + info.kind + "/" + e.getKey()));
-                out.write(e.getValue().toByteArray());
+                out.write(e.getValue());
                 out.closeEntry();
             }
 
