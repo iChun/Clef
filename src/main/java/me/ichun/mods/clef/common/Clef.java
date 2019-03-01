@@ -15,12 +15,15 @@ import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
-import net.minecraftforge.fml.common.event.*;
+import net.minecraftforge.fml.common.event.FMLLoadCompleteEvent;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLServerStoppingEvent;
 
 import java.io.File;
 
 @Mod(modid = Clef.MOD_ID, name = Clef.MOD_NAME,
         version = Clef.VERSION,
+        certificateFingerprint = iChunUtil.CERT_FINGERPRINT,
         guiFactory = iChunUtil.GUI_CONFIG_FACTORY,
         dependencies = "required-after:ichunutil@[" + iChunUtil.VERSION_MAJOR +".0.2," + (iChunUtil.VERSION_MAJOR + 1) + ".0.0)",
         acceptableRemoteVersions = "[" + iChunUtil.VERSION_MAJOR +".0.0," + iChunUtil.VERSION_MAJOR + ".1.0)",
@@ -30,7 +33,7 @@ public class Clef
 {
     public static final String MOD_NAME = "Clef";
     public static final String MOD_ID = "clef";
-    public static final String VERSION = iChunUtil.VERSION_MAJOR + ".0.0";
+    public static final String VERSION = iChunUtil.VERSION_MAJOR + ".1.0";
 
     public static final Logger LOGGER = Logger.createLogger(MOD_NAME);
 
