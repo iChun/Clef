@@ -131,7 +131,7 @@ public class ItemInstrument extends Item
     }
 
     @Override
-    public String getUnlocalizedName(ItemStack is)
+    public String getTranslationKey(ItemStack is)
     {
         NBTTagCompound tag = is.getTagCompound();
         if(tag != null)
@@ -146,7 +146,7 @@ public class ItemInstrument extends Item
                 return "item.clef.instrument." + instrument.info.itemName;
             }
         }
-        return super.getUnlocalizedName(is);
+        return super.getTranslationKey(is);
     }
 
     @Override

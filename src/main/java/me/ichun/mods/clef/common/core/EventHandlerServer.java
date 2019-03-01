@@ -49,7 +49,7 @@ public class EventHandlerServer
     @SubscribeEvent
     public void onRegisterBlock(RegistryEvent.Register<Block> event)
     {
-        Clef.blockInstrumentPlayer = new BlockInstrumentPlayer().setRegistryName("clef", "block_instrument_player").setUnlocalizedName("clef.item.instrumentPlayer");
+        Clef.blockInstrumentPlayer = new BlockInstrumentPlayer().setRegistryName("clef", "block_instrument_player").setTranslationKey("clef.item.instrumentPlayer");
 
         event.getRegistry().register(Clef.blockInstrumentPlayer);
     }
@@ -57,14 +57,14 @@ public class EventHandlerServer
     @SubscribeEvent
     public void onRegisterItem(RegistryEvent.Register<Item> event)
     {
-        Clef.itemInstrument = (new ItemInstrument()).setFull3D().setRegistryName("clef", "instrument").setUnlocalizedName("clef.item.instrument");
+        Clef.itemInstrument = (new ItemInstrument()).setFull3D().setRegistryName("clef", "instrument").setTranslationKey("clef.item.instrument");
         event.getRegistry().register(Clef.itemInstrument);
 
         Clef.creativeTabInstruments = new CreativeTabs("clef") {
             public final ItemStack iconItem = new ItemStack(Clef.itemInstrument);
 
             @Override
-            public ItemStack getTabIconItem()
+            public ItemStack createIcon()
             {
                 return iconItem;
             }
@@ -190,7 +190,7 @@ public class EventHandlerServer
                     return;
                 }
             }
-            if(event.getName().getResourcePath().contains("chest"))
+            if(event.getName().getPath().contains("chest"))
             {
                 event.getTable().addPool(new LootPool(new LootEntry[] { new LootEntryItem(Clef.itemInstrument, Clef.config.lootSpawnRate, 0, new LootFunction[] { new LootFunction(new LootCondition[0])
                 {
