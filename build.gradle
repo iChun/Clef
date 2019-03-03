@@ -58,7 +58,6 @@ task deobfJar(type: Jar) {
     classifier = 'deobf'
 }
 
-
 // sign jar
 task signJar(type: SignJar, dependsOn: reobfJar) {
     onlyIf {

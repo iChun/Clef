@@ -152,7 +152,7 @@ public class EventHandlerServer
         if(Clef.config.zombiesCanUseInstruments == 1 && !event.getEntityLiving().world.isRemote && event.getEntityLiving() instanceof EntityZombie)
         {
             EntityZombie zombie = (EntityZombie)event.getEntityLiving();
-            if(zombie.getRNG().nextFloat() < 0.004F &&ItemInstrument.getUsableInstrument(zombie) != null && getTrackPlayedByPlayer(zombie) == null)
+            if(zombie.getRNG().nextFloat() < 0.004F && ItemInstrument.getUsableInstrument(zombie) != null && getTrackPlayedByPlayer(zombie) == null)
             {
                 Track track = Clef.eventHandlerServer.findTrackByBand("zombies");
                 if(track != null)
