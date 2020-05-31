@@ -3,20 +3,18 @@ package me.ichun.mods.clef.client.render;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import me.ichun.mods.clef.common.item.ItemLayerModel;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import me.ichun.mods.ichunutil.client.model.item.ItemModelRenderer;
-import me.ichun.mods.ichunutil.client.render.RenderHelper;
 import net.minecraft.block.BlockState;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.TransformationMatrix;
-import net.minecraft.client.renderer.model.*;
-import net.minecraft.client.renderer.texture.AtlasTexture;
+import net.minecraft.client.renderer.model.BakedQuad;
+import net.minecraft.client.renderer.model.IBakedModel;
+import net.minecraft.client.renderer.model.ItemCameraTransforms;
+import net.minecraft.client.renderer.model.ItemOverrideList;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
@@ -68,12 +66,12 @@ public class BakedModelInstrument //mostly taken from forge's BakedItemModel
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, Random rand)
     {
-//        if(instrument != null)
-//        {
-//            ImmutableList.Builder<BakedQuad> builder = ImmutableList.builder();
-//            builder.addAll(ItemLayerModel.getQuadsForSprite(0, particle, TransformationMatrix.identity()));
-//            return builder.build();
-//        }
+        //        if(instrument != null)
+        //        {
+        //            ImmutableList.Builder<BakedQuad> builder = ImmutableList.builder();
+        //            builder.addAll(ItemLayerModel.getQuadsForSprite(0, particle, TransformationMatrix.identity()));
+        //            return builder.build();
+        //        }
         if(side == null)
         {
             return quads;
