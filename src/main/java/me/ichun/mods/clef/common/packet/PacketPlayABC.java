@@ -1,11 +1,9 @@
 package me.ichun.mods.clef.common.packet;
 
-import io.netty.buffer.ByteBuf;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
-import me.ichun.mods.ichunutil.common.core.network.AbstractPacket;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
-import net.minecraftforge.fml.relauncher.Side;
+import me.ichun.mods.ichunutil.common.network.AbstractPacket;
+import net.minecraft.network.PacketBuffer;
+import net.minecraftforge.fml.network.NetworkEvent;
 
 public class PacketPlayABC extends AbstractPacket
 {
@@ -25,32 +23,28 @@ public class PacketPlayABC extends AbstractPacket
     }
 
     @Override
-    public void writeTo(ByteBuf buf)
+    public void writeTo(PacketBuffer buf)
     {
-        ByteBufUtils.writeUTF8String(buf, abc_md5);
-        ByteBufUtils.writeUTF8String(buf, bandName);
+        buf.writeString(abc_md5);
+        buf.writeString(bandName);
         buf.writeBoolean(syncPlay);
         buf.writeBoolean(syncTrack);
     }
 
     @Override
-    public void readFrom(ByteBuf buf)
+    public void readFrom(PacketBuffer buf)
     {
-        abc_md5 = ByteBufUtils.readUTF8String(buf);
-        bandName = ByteBufUtils.readUTF8String(buf);
+        abc_md5 = readString(buf);
+        bandName = readString(buf);
         syncPlay = buf.readBoolean();
         syncTrack = buf.readBoolean();
     }
 
     @Override
-    public void execute(Side side, EntityPlayer player)
+    public void process(NetworkEvent.Context context) //receivingSide() SERVER
     {
-        AbcLibrary.playAbc(abc_md5, bandName, syncPlay, syncTrack, player);
-    }
-
-    @Override
-    public Side receivingSide()
-    {
-        return Side.SERVER;
+        context.enqueueWork(() -> {
+            AbcLibrary.playAbc(abc_md5, bandName, syncPlay, syncTrack, context.getSender());
+        });
     }
 }

@@ -10,23 +10,25 @@ import me.ichun.mods.clef.common.util.abc.AbcLibrary;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
+import net.minecraft.client.renderer.TransformationMatrix;
+import net.minecraft.client.renderer.model.BakedQuad;
+import net.minecraft.client.renderer.model.ModelResourceLocation;
+import net.minecraft.client.renderer.texture.AtlasTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.ModelBakeEvent;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.client.model.ItemLayerModel;
 import net.minecraftforge.client.model.ModelLoader;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent;
-import net.minecraftforge.fml.common.network.FMLNetworkEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,55 +39,23 @@ public class EventHandlerClient
 {
     public HashSet<Track> tracksPlaying = new HashSet<>();
 
-    public TextureAtlasSprite txInstrument;
-
-    @SubscribeEvent
-    public void onModelRegistry(ModelRegistryEvent event)
-    {
-        ModelLoader.setCustomModelResourceLocation(Clef.itemInstrument, 0, new ModelResourceLocation("clef:instrument", "inventory"));
-        ModelLoader.setCustomModelResourceLocation(Item.getItemFromBlock(Clef.blockInstrumentPlayer), 0, new ModelResourceLocation("clef:block_instrument_player", "inventory"));
-    }
-
-    @SubscribeEvent
-    public void onTextureStitchedPre(TextureStitchEvent.Pre event)
-    {
-        txInstrument = Minecraft.getMinecraft().getTextureMapBlocks().registerSprite(new ResourceLocation("clef", "items/instrument"));
-    }
-
-    @SubscribeEvent
-    public void onModelBake(ModelBakeEvent event)
-    {
-        ImmutableList.Builder<BakedQuad> builder = ImmutableList.builder();
-        builder.addAll(ItemLayerModel.getQuadsForSprite(0, txInstrument, DefaultVertexFormats.ITEM, Optional.empty()));
-        event.getModelRegistry().putObject(new ModelResourceLocation("clef:instrument", "inventory"), new BakedModelInstrument(builder.build(), txInstrument, ImmutableMap.copyOf(new HashMap<>()), null, null));
-    }
-
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event)
     {
         if(event.phase == TickEvent.Phase.END)
         {
-            Minecraft mc = Minecraft.getMinecraft();
+            Minecraft mc = Minecraft.getInstance();
             if(!mc.isGamePaused())
             {
-                Iterator<Track> ite = tracksPlaying.iterator();
-                while(ite.hasNext())
-                {
-                    Track track = ite.next();
-                    if(!track.update())
-                    {
-                        ite.remove();
-                        continue;
-                    }
-                }
+                tracksPlaying.removeIf(track -> !track.update());
             }
         }
     }
 
     @SubscribeEvent
-    public void onClientDisconnect(FMLNetworkEvent.ClientDisconnectionFromServerEvent event)
+    public void onClientDisconnect(ClientPlayerNetworkEvent.LoggedOutEvent event)
     {
-        Minecraft.getMinecraft().addScheduledTask(this::disconnectFromServer);
+        Minecraft.getInstance().execute(this::disconnectFromServer);
     }
 
     public void disconnectFromServer()
@@ -117,11 +87,11 @@ public class EventHandlerClient
         return null;
     }
 
-    public Track getTrackPlayedByPlayer(EntityPlayer player)
+    public Track getTrackPlayedByPlayer(PlayerEntity player)
     {
         for(Track track : tracksPlaying)
         {
-            if(track.players.containsKey(player) || track.playersNames.contains(player.getName()))
+            if(track.players.containsKey(player) || track.playersNames.contains(player.getName().getUnformattedComponentText()))
             {
                 return track;
             }
@@ -132,24 +102,24 @@ public class EventHandlerClient
     @SubscribeEvent
     public void onLeftClickEmpty(PlayerInteractEvent.LeftClickEmpty event)
     {
-        ItemStack is = ItemInstrument.getUsableInstrument(event.getEntityPlayer());
-        if(!is.isEmpty() && !(!event.getEntityPlayer().getHeldItemMainhand().isEmpty() && !event.getEntityPlayer().getHeldItemOffhand().isEmpty()))
+        ItemStack is = ItemInstrument.getUsableInstrument(event.getPlayer());
+        if(!is.isEmpty() && !(!event.getPlayer().getHeldItemMainhand().isEmpty() && !event.getPlayer().getHeldItemOffhand().isEmpty()))
         {
-            stopPlayingTrack(event.getEntityPlayer());
+            stopPlayingTrack(event.getPlayer());
         }
     }
 
     @SubscribeEvent
     public void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event)
     {
-        ItemStack is = ItemInstrument.getUsableInstrument(event.getEntityPlayer());
-        if(!is.isEmpty() && !(!event.getEntityPlayer().getHeldItemMainhand().isEmpty() && !event.getEntityPlayer().getHeldItemOffhand().isEmpty()))
+        ItemStack is = ItemInstrument.getUsableInstrument(event.getPlayer());
+        if(!is.isEmpty() && !(!event.getPlayer().getHeldItemMainhand().isEmpty() && !event.getPlayer().getHeldItemOffhand().isEmpty()))
         {
-            stopPlayingTrack(event.getEntityPlayer());
+            stopPlayingTrack(event.getPlayer());
         }
     }
 
-    public void stopPlayingTrack(EntityPlayer player)
+    public void stopPlayingTrack(PlayerEntity player)
     {
         Track track = getTrackPlayedByPlayer(player);
         if(track != null)

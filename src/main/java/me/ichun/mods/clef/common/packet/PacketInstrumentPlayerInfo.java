@@ -1,18 +1,16 @@
 package me.ichun.mods.clef.common.packet;
 
-import io.netty.buffer.ByteBuf;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.tileentity.TileEntityInstrumentPlayer;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
 import me.ichun.mods.clef.common.util.abc.TrackFile;
-import me.ichun.mods.ichunutil.common.core.network.AbstractPacket;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.player.EntityPlayer;
+import me.ichun.mods.ichunutil.common.network.AbstractPacket;
+import net.minecraft.block.BlockState;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
-import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.network.NetworkEvent;
 
 import java.util.ArrayList;
 
@@ -40,15 +38,15 @@ public class PacketInstrumentPlayerInfo extends AbstractPacket
     }
 
     @Override
-    public void writeTo(ByteBuf buf)
+    public void writeTo(PacketBuffer buf)
     {
         PacketBuffer pb = new PacketBuffer(buf);
         buf.writeInt(abc_md5s.size());
         for(String s : abc_md5s)
         {
-            ByteBufUtils.writeUTF8String(buf, s);
+            buf.writeString(s);
         }
-        ByteBufUtils.writeUTF8String(buf, bandName);
+        buf.writeString(bandName);
         buf.writeBoolean(syncPlay);
         buf.writeBoolean(syncTrack);
         buf.writeInt(repeat);
@@ -57,16 +55,16 @@ public class PacketInstrumentPlayerInfo extends AbstractPacket
     }
 
     @Override
-    public void readFrom(ByteBuf buf)
+    public void readFrom(PacketBuffer buf)
     {
         PacketBuffer pb = new PacketBuffer(buf);
         abc_md5s = new ArrayList<>();
         int size = buf.readInt();
         for(int i = 0; i < size; i++)
         {
-            abc_md5s.add(ByteBufUtils.readUTF8String(buf));
+            abc_md5s.add(readString(buf));
         }
-        bandName = ByteBufUtils.readUTF8String(buf);
+        bandName = readString(buf);
         syncPlay = buf.readBoolean();
         syncTrack = buf.readBoolean();
         repeat = buf.readInt();
@@ -75,40 +73,37 @@ public class PacketInstrumentPlayerInfo extends AbstractPacket
     }
 
     @Override
-    public void execute(Side side, EntityPlayer player)
+    public void process(NetworkEvent.Context context) //receivingSide() SERVER
     {
-        TileEntity te = player.world.getTileEntity(pos);
-        if(te instanceof TileEntityInstrumentPlayer)
-        {
-            TileEntityInstrumentPlayer instrumentPlayer = (TileEntityInstrumentPlayer)te;
-            instrumentPlayer.tracks.clear();
-            for(String s : abc_md5s)
+        context.enqueueWork(() -> {
+            ServerPlayerEntity player = context.getSender();
+            TileEntity te = player.world.getTileEntity(pos);
+            if(te instanceof TileEntityInstrumentPlayer)
             {
-                TrackFile track = AbcLibrary.getTrack(s);
-                if(track == null)
+                TileEntityInstrumentPlayer instrumentPlayer = (TileEntityInstrumentPlayer)te;
+                instrumentPlayer.tracks.clear();
+                for(String s : abc_md5s)
                 {
-                    instrumentPlayer.pending_md5s = abc_md5s;
-                    Clef.channel.sendTo(new PacketRequestFile(s, false), player);
+                    TrackFile track = AbcLibrary.getTrack(s);
+                    if(track == null)
+                    {
+                        instrumentPlayer.pending_md5s = abc_md5s;
+                        Clef.channel.sendTo(new PacketRequestFile(s, false), player);
+                    }
+                    else
+                    {
+                        instrumentPlayer.tracks.add(track);
+                    }
                 }
-                else
-                {
-                    instrumentPlayer.tracks.add(track);
-                }
+                instrumentPlayer.bandName = bandName;
+                instrumentPlayer.syncPlay = syncPlay;
+                instrumentPlayer.syncTrack = syncTrack;
+                instrumentPlayer.repeat = repeat;
+                instrumentPlayer.shuffle = shuffle;
+                instrumentPlayer.markDirty();
+                BlockState state = player.world.getBlockState(pos);
+                player.world.notifyBlockUpdate(pos, state, state, 3);
             }
-            instrumentPlayer.bandName = bandName;
-            instrumentPlayer.syncPlay = syncPlay;
-            instrumentPlayer.syncTrack = syncTrack;
-            instrumentPlayer.repeat = repeat;
-            instrumentPlayer.shuffle = shuffle;
-            instrumentPlayer.markDirty();
-            IBlockState state = player.world.getBlockState(pos);
-            player.world.notifyBlockUpdate(pos, state, state, 3);
-        }
-    }
-
-    @Override
-    public Side receivingSide()
-    {
-        return Side.SERVER;
+        });
     }
 }

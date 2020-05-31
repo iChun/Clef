@@ -1,43 +1,35 @@
 package me.ichun.mods.clef.client.gui;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.datafixers.util.Pair;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.inventory.ContainerInstrumentPlayer;
 import me.ichun.mods.clef.common.packet.PacketInstrumentPlayerInfo;
 import me.ichun.mods.clef.common.tileentity.TileEntityInstrumentPlayer;
 import me.ichun.mods.clef.common.util.abc.TrackFile;
-import net.minecraft.client.audio.PositionedSoundRecord;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.OpenGlHelper;
-import net.minecraft.client.renderer.RenderHelper;
+import me.ichun.mods.ichunutil.client.core.ResourceHelper;
+import net.minecraft.client.audio.SimpleSound;
+import net.minecraft.client.gui.IHasContainer;
+import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.init.SoundEvents;
-import net.minecraft.inventory.ClickType;
-import net.minecraft.inventory.Slot;
+import net.minecraft.client.resources.I18n;
+import net.minecraft.inventory.container.ClickType;
+import net.minecraft.inventory.container.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.translation.I18n;
+import net.minecraft.util.SoundEvents;
+import org.lwjgl.opengl.GL13;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 @SuppressWarnings("deprecation")
 public class GuiPlayTrackBlock extends GuiPlayTrack
+        implements IHasContainer<ContainerInstrumentPlayer>
 {
-    public static final ResourceLocation texResourcePacks = new ResourceLocation("minecraft", "textures/gui/resource_packs.png");
-    public static final ResourceLocation texSpectatorWidgets = new ResourceLocation("minecraft", "textures/gui/spectator_widgets.png");
+    public final TileEntityInstrumentPlayer player;
+    public final ContainerInstrumentPlayer containerInstrumentPlayer;
 
-    public static final int ID_ADD_PLAYLIST = 10;
-    public static final int ID_VIEW_PLAYLIST = 11;
-    public static final int ID_REPEAT = 12;
-    public static final int ID_SHUFFLE = 13;
-    public static final int ID_ORDER_UP = 14;
-    public static final int ID_ORDER_DOWN = 15;
-    public static final int ID_DELETE = 16;
-    public static final int ID_VIEW_ALL = 17;
-
-    public TileEntityInstrumentPlayer player;
-    public ContainerInstrumentPlayer containerInstrumentPlayer;
+    protected Slot hoveredSlot;
 
     public int repeat = 0;
     public int shuffle = 0;
@@ -45,17 +37,17 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
 
     public boolean playlistView = false;
 
-    public GuiPlayTrackBlock(TileEntityInstrumentPlayer player)
+    public GuiPlayTrackBlock(ContainerInstrumentPlayer container)
     {
         super();
         background = texBackgroundBlock;
-        this.player = player;
-        this.containerInstrumentPlayer = new ContainerInstrumentPlayer(player);
+        this.containerInstrumentPlayer = container;
+        this.player = container.inventory;
 
         disableListWhenSyncTrack = false;
 
         playlist = new ArrayList<>(player.tracks);
-        bandNameString = player.bandName.isEmpty() ? Clef.config.favoriteBand : player.bandName;
+        bandNameString = player.bandName.isEmpty() ? Clef.configClient.favoriteBand : player.bandName;
         syncPlay = player.syncPlay ? 1 : 0;
         syncTrack = player.syncTrack ? 1 : 0;
         repeat = player.repeat;
@@ -63,21 +55,15 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
     }
 
     @Override
-    public void initGui()
+    public void init()
     {
-        super.initGui();
+        super.init();
+        this.children.remove(trackList);
         trackListBottom -= 22;
         trackList = new GuiTrackList(this, 158, ySize - 22, guiTop + 17, trackListBottom, guiLeft + 7, 8, playlistView ? playlist : tracks);
+        this.children.add(trackList);
 
-        this.mc.player.openContainer = this.containerInstrumentPlayer;
-
-        for(GuiButton btn : buttonList)
-        {
-            if(btn.id == ID_CONFIRM)
-            {
-                btn.displayString = I18n.translateToLocal("gui.done");
-            }
-        }
+        buttonConfirm.setMessage(I18n.format("gui.done"));
     }
 
     @Override
@@ -86,18 +72,91 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
         if(!playlistView)
         {
             super.addButtons();
-            buttonList.add(new GuiButton(ID_ADD_PLAYLIST, guiLeft + 116 - 55, guiTop + 205, 50, 20, I18n.translateToLocal("clef.gui.block.addPlaylist")));
-            buttonList.add(new GuiButton(ID_VIEW_PLAYLIST, guiLeft + 116, guiTop + 205, 50, 20, I18n.translateToLocal("clef.gui.block.viewPlaylist")));
+
+            //add playlist
+            this.addButton(new Button(guiLeft + 116 - 55, guiTop + 205, 50, 20, I18n.format("clef.gui.block.addPlaylist"), btn -> {
+                if(index >= 0 && index < tracks.size())
+                {
+                    if(!playlist.contains(tracks.get(index)))
+                    {
+                        playlist.add(tracks.get(index));
+                    }
+                }
+            }));
+
+            //view playlist
+            this.addButton(new Button(guiLeft + 116, guiTop + 205, 50, 20, I18n.format("clef.gui.block.viewPlaylist"), btn -> {
+                if(doneTimeout < 0)
+                {
+                    togglePlaylistView();
+                }
+            }));
         }
         else
         {
-            buttonList.add(new GuiButton(ID_REPEAT, guiLeft + 179, guiTop + 51, 72, 20, I18n.translateToLocal(repeat == 0 ? "clef.gui.block.repeatNone" : repeat == 1 ? "clef.gui.block.repeatAll" :"clef.gui.block.repeatOne")));
-            buttonList.add(new GuiButton(ID_SHUFFLE, guiLeft + 179, guiTop + 94, 72, 20, I18n.translateToLocal(shuffle == 1 ? "gui.yes" : "gui.no")));
+            //repeat song
+            this.addButton(new Button(guiLeft + 179, guiTop + 51, 72, 20, I18n.format(repeat == 0 ? "clef.gui.block.repeatNone" : repeat == 1 ? "clef.gui.block.repeatAll" :"clef.gui.block.repeatOne"), btn -> {
+                repeat++;
+                if(repeat > 2)
+                {
+                    repeat = 0;
+                }
+                btn.setMessage(I18n.format(repeat == 0 ? "clef.gui.block.repeatNone" : repeat == 1 ? "clef.gui.block.repeatAll" :"clef.gui.block.repeatOne"));
+            }));
 
-            buttonList.add(new GuiButton(ID_VIEW_ALL, guiLeft + 116, guiTop + 205, 50, 20, I18n.translateToLocal("clef.gui.block.viewAll")));
-            buttonList.add(new GuiButton(ID_ORDER_UP, guiLeft + 6, guiTop + 205, 20, 20, ""));
-            buttonList.add(new GuiButton(ID_ORDER_DOWN, guiLeft + 30, guiTop + 205, 20, 20, ""));
-            buttonList.add(new GuiButton(ID_DELETE, guiLeft + 54, guiTop + 205, 20, 20, ""));
+            //shuffle songs
+            this.addButton(new Button(guiLeft + 179, guiTop + 94, 72, 20, I18n.format(shuffle == 1 ? "gui.yes" : "gui.no"), btn -> {
+                shuffle = shuffle == 1 ? 0 : 1;
+                btn.setMessage(I18n.format(shuffle == 1 ? "gui.yes" : "gui.no"));
+            }));
+
+            //view all
+            this.addButton(new Button(guiLeft + 116, guiTop + 205, 50, 20, I18n.format("clef.gui.block.viewAll"), btn -> {
+                if(doneTimeout < 0)
+                {
+                    togglePlaylistView();
+                }
+            }));
+
+            //order up
+            this.addButton(new Button(guiLeft + 6, guiTop + 205, 20, 20, "", btn -> {
+                if(index >= 0 && index < playlist.size())
+                {
+                    if(index > 0)
+                    {
+                        TrackFile file = playlist.get(index);
+                        playlist.remove(index);
+                        playlist.add(index - 1, file);
+                        index--;
+                    }
+                }
+            }));
+
+            //order down
+            this.addButton(new Button(guiLeft + 30, guiTop + 205, 20, 20, "", btn -> {
+                if(index >= 0 && index < playlist.size())
+                {
+                    if(index < playlist.size() - 1)
+                    {
+                        TrackFile file = playlist.get(index);
+                        playlist.remove(index);
+                        playlist.add(index + 1, file);
+                        index++;
+                    }
+                }
+            }));
+
+            //delete
+            this.addButton(new Button(guiLeft + 54, guiTop + 205, 20, 20, "", btn -> {
+                if(index >= 0 && index < playlist.size())
+                {
+                    playlist.remove(index);
+                    if(playlist.size() <= index)
+                    {
+                        index = playlist.size() - 1;
+                    }
+                }
+            }));
         }
     }
 
@@ -106,29 +165,30 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
     {
         if(!playlistView)
         {
-            fontRenderer.drawString(I18n.translateToLocal("clef.gui.block.playlist") + ":", guiLeft + 9, guiTop + 211, 16777215, true);
+            font.drawStringWithShadow(I18n.format("clef.gui.block.playlist") + ":", guiLeft + 9, guiTop + 211, 16777215);
             super.drawText();
         }
         else
         {
-            fontRenderer.drawString(I18n.translateToLocal("clef.gui.block.playlist") + " (" + playlist.size() + ")", guiLeft + 6, guiTop + 5, 16777215, true);
-            fontRenderer.drawString(I18n.translateToLocal("clef.gui.block.repeat"), guiLeft + 179, guiTop + 40, 16777215, true);
-            fontRenderer.drawString(I18n.translateToLocal("clef.gui.block.shuffle"), guiLeft + 179, guiTop + 83, 16777215, true);
+            font.drawStringWithShadow(I18n.format("clef.gui.block.playlist") + " (" + playlist.size() + ")", guiLeft + 6, guiTop + 5, 16777215);
+            font.drawStringWithShadow(I18n.format("clef.gui.block.repeat"), guiLeft + 179, guiTop + 40, 16777215);
+            font.drawStringWithShadow(I18n.format("clef.gui.block.shuffle"), guiLeft + 179, guiTop + 83, 16777215);
         }
     }
 
     @Override
-    public void drawScreen(int mouseX, int mouseY, float partialTicks)
+    public void render(int mouseX, int mouseY, float partialTicks) //a lot taken from Container Screen
     {
-        super.drawScreen(mouseX, mouseY, partialTicks);
+        super.render(mouseX, mouseY, partialTicks);
 
-        RenderHelper.enableGUIStandardItemLighting();
-        GlStateManager.pushMatrix();
-        GlStateManager.translate((float)guiLeft, (float)guiTop, 0.0F);
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        GlStateManager.enableRescaleNormal();
-        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0F, 240.0F);
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        RenderSystem.pushMatrix();
+        RenderSystem.translatef((float)guiLeft, (float)guiTop, 0.0F);
+        RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
+        RenderSystem.enableRescaleNormal();
+        this.hoveredSlot = null;
+
+        RenderSystem.glMultiTexCoord2f(GL13.GL_TEXTURE2, 240.0F, 240.0F);
+        RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 
         for (int i1 = 0; i1 < this.containerInstrumentPlayer.inventorySlots.size(); i1++)
         {
@@ -137,30 +197,41 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
 
             if (this.isMouseOverSlot(slot, mouseX, mouseY) && slot.isEnabled())
             {
-                GlStateManager.disableLighting();
-                GlStateManager.disableDepth();
+                this.hoveredSlot = slot;
+                RenderSystem.disableLighting();
+                RenderSystem.disableDepthTest();
                 int j1 = slot.xPos;
                 int k1 = slot.yPos;
-                GlStateManager.colorMask(true, true, true, false);
-                this.drawGradientRect(j1, k1, j1 + 16, k1 + 16, -2130706433, -2130706433);
-                GlStateManager.colorMask(true, true, true, true);
-                GlStateManager.enableLighting();
-                GlStateManager.enableDepth();
+                RenderSystem.colorMask(true, true, true, false);
+                this.fillGradient(j1, k1, j1 + 16, k1 + 16, -2130706433, -2130706433);
+                RenderSystem.colorMask(true, true, true, true);
+                RenderSystem.enableLighting();
+                RenderSystem.enableDepthTest();
             }
         }
 
-        RenderHelper.disableStandardItemLighting();
-        GlStateManager.popMatrix();
+        RenderSystem.popMatrix();
+
+        RenderSystem.disableLighting();
+        RenderSystem.disableDepthTest();
+        this.renderHoveredToolTip(mouseX, mouseY);
+        RenderSystem.enableDepthTest();
+    }
+
+    protected void renderHoveredToolTip(int mouseX, int mouseY) {
+        if (this.hoveredSlot != null && this.hoveredSlot.getHasStack()) {
+            this.renderTooltip(this.hoveredSlot.getStack(), mouseX, mouseY);
+        }
 
     }
 
-    private Slot getSlotAtPosition(int x, int y)
+    private Slot getSlotAtPosition(double x, double y)
     {
         for (int i = 0; i < this.containerInstrumentPlayer.inventorySlots.size(); ++i)
         {
             Slot slot = this.containerInstrumentPlayer.inventorySlots.get(i);
 
-            if (this.isMouseOverSlot(slot, x, y))
+            if (this.isMouseOverSlot(slot, x, y) && slot.isEnabled())
             {
                 return slot;
             }
@@ -171,21 +242,23 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
 
     protected void handleMouseClick(Slot slotIn, int slotId, int mouseButton, ClickType type)
     {
-        this.mc.playerController.windowClick(this.containerInstrumentPlayer.windowId, slotId, mouseButton, type, this.mc.player);
+        this.minecraft.playerController.windowClick(this.containerInstrumentPlayer.windowId, slotId, mouseButton, type, this.minecraft.player);
     }
 
     @Override
-    public void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton)
     {
-        super.mouseClicked(mouseX, mouseY, mouseButton);
+        boolean flag = super.mouseClicked(mouseX, mouseY, mouseButton);
         if (mouseButton == 0 || mouseButton == 1)
         {
             Slot slot = this.getSlotAtPosition(mouseX, mouseY);
             if(slot != null)
             {
                 handleMouseClick(slot, slot.slotNumber, mouseButton, ClickType.PICKUP);
+                return true;
             }
         }
+        return flag;
     }
 
     @Override
@@ -196,78 +269,13 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
     {
         if(playlistView)
         {
-            GlStateManager.color(1F, 1F, 1F, 1F);
-            this.mc.getTextureManager().bindTexture(texResourcePacks);
-            this.drawTexturedModalRect(guiLeft - 8, guiTop + 206, 96, 0, 32, 32);
-            this.drawTexturedModalRect(guiLeft + 32, guiTop + 191, 80, 0, 32, 32);
+            RenderSystem.color4f(1F, 1F, 1F, 1F);
+            this.minecraft.getTextureManager().bindTexture(ResourceHelper.TEX_RESOURCE_PACKS);
+            this.blit(guiLeft - 8, guiTop + 206, 96, 0, 32, 32);
+            this.blit(guiLeft + 32, guiTop + 191, 80, 0, 32, 32);
 
-            this.mc.getTextureManager().bindTexture(texSpectatorWidgets);
-            this.drawTexturedModalRect(guiLeft + 40, guiTop + 207, 112, 0, 32, 32);
-        }
-    }
-
-    @Override
-    protected void actionPerformed(GuiButton btn)
-    {
-        super.actionPerformed(btn);
-        if(btn.id == ID_ADD_PLAYLIST)
-        {
-            if(index >= 0 && index < tracks.size())
-            {
-                if(!playlist.contains(tracks.get(index)))
-                {
-                    playlist.add(tracks.get(index));
-                }
-            }
-        }
-        else if((btn.id == ID_VIEW_PLAYLIST || btn.id == ID_VIEW_ALL) && doneTimeout < 0)
-        {
-            togglePlaylistView();
-        }
-        else if(btn.id == ID_REPEAT)
-        {
-            repeat++;
-            if(repeat > 2)
-            {
-                repeat = 0;
-            }
-            btn.displayString = I18n.translateToLocal(repeat == 0 ? "clef.gui.block.repeatNone" : repeat == 1 ? "clef.gui.block.repeatAll" :"clef.gui.block.repeatOne");
-        }
-        else if(btn.id == ID_SHUFFLE)
-        {
-            shuffle = shuffle == 1 ? 0 : 1;
-            btn.displayString = I18n.translateToLocal(shuffle == 1 ? "gui.yes" : "gui.no");
-        }
-        else if(index >= 0 && index < playlist.size())
-        {
-            if(btn.id == ID_ORDER_UP)
-            {
-                if(index > 0)
-                {
-                    TrackFile file = playlist.get(index);
-                    playlist.remove(index);
-                    playlist.add(index - 1, file);
-                    index--;
-                }
-            }
-            else if(btn.id == ID_ORDER_DOWN)
-            {
-                if(index < playlist.size() - 1)
-                {
-                    TrackFile file = playlist.get(index);
-                    playlist.remove(index);
-                    playlist.add(index + 1, file);
-                    index++;
-                }
-            }
-            else if(btn.id == ID_DELETE)
-            {
-                playlist.remove(index);
-                if(playlist.size() <= index)
-                {
-                    index = playlist.size() - 1;
-                }
-            }
+            this.minecraft.getTextureManager().bindTexture(ResourceHelper.TEX_SPECTATOR_WIDGETS);
+            this.blit(guiLeft + 40, guiTop + 207, 112, 0, 32, 32);
         }
     }
 
@@ -276,7 +284,7 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
         doneTimeout = 2;
         index = -1;
         playlistView = !playlistView;
-        initGui();
+        init(minecraft, minecraft.getMainWindow().getScaledWidth(), minecraft.getMainWindow().getScaledHeight());
         trackList.tracks = playlistView ? playlist : tracks;
     }
 
@@ -297,7 +305,7 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
                     index = playlist.size() - 1;
                 }
             }
-            this.mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            this.minecraft.getSoundHandler().play(SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, 1.0F));
             return;
         }
         if(playlist.isEmpty())
@@ -318,21 +326,21 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
         }
         Clef.channel.sendToServer(new PacketInstrumentPlayerInfo(md5s, bandName.getText(), syncPlay == 1, syncTrack == 1, repeat, shuffle == 1, player.getPos()));
         closeScreen();
-        mc.setIngameFocus();
+        this.minecraft.mouseHelper.grabMouse();
     }
 
     @Override
     public void closeScreen()
     {
-        mc.player.closeScreen();
+        minecraft.player.closeScreen();
     }
 
-    private boolean isMouseOverSlot(Slot slotIn, int mouseX, int mouseY)
+    private boolean isMouseOverSlot(Slot slotIn, double mouseX, double mouseY)
     {
         return this.isPointInRegion(slotIn.xPos, slotIn.yPos, 16, 16, mouseX, mouseY);
     }
 
-    protected boolean isPointInRegion(int rectX, int rectY, int rectWidth, int rectHeight, int pointX, int pointY)
+    protected boolean isPointInRegion(int rectX, int rectY, int rectWidth, int rectHeight, double pointX, double pointY)
     {
         int i = this.guiLeft;
         int j = this.guiTop;
@@ -341,7 +349,7 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
         return pointX >= rectX - 1 && pointX < rectX + rectWidth + 1 && pointY >= rectY - 1 && pointY < rectY + rectHeight + 1;
     }
 
-    private void drawSlot(Slot slotIn)
+    private void drawSlot(Slot slotIn) //Taken from ContainerScreen
     {
         int i = slotIn.xPos;
         int j = slotIn.yPos;
@@ -350,36 +358,35 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
         boolean flag1 = false;
         String s = null;
 
-        this.zLevel = 100.0F;
-        this.itemRender.zLevel = 100.0F;
-
-        if (itemstack.isEmpty() && slotIn.isEnabled())
-        {
-            TextureAtlasSprite textureatlassprite = slotIn.getBackgroundSprite();
-
-            if (textureatlassprite != null)
-            {
-                GlStateManager.disableLighting();
-                this.mc.getTextureManager().bindTexture(slotIn.getBackgroundLocation());
-                this.drawTexturedModalRect(i, j, textureatlassprite, 16, 16);
-                GlStateManager.enableLighting();
+        this.setBlitOffset(100);
+        this.itemRenderer.zLevel = 100.0F;
+        if (itemstack.isEmpty() && slotIn.isEnabled()) {
+            Pair<ResourceLocation, ResourceLocation> pair = slotIn.getBackground();
+            if (pair != null) {
+                TextureAtlasSprite textureatlassprite = this.minecraft.getAtlasSpriteGetter(pair.getFirst()).apply(pair.getSecond());
+                this.minecraft.getTextureManager().bindTexture(textureatlassprite.getAtlasTexture().getTextureLocation());
+                blit(i, j, this.getBlitOffset(), 16, 16, textureatlassprite);
                 flag1 = true;
             }
         }
 
-        if (!flag1)
-        {
-            if (flag)
-            {
-                drawRect(i, j, i + 16, j + 16, -2130706433);
+        if (!flag1) {
+            if (flag) {
+                fill(i, j, i + 16, j + 16, -2130706433);
             }
 
-            GlStateManager.enableDepth();
-            this.itemRender.renderItemAndEffectIntoGUI(this.mc.player, itemstack, i, j);
-            this.itemRender.renderItemOverlayIntoGUI(this.fontRenderer, itemstack, i, j, s);
+            RenderSystem.enableDepthTest();
+            this.itemRenderer.renderItemAndEffectIntoGUI(this.minecraft.player, itemstack, i, j);
+            this.itemRenderer.renderItemOverlayIntoGUI(this.font, itemstack, i, j, s);
         }
 
-        this.itemRender.zLevel = 0.0F;
-        this.zLevel = 0.0F;
+        this.itemRenderer.zLevel = 0.0F;
+        this.setBlitOffset(0);
+    }
+
+    @Override //TODO am I doing this right?
+    public ContainerInstrumentPlayer getContainer()
+    {
+        return containerInstrumentPlayer;
     }
 }

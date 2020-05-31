@@ -1,5 +1,6 @@
 package me.ichun.mods.clef.common.util.abc.play;
 
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.item.ItemInstrument;
 import me.ichun.mods.clef.common.packet.PacketPlayingTracks;
@@ -10,24 +11,24 @@ import me.ichun.mods.clef.common.util.abc.play.components.Note;
 import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
-import me.ichun.mods.ichunutil.common.iChunUtil;
+import me.ichun.mods.ichunutil.common.entity.util.EntityHelper;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.WorldClient;
+import net.minecraft.client.entity.player.AbstractClientPlayerEntity;
+import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.monster.EntityZombie;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.monster.ZombieEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.network.PacketDistributor;
 
 import javax.annotation.Nullable;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 public class Track
 {
@@ -42,10 +43,10 @@ public class Track
     public boolean playing = true;
     public int timeToSilence = 0;
 
-    public HashMap<Integer, HashSet<BlockPos>> instrumentPlayers = new HashMap<>();
+    public HashMap<ResourceLocation, HashSet<BlockPos>> instrumentPlayers = new HashMap<>();
     public HashSet<String> playersNames = new HashSet<>();
-    public HashMap<EntityPlayer, Integer> players = new HashMap<>();
-    public HashSet<Integer> zombies = new HashSet<>();
+    public IdentityHashMap<PlayerEntity, Integer> players = new IdentityHashMap<>();
+    public IntOpenHashSet zombies = new IntOpenHashSet();
 
     public Track(String id, String band, String md5, @Nullable TrackInfo track, boolean isRemote)
     {
@@ -82,7 +83,7 @@ public class Track
         this.track = track;
         if(!isRemote)
         {
-            Clef.channel.sendToAll(new PacketPlayingTracks(this));
+            Clef.channel.sendTo(new PacketPlayingTracks(this), PacketDistributor.ALL.noArg());
         }
     }
 
@@ -117,7 +118,7 @@ public class Track
 
         if(isRemote)
         {
-            if(playProg == 0 && Clef.config.showRecordPlayingMessageForTracks == 1)
+            if(playProg == 0 && Clef.configClient.showRecordPlayingMessageForTracks)
             {
                 showNowPlaying();
             }
@@ -130,22 +131,22 @@ public class Track
 
             if(track.notes.containsKey(playProg))
             {
-                EntityPlayer mcPlayer = iChunUtil.proxy.getMcPlayer();
+                PlayerEntity mcPlayer = EntityHelper.getClientPlayer();
                 if(mcPlayer == null)
                 {
                     return false;
                 }
-                Iterator<Map.Entry<EntityPlayer, Integer>> playerIte = players.entrySet().iterator();
+                Iterator<Map.Entry<PlayerEntity, Integer>> playerIte = players.entrySet().iterator();
                 while(playerIte.hasNext())
                 {
-                    Map.Entry<EntityPlayer, Integer> e = playerIte.next();
-                    EntityPlayer player = e.getKey();
-                    if(player.isEntityAlive() && player.getDistance(mcPlayer) < 48D)
+                    Map.Entry<PlayerEntity, Integer> e = playerIte.next();
+                    PlayerEntity player = e.getKey();
+                    if(player.isAlive() && player.getDistance(mcPlayer) < 48D)
                     {
                         ItemStack is = ItemInstrument.getUsableInstrument(player);
                         if(!is.isEmpty())
                         {
-                            NBTTagCompound tag = is.getTagCompound();
+                            CompoundNBT tag = is.getTag();
                             if(tag != null)
                             {
                                 Instrument instrument = InstrumentLibrary.getInstrumentByName(tag.getString("itemName"));
@@ -170,16 +171,16 @@ public class Track
                     }
                     else
                     {
-                        playersNames.add(player.getName());
+                        playersNames.add(player.getName().getUnformattedComponentText());
                         playerIte.remove();
                     }
                 }
-                HashSet<BlockPos> poses = instrumentPlayers.get(mcPlayer.getEntityWorld().provider.getDimension());
+                HashSet<BlockPos> poses = instrumentPlayers.get(mcPlayer.getEntityWorld().getDimension().getType().getRegistryName());
                 if(poses != null)
                 {
                     for(BlockPos pos : poses)
                     {
-                        if(mcPlayer.getDistance(pos.getX(), pos.getY(), pos.getZ()) < 48D)
+                        if(mcPlayer.getDistanceSq(pos.getX(), pos.getY(), pos.getZ()) < (48D * 48D))
                         {
                             TileEntity te = mcPlayer.world.getTileEntity(pos);
                             if(te instanceof TileEntityInstrumentPlayer)
@@ -188,9 +189,9 @@ public class Track
                                 for(int i = 0; i < 9; i++)
                                 {
                                     ItemStack is = player.getStackInSlot(i);
-                                    if(is.getItem() == Clef.itemInstrument && is.getTagCompound() != null)
+                                    if(is.getItem() == Clef.Items.INSTRUMENT.get() && is.getTag() != null)
                                     {
-                                        Instrument instrument = InstrumentLibrary.getInstrumentByName(is.getTagCompound().getString("itemName"));
+                                        Instrument instrument = InstrumentLibrary.getInstrumentByName(is.getTag().getString("itemName"));
                                         if(instrument != null)
                                         {
                                             HashSet<Note> notes = track.notes.get(playProg);
@@ -210,12 +211,12 @@ public class Track
                 {
                     Integer i = ite1.next();
                     Entity ent = mcPlayer.world.getEntityByID(i);
-                    if(ent instanceof EntityZombie && ent.isEntityAlive() && mcPlayer.getDistance(ent) < 48D)
+                    if(ent instanceof ZombieEntity && ent.isAlive() && mcPlayer.getDistance(ent) < 48D)
                     {
-                        ItemStack is = ItemInstrument.getUsableInstrument((EntityZombie)ent);
+                        ItemStack is = ItemInstrument.getUsableInstrument((ZombieEntity)ent);
                         if(!is.isEmpty())
                         {
-                            NBTTagCompound tag = is.getTagCompound();
+                            CompoundNBT tag = is.getTag();
                             if(tag != null)
                             {
                                 Instrument instrument = InstrumentLibrary.getInstrumentByName(tag.getString("itemName"));
@@ -240,19 +241,19 @@ public class Track
         else
         {
             boolean update = false;
-            Iterator<Map.Entry<EntityPlayer, Integer>> playerIte = players.entrySet().iterator();
+            Iterator<Map.Entry<PlayerEntity, Integer>> playerIte = players.entrySet().iterator();
             while(playerIte.hasNext())
             {
-                Map.Entry<EntityPlayer, Integer> e = playerIte.next();
-                EntityPlayer player = e.getKey();
-                if(player.isEntityAlive())
+                Map.Entry<PlayerEntity, Integer> e = playerIte.next();
+                PlayerEntity player = e.getKey();
+                if(player.isAlive())
                 {
                     e.setValue(e.getValue() + 1);
 
                     ItemStack is = ItemInstrument.getUsableInstrument(player);
                     if(!is.isEmpty())
                     {
-                        Instrument instrument = InstrumentLibrary.getInstrumentByName(is.getTagCompound().getString("itemName"));
+                        Instrument instrument = InstrumentLibrary.getInstrumentByName(is.getTag().getString("itemName"));
                         if(instrument != null)
                         {
                             e.setValue(0);
@@ -288,7 +289,7 @@ public class Track
                 {
                     stop();
                 }
-                Clef.channel.sendToAll(new PacketPlayingTracks(this));
+                Clef.channel.sendTo(new PacketPlayingTracks(this), PacketDistributor.ALL.noArg());
             }
         }
 
@@ -330,73 +331,73 @@ public class Track
         return id.hashCode();
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public void findPlayers()
     {
         Iterator<String> ite = playersNames.iterator();
         while(ite.hasNext())
         {
             String s = ite.next();
-            if(Minecraft.getMinecraft().world != null)
+            if(Minecraft.getInstance().world != null)
             {
-                EntityPlayer player = Minecraft.getMinecraft().world.getPlayerEntityByName(s);
-                if(player != null && player.isEntityAlive())
+                for(AbstractClientPlayerEntity player : Minecraft.getInstance().world.getPlayers())
                 {
-                    players.put(player, 0);
-                    ite.remove();
+                    if(player.getName().getUnformattedComponentText().equals(s) && player.isAlive())
+                    {
+                        players.put(player, 0);
+                        ite.remove();
+                    }
                 }
             }
         }
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public void showNowPlaying()
     {
-        Minecraft.getMinecraft().ingameGUI.setRecordPlayingMessage(track.getTitle());
+        Minecraft.getInstance().ingameGUI.setRecordPlayingMessage(track.getTitle());
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public boolean shouldRequestTrack()
     {
-        WorldClient world = Minecraft.getMinecraft().world;
+        ClientWorld world = Minecraft.getInstance().world;
         if (world == null)
         {
             return false;
         }
-        HashSet<BlockPos> poses = instrumentPlayers.get(world.provider.getDimension());
+        HashSet<BlockPos> poses = instrumentPlayers.get(world.getDimension().getType().getRegistryName());
         if(poses != null)
         {
             for(BlockPos pos : poses)
             {
-                if(Minecraft.getMinecraft().player.getDistance(pos.getX(), pos.getY(), pos.getZ()) < 48D)
+                if(Minecraft.getInstance().player.getDistanceSq(pos.getX(), pos.getY(), pos.getZ()) < (48D * 48D))
                 {
                     return true;
                 }
             }
         }
 
-        Iterator<String> ite = playersNames.iterator();
-        while(ite.hasNext())
+        for(String s : playersNames)
         {
-            String s = ite.next();
-            if(Minecraft.getMinecraft().world != null)
+            if(Minecraft.getInstance().world != null)
             {
-                EntityPlayer player = Minecraft.getMinecraft().world.getPlayerEntityByName(s);
-                if(player != null && player.isEntityAlive())
+                for(AbstractClientPlayerEntity player : Minecraft.getInstance().world.getPlayers())
                 {
-                    return true;
+                    if(player.getName().getUnformattedComponentText().equals(s) && player.isAlive())
+                    {
+                        return true;
+                    }
                 }
             }
         }
 
-        Iterator<Integer> ite1 = zombies.iterator();
-        while(ite1.hasNext())
+        for(Integer i : zombies)
         {
-            Integer i = ite1.next();
-            if(Minecraft.getMinecraft().world != null)
+            if(Minecraft.getInstance().world != null)
             {
-                Entity ent = Minecraft.getMinecraft().world.getEntityByID(i);
-                if(ent != null && ent.isEntityAlive())
+                Entity ent = Minecraft.getInstance().world.getEntityByID(i);
+                if(ent != null && ent.isAlive())
                 {
                     return true;
                 }

@@ -1,12 +1,11 @@
 package me.ichun.mods.clef.common.packet;
 
-import io.netty.buffer.ByteBuf;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
-import me.ichun.mods.ichunutil.common.core.network.AbstractPacket;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
-import net.minecraftforge.fml.relauncher.Side;
+import me.ichun.mods.ichunutil.common.network.AbstractPacket;
+import net.minecraft.network.PacketBuffer;
+import net.minecraftforge.fml.LogicalSide;
+import net.minecraftforge.fml.network.NetworkEvent;
 
 public class PacketRequestFile extends AbstractPacket
 {
@@ -22,35 +21,32 @@ public class PacketRequestFile extends AbstractPacket
     }
 
     @Override
-    public void writeTo(ByteBuf buf)
+    public void writeTo(PacketBuffer buf)
     {
-        ByteBufUtils.writeUTF8String(buf, file);
+        buf.writeString(file);
         buf.writeBoolean(isInstrument);
     }
 
     @Override
-    public void readFrom(ByteBuf buf)
+    public void readFrom(PacketBuffer buf)
     {
-        file = ByteBufUtils.readUTF8String(buf);
+        file = readString(buf);
         isInstrument = buf.readBoolean();
     }
 
     @Override
-    public void execute(Side side, EntityPlayer player)
+    public void process(NetworkEvent.Context context) //receivingSide() //Received on both sides
     {
-        if(isInstrument)
-        {
-            InstrumentLibrary.packageAndSendInstrument(file, side == Side.SERVER ? player : null); //send to player, if null, to server
-        }
-        else
-        {
-            AbcLibrary.sendAbc(file, side == Side.SERVER ? player : null);
-        }
-    }
-
-    @Override
-    public Side receivingSide() //Received on both sides
-    {
-        return null;
+        context.enqueueWork(() -> {
+            LogicalSide receivingSide = context.getDirection().getReceptionSide();
+            if(isInstrument)
+            {
+                InstrumentLibrary.packageAndSendInstrument(file, receivingSide.isServer() ? context.getSender() : null); //send to player, if null, to server
+            }
+            else
+            {
+                AbcLibrary.sendAbc(file, receivingSide.isServer() ? context.getSender() : null);
+            }
+        });
     }
 }

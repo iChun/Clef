@@ -1,48 +1,59 @@
 package me.ichun.mods.clef.common.block;
 
-import me.ichun.mods.clef.client.gui.GuiPlayTrackBlock;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.packet.PacketCreateInstrument;
 import me.ichun.mods.clef.common.tileentity.TileEntityInstrumentPlayer;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockContainer;
+import net.minecraft.block.*;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Items;
-import net.minecraft.init.SoundEvents;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.InventoryHelper;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumBlockRenderType;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
+import net.minecraft.util.ActionResultType;
+import net.minecraft.util.Hand;
 import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvents;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.BlockRayTraceResult;
+import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.client.FMLClientHandler;
-import net.minecraftforge.fml.common.network.internal.FMLNetworkHandler;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.network.NetworkHooks;
 
-public class BlockInstrumentPlayer extends BlockContainer
+import javax.annotation.Nullable;
+
+public class BlockInstrumentPlayer extends ContainerBlock
 {
     public BlockInstrumentPlayer()
     {
-        super(Material.WOOD);
+        super(Block.Properties.create(Material.WOOD).sound(SoundType.WOOD).hardnessAndResistance(0.8F)); //from Note Block
     }
 
     @Override
-    public TileEntity createNewTileEntity(World worldIn, int meta)
+    public boolean hasTileEntity(BlockState state)
+    {
+        return true;
+    }
+
+    @Nullable
+    @Override
+    public TileEntity createNewTileEntity(IBlockReader world)
     {
         return new TileEntityInstrumentPlayer();
     }
 
+    @Nullable
     @Override
-    public void neighborChanged(IBlockState state, World worldIn, BlockPos pos, Block blockIn, BlockPos fromPos)
+    public TileEntity createTileEntity(BlockState state, IBlockReader world)
+    {
+        return createNewTileEntity(world);
+    }
+
+    @Override
+    public void neighborChanged(BlockState state, World worldIn, BlockPos pos, Block blockIn, BlockPos fromPos, boolean isMoving)
     {
         if(!worldIn.isRemote)
         {
@@ -63,7 +74,7 @@ public class BlockInstrumentPlayer extends BlockContainer
     }
 
     @Override
-    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, EnumFacing side, float hitX, float hitY, float hitZ)
+    public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity playerIn, Hand hand, BlockRayTraceResult hit)
     {
         TileEntity te = worldIn.getTileEntity(pos);
         if(te instanceof TileEntityInstrumentPlayer)
@@ -71,9 +82,9 @@ public class BlockInstrumentPlayer extends BlockContainer
             TileEntityInstrumentPlayer player = (TileEntityInstrumentPlayer)te;
             boolean hasSlot = false;
             ItemStack is = playerIn.getHeldItemMainhand();
-            if(is.getItem() == Clef.itemInstrument && !playerIn.isSneaking())
+            if(is.getItem() == Clef.Items.INSTRUMENT.get() && !playerIn.isSneaking())
             {
-                if(is.getTagCompound() == null && !worldIn.isRemote)
+                if(is.getTag() == null && !worldIn.isRemote)
                 {
                     InstrumentLibrary.assignRandomInstrument(is);
                 }
@@ -89,7 +100,7 @@ public class BlockInstrumentPlayer extends BlockContainer
                         {
                             player.setInventorySlotContents(i, is);
                             player.markDirty();
-                            playerIn.setHeldItem(EnumHand.MAIN_HAND, ItemStack.EMPTY);
+                            playerIn.setHeldItem(Hand.MAIN_HAND, ItemStack.EMPTY);
                             playerIn.inventory.markDirty();
                             worldIn.notifyBlockUpdate(pos, state, state, 3);
                         }
@@ -110,62 +121,47 @@ public class BlockInstrumentPlayer extends BlockContainer
                 }
                 if(!full)
                 {
-                    return false;
+                    return ActionResultType.PASS;
                 }
                 if(worldIn.isRemote)
                 {
                     for(Instrument instrument : InstrumentLibrary.instruments)
                     {
-                        if(instrument.info.itemName.equalsIgnoreCase(is.getDisplayName()))
+                        if(instrument.info.itemName.equalsIgnoreCase(is.getDisplayName().getUnformattedComponentText()))
                         {
                             Clef.channel.sendToServer(new PacketCreateInstrument(instrument.info.itemName, pos));
                             break;
                         }
                     }
                 }
-                return true;
+                return ActionResultType.SUCCESS;
             }
-            if(!hasSlot && !player.justCreatedInstrument)
+            if(!playerIn.world.isRemote && !hasSlot && !player.justCreatedInstrument)
             {
-                FMLNetworkHandler.openGui(playerIn, Clef.instance, 0, worldIn, pos.getX(), pos.getY(), pos.getZ());
+                NetworkHooks.openGui((ServerPlayerEntity)playerIn, player, pos);
             }
-            return true;
+            return ActionResultType.SUCCESS;
         }
-        return false;
+        return ActionResultType.PASS;
     }
 
     @Override
-    public void breakBlock(World worldIn, BlockPos pos, IBlockState state)
-    {
-        TileEntity tileentity = worldIn.getTileEntity(pos);
+    public void onReplaced(BlockState state, World worldIn, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (state.getBlock() != newState.getBlock()) {
+            TileEntity tileentity = worldIn.getTileEntity(pos);
+            if (tileentity instanceof TileEntityInstrumentPlayer)
+            {
+                InventoryHelper.dropInventoryItems(worldIn, pos, (TileEntityInstrumentPlayer)tileentity);
+                worldIn.updateComparatorOutputLevel(pos, this);
+            }
 
-        if (tileentity instanceof TileEntityInstrumentPlayer)
-        {
-            InventoryHelper.dropInventoryItems(worldIn, pos, (TileEntityInstrumentPlayer)tileentity);
-            worldIn.updateComparatorOutputLevel(pos, this);
-        }
-
-        super.breakBlock(worldIn, pos, state);
-    }
-
-    @Override
-    public void dropBlockAsItemWithChance(World worldIn, BlockPos pos, IBlockState state, float chance, int fortune)
-    {
-        if (!worldIn.isRemote)
-        {
-            super.dropBlockAsItemWithChance(worldIn, pos, state, chance, 0);
+            super.onReplaced(state, worldIn, pos, newState, isMoving);
         }
     }
 
     @Override
-    public EnumBlockRenderType getRenderType(IBlockState state)
+    public BlockRenderType getRenderType(BlockState state)
     {
-        return EnumBlockRenderType.MODEL;
-    }
-
-    @SideOnly(Side.CLIENT)
-    public void openGui(TileEntityInstrumentPlayer player)
-    {
-        FMLClientHandler.instance().displayGuiScreen(Minecraft.getMinecraft().player, new GuiPlayTrackBlock(player));
+        return BlockRenderType.MODEL;
     }
 }

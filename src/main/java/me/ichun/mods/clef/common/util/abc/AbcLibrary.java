@@ -5,13 +5,17 @@ import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.packet.PacketFileFragment;
 import me.ichun.mods.clef.common.packet.PacketPlayingTracks;
 import me.ichun.mods.clef.common.packet.PacketRequestFile;
+import me.ichun.mods.clef.common.util.ResourceHelper;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
-import me.ichun.mods.ichunutil.common.core.util.IOUtil;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import me.ichun.mods.ichunutil.common.util.IOUtil;
+import net.minecraft.client.Minecraft;
+import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.LogicalSide;
+import net.minecraftforge.fml.common.thread.EffectiveSide;
+import net.minecraftforge.fml.network.PacketDistributor;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.*;
@@ -29,7 +33,7 @@ public class AbcLibrary
     public static void init()
     {
         tracks.clear();
-        File defaultAbc = new File(Clef.getResourceHelper().abcDir, "files.extracted");
+        File defaultAbc = new File(ResourceHelper.getAbcDir().toFile(), "files.extracted");
         if(!defaultAbc.exists())
         {
             try(InputStream in = Clef.class.getResourceAsStream("/abc.zip"); ZipInputStream zipStream = new ZipInputStream(in))
@@ -39,7 +43,7 @@ public class AbcLibrary
 
                 while((entry = zipStream.getNextEntry()) != null)
                 {
-                    File file = new File(Clef.getResourceHelper().abcDir, entry.getName());
+                    File file = new File(ResourceHelper.getAbcDir().toFile(), entry.getName());
                     if(file.exists() && file.length() > 3L)
                     {
                         continue;
@@ -65,14 +69,14 @@ public class AbcLibrary
             catch(IOException ignored){}
         }
         Clef.LOGGER.info("Loading abc files");
-        Clef.LOGGER.info("Loaded " + readAbcs(Clef.getResourceHelper().abcDir, tracks) + " abc files");
+        Clef.LOGGER.info("Loaded " + readAbcs(ResourceHelper.getAbcDir().toFile(), tracks) + " abc files");
         if(tracks.isEmpty())
         {
             TrackInfo track = new TrackInfo();
             track.setTitle("You have no tracks");
             track.setFileTitle("You have no tracks");
             track.trackLength = 10;
-            tracks.add(new TrackFile(track, new File(Clef.getResourceHelper().abcDir, "You have no tracks.abc"), ""));
+            tracks.add(new TrackFile(track, new File(ResourceHelper.getAbcDir().toFile(), "You have no tracks.abc"), ""));
         }
     }
 
@@ -106,7 +110,7 @@ public class AbcLibrary
                     tracks.add(new TrackFile(track, file, md5));
                     Collections.sort(tracks);
 
-                    if(FMLCommonHandler.instance().getEffectiveSide().isServer() && tracksWaitingForTrackInfo.containsKey(md5))
+                    if(EffectiveSide.get().isServer() && tracksWaitingForTrackInfo.containsKey(md5))
                     {
                         tracksWaitingForTrackInfo.get(md5).setTrack(md5, track);
                         tracksWaitingForTrackInfo.remove(md5);
@@ -118,26 +122,26 @@ public class AbcLibrary
         return false;
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public static void reloadTracks(GuiPlayTrack gui)
     {
         ArrayList<TrackFile> tracks = new ArrayList<>();
         Clef.LOGGER.info("Reloading abc files");
-        Clef.LOGGER.info("Reloaded " + readAbcs(Clef.getResourceHelper().abcDir, tracks) + " abc files");
+        Clef.LOGGER.info("Reloaded " + readAbcs(ResourceHelper.getAbcDir().toFile(), tracks) + " abc files");
         if(tracks.isEmpty())
         {
             TrackInfo track = new TrackInfo();
             track.setTitle("You have no tracks");
             track.setFileTitle("You have no tracks");
             track.trackLength = 10;
-            tracks.add(new TrackFile(track, new File(Clef.getResourceHelper().abcDir, "You have no tracks.abc"), ""));
+            tracks.add(new TrackFile(track, new File(ResourceHelper.getAbcDir().toFile(), "You have no tracks.abc"), ""));
         }
         AbcLibrary.tracks = tracks;
 
         gui.tracks = tracks;
         gui.index = -1;
         gui.doneTimeout = 20;
-        gui.initGui();
+        gui.init(Minecraft.getInstance(), Minecraft.getInstance().getMainWindow().getScaledWidth(), Minecraft.getInstance().getMainWindow().getScaledHeight());
     }
 
     public static boolean hasTrack(String md5)
@@ -157,7 +161,7 @@ public class AbcLibrary
         return null;
     }
 
-    public static void playAbc(String md5, String bandName, boolean syncPlay, boolean syncTrack, EntityPlayer player) //CLIENT NEVER CALLS THIS.
+    public static void playAbc(String md5, String bandName, boolean syncPlay, boolean syncTrack, ServerPlayerEntity player) //CLIENT NEVER CALLS THIS.
     {
         TrackFile file = getTrack(md5);
         Track track;
@@ -207,7 +211,7 @@ public class AbcLibrary
             {
                 playerTrack.stop();
             }
-            Clef.channel.sendToAll(new PacketPlayingTracks(playerTrack));
+            Clef.channel.sendTo(new PacketPlayingTracks(playerTrack), PacketDistributor.ALL.noArg());
         }
 
         //queue the track. track plays when the trackfile is set.
@@ -215,16 +219,16 @@ public class AbcLibrary
         track.players.put(player, 0);
         if(track.getTrack() != null)
         {
-            Clef.channel.sendToAll(new PacketPlayingTracks(track));
+            Clef.channel.sendTo(new PacketPlayingTracks(track), PacketDistributor.ALL.noArg());
         }
     }
 
-    public static void startPlayingTrack(EntityPlayer player, Track...tracks)
+    public static void startPlayingTrack(ServerPlayerEntity player, Track...tracks)
     {
         Clef.channel.sendTo(new PacketPlayingTracks(tracks), player);
     }
 
-    public static void sendAbc(String md5, EntityPlayer player)
+    public static void sendAbc(String md5, ServerPlayerEntity player)
     {
         if(md5.isEmpty())
         {
@@ -253,23 +257,23 @@ public class AbcLibrary
                     return;
                 }
 
-                Clef.LOGGER.info("Sending track " + track.file.getName() + " to " + (player == null ? "the server" : player.getName()));
+                Clef.LOGGER.info("Sending track " + track.file.getName() + " to " + (player == null ? "the server" : player.getName().getUnformattedComponentText()));
 
                 int packetsToSend = (int)Math.ceil((float)fileSize / 32000F);
                 int packetCount = 0;
 
                 while(fileSize > 0)
                 {
-                    byte[] fileBytes = new byte[fileSize > 32000 ? 32000 : fileSize];
+                    byte[] fileBytes = new byte[Math.min(fileSize, 32000)];
                     fis.read(fileBytes);
 
                     if(player != null)
                     {
-                        Clef.channel.sendTo(new PacketFileFragment(track.file.getName(), packetsToSend, packetCount, fileSize > 32000 ? 32000 : fileSize, fileBytes), player);
+                        Clef.channel.sendTo(new PacketFileFragment(track.file.getName(), packetsToSend, packetCount, fileBytes), player);
                     }
                     else
                     {
-                        Clef.channel.sendToServer(new PacketFileFragment(track.file.getName(), packetsToSend, packetCount, fileSize > 32000 ? 32000 : fileSize, fileBytes));
+                        Clef.channel.sendToServer(new PacketFileFragment(track.file.getName(), packetsToSend, packetCount, fileBytes));
                     }
 
                     packetCount++;
@@ -281,13 +285,13 @@ public class AbcLibrary
         //Do nothing if we don't have it, unlike instruments.
     }
 
-    public static HashSet<String> requestedABCFromServer = new HashSet<>(); // The server should ALWAYS have all the abc files, unlike the server.
+    public static HashSet<String> requestedABCFromServer = new HashSet<>(); // The server should ALWAYS have all the abc files, unlike the client.
     public static HashSet<String> requestedABCFromPlayers = new HashSet<>();
     public static HashMap<String, Track> tracksWaitingForTrackInfo = new HashMap<>();
 
-    public static void handleReceivedFile(String fileName, byte[] fileData, Side side)
+    public static void handleReceivedFile(String fileName, byte[] fileData, LogicalSide side)
     {
-        File dir = new File(Clef.getResourceHelper().abcDir, "received");
+        File dir = new File(ResourceHelper.getAbcDir().toFile(), "received");
         File file = new File(dir, fileName);
         try
         {
@@ -304,13 +308,14 @@ public class AbcLibrary
             Clef.LOGGER.info("Received " + fileName + ". Reading.");
             readAbc(file, tracks);
 
+            String fileNameTruncated = fileName.substring(0, fileName.length() - 4);
             if(side.isServer())
             {
-                requestedABCFromPlayers.remove(fileName.substring(0, fileName.length() - 4));
+                requestedABCFromPlayers.remove(fileNameTruncated);
             }
             else
             {
-                requestedABCFromServer.remove(fileName.substring(0, fileName.length() - 4));
+                requestedABCFromServer.remove(fileNameTruncated);
             }
         }
         catch(Exception e)

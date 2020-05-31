@@ -1,42 +1,36 @@
 package me.ichun.mods.clef.client.gui;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.packet.PacketPlayABC;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
 import me.ichun.mods.clef.common.util.abc.TrackFile;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.*;
+import net.minecraft.client.gui.AbstractGui;
+import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.translation.I18n;
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
+import net.minecraft.util.text.TranslationTextComponent;
+import org.lwjgl.glfw.GLFW;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 @SuppressWarnings("deprecation")
-public class GuiPlayTrack extends GuiScreen
+public class GuiPlayTrack extends Screen
 {
     public static final ResourceLocation texBackground = new ResourceLocation("clef", "textures/gui/track_select.png");
     public static final ResourceLocation texBackgroundBlock = new ResourceLocation("clef", "textures/gui/track_select_block.png");
     public static final ResourceLocation texInstrument = new ResourceLocation("clef", "textures/items/instrument.png");
-    public static final ResourceLocation texNote = new ResourceLocation("minecraft", "textures/particle/particles.png");
+    public static final ResourceLocation texNote = new ResourceLocation("minecraft", "textures/particle/note.png");
     public static final ResourceLocation texIcons = new ResourceLocation("minecraft", "textures/gui/icons.png");
-
-    public static final int ID_CONFIRM = 0;
-    public static final int ID_SYNC_PLAY = 1;
-    public static final int ID_SYNC_TRACK = 2;
-    public static final int ID_RELOAD_INSTRUMENTS = 20;
-    public static final int ID_RELOAD_TRACKS = 21;
-    public static final int ID_TOGGLE_TITLE = 22;
 
     public ResourceLocation background = texBackground;
 
@@ -46,7 +40,7 @@ public class GuiPlayTrack extends GuiScreen
     protected int guiLeft;
     protected int guiTop;
 
-    public GuiTextField bandName;
+    public TextFieldWidget bandName;
 
     public GuiTrackList trackList;
     public int trackListBottom;
@@ -65,210 +59,206 @@ public class GuiPlayTrack extends GuiScreen
 
     public boolean disableListWhenSyncTrack = true;
 
+    public Button buttonConfirm = null;
+    public Button buttonSyncPlay = null;
+    public Button buttonSyncTrack = null;
+
     public GuiPlayTrack()
     {
+        super(new TranslationTextComponent("clef.gui.chooser"));
         tracks = AbcLibrary.tracks;
-        bandNameString = Clef.config.favoriteBand;
+        bandNameString = Clef.configClient.favoriteBand;
     }
 
     @Override
-    public void initGui()
+    public void init()
     {
-        Keyboard.enableRepeatEvents(true);
+        this.minecraft.keyboardListener.enableRepeatEvents(true);
 
         this.guiLeft = (this.width - this.xSize) / 2;
         this.guiTop = (this.height - this.ySize) / 2;
 
         trackListBottom = guiTop + ySize - 6;
 
-        buttonList.clear();
-
-        buttonList.add(new GuiButton(ID_CONFIRM, guiLeft + 174, guiTop + 210, 83, 20, I18n.translateToLocal("clef.gui.play")));
-        addButtons();
-
-        bandName = new GuiTextField(0, mc.fontRenderer, this.guiLeft + 181, this.guiTop + 18, 64, mc.fontRenderer.FONT_HEIGHT);
+        bandName = new TextFieldWidget(font, this.guiLeft + 181, this.guiTop + 18, 64, font.FONT_HEIGHT, I18n.format("clef.gui.band"));
         bandName.setMaxStringLength(15);
         bandName.setEnableBackgroundDrawing(false);
         bandName.setTextColor(16777215);
         bandName.setText(bandNameString);
+        this.children.add(bandName);
 
-        for(GuiButton btn : buttonList)
-        {
-            if(btn.id == ID_SYNC_PLAY)
-            {
-                btn.enabled = !bandName.getText().isEmpty() && syncTrack == 0;
-                btn.displayString = I18n.translateToLocal(syncPlay == 1 ? "gui.yes" : "gui.no");
-            }
-            else if(btn.id == ID_SYNC_TRACK)
-            {
-                btn.enabled = !bandName.getText().isEmpty();
-                btn.displayString = I18n.translateToLocal(syncTrack == 1 ? "gui.yes" : "gui.no");
-            }
-        }
+        this.addButton(buttonConfirm = new Button(guiLeft + 174, guiTop + 210, 83, 20, I18n.format("clef.gui.play"), btn -> confirmSelection(false)));
+        addButtons();
+
+        buttonSyncPlay.active = !bandName.getText().isEmpty() && syncTrack == 0;
+        buttonSyncPlay.setMessage(I18n.format(syncPlay == 1 ? "gui.yes" : "gui.no"));
+        buttonSyncTrack.active = !bandName.getText().isEmpty();
+        buttonSyncTrack.setMessage(I18n.format(syncTrack == 1 ? "gui.yes" : "gui.no"));
 
         trackList = new GuiTrackList(this, 158, ySize - 22, guiTop + 17, trackListBottom, guiLeft + 7, 8, tracks);
+        this.children.add(trackList);
     }
 
     public void addButtons()
     {
-        buttonList.add(new GuiButton(ID_SYNC_PLAY, guiLeft + 179, guiTop + 51, 72, 20, I18n.translateToLocal(syncPlay == 1 ? "gui.yes" : "gui.no")));
-        buttonList.add(new GuiButton(ID_SYNC_TRACK, guiLeft + 179, guiTop + 94, 72, 20, I18n.translateToLocal(syncTrack == 1 ? "gui.yes" : "gui.no")));
+        //sync play button
+        this.addButton(buttonSyncPlay = new Button(guiLeft + 179, guiTop + 51, 72, 20, I18n.format(syncPlay == 1 ? "gui.yes" : "gui.no"), btn -> {
+            syncPlay = syncPlay == 1 ? 0 : 1;
+            btn.setMessage(I18n.format(syncPlay == 1 ? "gui.yes" : "gui.no"));
+        }));
+
+        //sync track button
+        this.addButton(buttonSyncTrack = new Button(guiLeft + 179, guiTop + 94, 72, 20, I18n.format(syncTrack == 1 ? "gui.yes" : "gui.no"), btn -> {
+            syncTrack = syncTrack == 1 ? 0 : 1;
+            btn.setMessage(I18n.format(syncTrack == 1 ? "gui.yes" : "gui.no"));
+
+            buttonSyncPlay.active = syncTrack == 0;
+            if(!buttonSyncPlay.active)
+            {
+                syncPlay = 1;
+                buttonSyncPlay.setMessage(I18n.format("gui.yes"));
+            }
+        }));
         addReloadButtons();
     }
 
-    public void addReloadButtons()
+    public void addReloadButtons() //TODO switch these to imagebuttons
     {
-        buttonList.add(new GuiButton(ID_RELOAD_INSTRUMENTS, guiLeft + 179, guiTop + 137, 20, 20, ""));
-        buttonList.add(new GuiButton(ID_RELOAD_TRACKS, guiLeft + 205, guiTop + 137, 20, 20, ""));
-        buttonList.add(new GuiButton(ID_TOGGLE_TITLE, guiLeft + 231, guiTop + 137, 20, 20, ""));
-    }
-
-    public FontRenderer getFontRenderer()
-    {
-        return fontRenderer;
+        //reload instruments
+        this.addButton(new Button(guiLeft + 179, guiTop + 137, 20, 20, "", btn -> {
+            if(doneTimeout <= 0)
+            {
+                InstrumentLibrary.reloadInstruments(this);
+            }
+        }));
+        //reload tracks
+        this.addButton(new Button(guiLeft + 205, guiTop + 137, 20, 20, "", btn -> {
+            if(doneTimeout <= 0)
+            {
+                AbcLibrary.reloadTracks(this);
+            }
+        }));
+        //toggle title
+        this.addButton(new Button(guiLeft + 231, guiTop + 137, 20, 20, "", btn -> {
+            Clef.configClient.showFileTitle = !Clef.configClient.showFileTitle;
+            Clef.configClient.save();
+            Collections.sort(tracks);
+        }));
     }
 
     @Override
-    public void onGuiClosed()
+    public void removed()
     {
-        Keyboard.enableRepeatEvents(false);
+        this.minecraft.keyboardListener.enableRepeatEvents(false);
     }
 
     @Override
-    public void updateScreen()
+    public void tick()
     {
         scrollTicker++;
         doneTimeout--;
-        bandName.updateCursorCounter();
-    }
-
-    @Override
-    public void handleMouseInput() throws IOException
-    {
-        int mouseX = Mouse.getEventX() * this.width / this.mc.displayWidth;
-        int mouseY = this.height - Mouse.getEventY() * this.height / this.mc.displayHeight - 1;
-
-        super.handleMouseInput();
-        if(syncTrack == 0 || !disableListWhenSyncTrack)
-        {
-            this.trackList.handleMouseInput(mouseX, mouseY);
-        }
+        bandName.tick();
         bandNameString = bandName.getText();
     }
 
     @Override
-    protected void keyTyped(char c, int i)
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers)
     {
-        bandName.textboxKeyTyped(c, i);
+        boolean flag = super.keyPressed(keyCode, scanCode, modifiers);
         if(bandName.isFocused())
         {
-            if (i != 1)
+            if (keyCode != GLFW.GLFW_KEY_ESCAPE)
             {
                 syncPlay = 1;
                 syncTrack = 1;
-                for(GuiButton btn : buttonList)
-                {
-                    if(btn.id == ID_SYNC_PLAY)
-                    {
-                        btn.enabled = false;
-                        btn.displayString = I18n.translateToLocal(syncPlay == 1 ? "gui.yes" : "gui.no");
-                    }
-                    else if(btn.id == ID_SYNC_TRACK)
-                    {
-                        btn.displayString = I18n.translateToLocal(syncTrack == 1 ? "gui.yes" : "gui.no");
-                    }
-                }
+                buttonSyncPlay.active = false;
+                buttonSyncPlay.setMessage(I18n.format(syncPlay == 1 ? "gui.yes" : "gui.no"));
+                buttonSyncTrack.setMessage(I18n.format(syncTrack == 1 ? "gui.yes" : "gui.no"));
             }
         }
-        if (i == 1)
+        if (keyCode == GLFW.GLFW_KEY_ESCAPE)
         {
             if(bandName.isFocused())
             {
                 bandName.setText("");
-                bandName.setFocused(false);
+                bandName.setFocused2(false);
             }
             else
             {
                 closeScreen();
-                mc.setIngameFocus();
+                this.minecraft.mouseHelper.grabMouse();
             }
         }
-        for(GuiButton btn : buttonList)
-        {
-            if(btn.id == ID_SYNC_PLAY)
-            {
-                btn.enabled = !bandName.getText().isEmpty() && syncTrack == 0;
-                btn.displayString = I18n.translateToLocal(syncPlay == 1 ? "gui.yes" : "gui.no");
-            }
-            else if(btn.id == ID_SYNC_TRACK)
-            {
-                btn.enabled = !bandName.getText().isEmpty();
-                btn.displayString = I18n.translateToLocal(syncTrack == 1 ? "gui.yes" : "gui.no");
-            }
-        }
+        buttonSyncPlay.active = !bandName.getText().isEmpty() && syncTrack == 0;
+        buttonSyncPlay.setMessage(I18n.format(syncPlay == 1 ? "gui.yes" : "gui.no"));
+        buttonSyncTrack.active = !bandName.getText().isEmpty();
+        buttonSyncTrack.setMessage(I18n.format(syncTrack == 1 ? "gui.yes" : "gui.no"));
         bandNameString = bandName.getText();
+
+        return flag;
     }
 
     @Override
-    public void drawScreen(int mouseX, int mouseY, float partialTicks)
+    public boolean shouldCloseOnEsc()
     {
-        //        initGui();
-        if(mc == null)
-        {
-            mc = Minecraft.getMinecraft();
-            fontRenderer = mc.fontRenderer;
-        }
-        drawDefaultBackground();
+        return !bandName.isFocused();
+    }
 
-        GlStateManager.color(1F, 1F, 1F, 1F);
-        this.mc.getTextureManager().bindTexture(background);
-        this.drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
+    @Override
+    public void render(int mouseX, int mouseY, float partialTicks)
+    {
+        renderBackground();
 
-        Gui.drawRect(guiLeft + 6, guiTop + 16, guiLeft + 166, trackListBottom + 1, -1072689136);
+        RenderSystem.color4f(1F, 1F, 1F, 1F);
+        this.minecraft.getTextureManager().bindTexture(background);
+        this.blit(guiLeft, guiTop, 0, 0, xSize, ySize);
+
+        AbstractGui.fill(guiLeft + 6, guiTop + 16, guiLeft + 166, trackListBottom + 1, -1072689136);
+        AbstractGui.fill(guiLeft + 6 + 1, guiTop + 16 + 1, guiLeft + 166 - 1, trackListBottom, 0xff1a1a1a);
 
         if(bandName.getVisible())
         {
-            bandName.drawTextBox();
+            bandName.render(mouseX, mouseY, partialTicks);
         }
 
-        fontRenderer.drawString(I18n.translateToLocal("clef.gui.band"), guiLeft + 179, guiTop + 5, 16777215, true);
+        font.drawStringWithShadow(I18n.format("clef.gui.band"), guiLeft + 179, guiTop + 5, 16777215);
 
         if(bandName.getText().isEmpty() && !bandName.isFocused())
         {
-            fontRenderer.drawString(I18n.translateToLocal("clef.gui.bandSolo"), guiLeft + 182, guiTop + 18, 0xcccccc, false);
+            font.drawString(I18n.format("clef.gui.bandSolo"), guiLeft + 182, guiTop + 18, 0xcccccc);
         }
 
         drawText();
 
-        trackList.drawScreen(mouseX, mouseY, partialTicks);
+        trackList.render(mouseX, mouseY, partialTicks);
 
-        super.drawScreen(mouseX, mouseY, partialTicks);
+        super.render(mouseX, mouseY, partialTicks);
 
         drawReloadButtons();
 
         if(syncTrack == 1 && disableListWhenSyncTrack && !bandName.getText().isEmpty())
         {
-            Gui.drawRect(guiLeft + 6, guiTop + 16, guiLeft + 166, trackListBottom + 1, -1072689136);
+            AbstractGui.fill(guiLeft + 6, guiTop + 16, guiLeft + 166, trackListBottom + 1, -1072689136);
         }
     }
 
     public void drawText()
     {
-        fontRenderer.drawString(I18n.translateToLocal("clef.gui.chooseSong") + " (" + tracks.size() + ")", guiLeft + 6, guiTop + 5, 16777215, true);
-        fontRenderer.drawString(I18n.translateToLocal("clef.gui.syncPlayTime"), guiLeft + 179, guiTop + 40, 16777215, true);
-        fontRenderer.drawString(I18n.translateToLocal("clef.gui.syncTrack"), guiLeft + 179, guiTop + 83, 16777215, true);
-        GlStateManager.pushMatrix();
-        int length = fontRenderer.getStringWidth(I18n.translateToLocal("clef.gui.moreSongs"));
-        GlStateManager.translate(guiLeft - 4, guiTop + length + 3, 0);
-        GlStateManager.scale(0.5F, 0.5F, 1F);
-        GlStateManager.rotate(-90F, 0F, 0F, 1F);
-        fontRenderer.drawString(I18n.translateToLocal("clef.gui.moreSongs"), 0, 0, 16777215, true);
-        GlStateManager.popMatrix();
+        font.drawStringWithShadow(I18n.format("clef.gui.chooseSong") + " (" + tracks.size() + ")", guiLeft + 6, guiTop + 5, 16777215);
+        font.drawStringWithShadow(I18n.format("clef.gui.syncPlayTime"), guiLeft + 179, guiTop + 40, 16777215);
+        font.drawStringWithShadow(I18n.format("clef.gui.syncTrack"), guiLeft + 179, guiTop + 83, 16777215);
+        RenderSystem.pushMatrix();
+        int length = font.getStringWidth(I18n.format("clef.gui.moreSongs"));
+        RenderSystem.translatef(guiLeft - 4, guiTop + length + 3, 0);
+        RenderSystem.scalef(0.5F, 0.5F, 1F);
+        RenderSystem.rotatef(-90F, 0F, 0F, 1F);
+        font.drawStringWithShadow(I18n.format("clef.gui.moreSongs"), 0, 0, 16777215);
+        RenderSystem.popMatrix();
     }
 
     public void closeScreen()
     {
-        mc.displayGuiScreen(null);
+        minecraft.displayGuiScreen(null);
     }
 
     public void drawReloadButtons()
@@ -279,39 +269,48 @@ public class GuiPlayTrack extends GuiScreen
             disableListWhenSyncTrack = Clef.eventHandlerClient.findTrackByBand(bandName.getText()) != null;
         }
 
-        fontRenderer.drawString(I18n.translateToLocal("clef.gui.reload"), guiLeft + 179, guiTop + 126, 16777215, true);
+        font.drawStringWithShadow(I18n.format("clef.gui.reload"), guiLeft + 179, guiTop + 126, 16777215);
         if(doneTimeout > 0)
         {
-            fontRenderer.drawString(I18n.translateToLocal("gui.done"), guiLeft + 179 + 2 + fontRenderer.getStringWidth(I18n.translateToLocal("clef.gui.reload")), guiTop + 126, 16777215, true);
+            font.drawStringWithShadow(I18n.format("gui.done"), guiLeft + 179 + 2 + font.getStringWidth(I18n.format("clef.gui.reload")), guiTop + 126, 16777215);
         }
 
-        GlStateManager.color(1F, 1F, 1F, 1F);
-        this.mc.getTextureManager().bindTexture(texInstrument);
+        RenderSystem.color4f(1F, 1F, 1F, 1F); //reset the colors.
+
+        RenderSystem.enableAlphaTest();
+        this.minecraft.getTextureManager().bindTexture(texInstrument);
         float x = guiLeft + 179 + 2;
         float y = guiTop + 137 + 2;
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferbuilder = tessellator.getBuffer();
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX);
-        bufferbuilder.pos((double)(x + 0), (double)(y + 16), (double)this.zLevel).tex(0F, 1F).endVertex();
-        bufferbuilder.pos((double)(x + 16), (double)(y + 16), (double)this.zLevel).tex(1F, 1F).endVertex();
-        bufferbuilder.pos((double)(x + 16), (double)(y + 0), (double)this.zLevel).tex(1F, 0F).endVertex();
-        bufferbuilder.pos((double)(x + 0), (double)(y + 0), (double)this.zLevel).tex(0F, 0F).endVertex();
+        bufferbuilder.pos((double)(x + 0), (double)(y + 16), (double)this.getBlitOffset()).tex(0F, 1F).endVertex();
+        bufferbuilder.pos((double)(x + 16), (double)(y + 16), (double)this.getBlitOffset()).tex(1F, 1F).endVertex();
+        bufferbuilder.pos((double)(x + 16), (double)(y + 0), (double)this.getBlitOffset()).tex(1F, 0F).endVertex();
+        bufferbuilder.pos((double)(x + 0), (double)(y + 0), (double)this.getBlitOffset()).tex(0F, 0F).endVertex();
         tessellator.draw();
 
-        this.mc.getTextureManager().bindTexture(texIcons);
-        this.drawTexturedModalRect(guiLeft + 236, guiTop + 142, 0, 224, 10, 10);
+        this.minecraft.getTextureManager().bindTexture(texIcons);
+        this.blit(guiLeft + 236, guiTop + 142, 0, 224, 10, 10);
 
-        GlStateManager.color(0.5F, 1F, 1F, 1F);
-        this.mc.getTextureManager().bindTexture(texNote);
-        this.drawTexturedModalRect(guiLeft + 205 + 2, guiTop + 137 + 2, 0, 64, 16, 16);
+        this.minecraft.getTextureManager().bindTexture(texNote);
+        x = guiLeft + 205 + 2;
+        y = guiTop + 137 + 2;
+        bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR_TEX);
+        bufferbuilder.pos((double)(x + 0), (double)(y + 16), (double)this.getBlitOffset()).color(0.5F, 1F, 1F, 1F).tex(0F, 1F).endVertex();
+        bufferbuilder.pos((double)(x + 16), (double)(y + 16), (double)this.getBlitOffset()).color(0.5F, 1F, 1F, 1F).tex(1F, 1F).endVertex();
+        bufferbuilder.pos((double)(x + 16), (double)(y + 0), (double)this.getBlitOffset()).color(0.5F, 1F, 1F, 1F).tex(1F, 0F).endVertex();
+        bufferbuilder.pos((double)(x + 0), (double)(y + 0), (double)this.getBlitOffset()).color(0.5F, 1F, 1F, 1F).tex(0F, 0F).endVertex();
+        tessellator.draw();
+
+        RenderSystem.disableAlphaTest();
     }
 
     @Override
-    protected void mouseClicked(int mouseX, int mouseY, int btn) throws IOException
+    public boolean mouseClicked(double mouseX, double mouseY, int btn)
     {
-        super.mouseClicked(mouseX, mouseY, btn);
-        bandName.mouseClicked(mouseX, mouseY, btn);
-        if(btn == 1) //RMB
+        boolean superResult = super.mouseClicked(mouseX, mouseY, btn);
+        if(btn == GLFW.GLFW_MOUSE_BUTTON_RIGHT) //RMB
         {
             boolean flag = mouseX >= bandName.x && mouseX < bandName.x + this.width && mouseY >= bandName.y && mouseY < bandName.y + this.height;
             if(flag)
@@ -335,100 +334,32 @@ public class GuiPlayTrack extends GuiScreen
                         bandName.setText(bands.get(bandIndex));
                         syncPlay = 1;
                         syncTrack = 1;
-                        for(GuiButton btn1 : buttonList)
-                        {
-                            if(btn1.id == ID_SYNC_PLAY)
-                            {
-                                btn1.enabled = false;
-                                btn1.displayString = I18n.translateToLocal(syncPlay == 1 ? "gui.yes" : "gui.no");
-                            }
-                            else if(btn1.id == ID_SYNC_TRACK)
-                            {
-                                btn1.enabled = true;
-                                btn1.displayString = I18n.translateToLocal(syncTrack == 1 ? "gui.yes" : "gui.no");
-                            }
-                        }
+                        buttonSyncPlay.active = false;
+                        buttonSyncPlay.setMessage(I18n.format(syncPlay == 1 ? "gui.yes" : "gui.no"));
+                        buttonSyncTrack.active = true;
+                        buttonSyncTrack.setMessage(I18n.format(syncTrack == 1 ? "gui.yes" : "gui.no"));
                         bandIndex++;
                     }
                 }
                 else
                 {
                     bandName.setText("");
-                    for(GuiButton btn1 : buttonList)
-                    {
-                        if(btn1.id == ID_SYNC_PLAY)
-                        {
-                            btn1.enabled = false;
-                            btn1.displayString = I18n.translateToLocal(syncPlay == 1 ? "gui.yes" : "gui.no");
-                        }
-                        else if(btn1.id == ID_SYNC_TRACK)
-                        {
-                            btn1.enabled = false;
-                            btn1.displayString = I18n.translateToLocal(syncTrack == 1 ? "gui.yes" : "gui.no");
-                        }
-                    }
+                    buttonSyncPlay.active = false;
+                    buttonSyncPlay.setMessage(I18n.format(syncPlay == 1 ? "gui.yes" : "gui.no"));
+                    buttonSyncTrack.active = false;
+                    buttonSyncTrack.setMessage(I18n.format(syncTrack == 1 ? "gui.yes" : "gui.no"));
                 }
+                bandName.setFocused2(false);
+                setFocused(null);
             }
         }
+        return superResult;
     }
 
     @Override
-    public boolean doesGuiPauseGame()
+    public boolean isPauseScreen()
     {
         return false;
-    }
-
-    @Override
-    protected void actionPerformed(GuiButton btn)
-    {
-        if(btn.id == ID_CONFIRM)
-        {
-            confirmSelection(false);
-        }
-        else if(btn.id == ID_SYNC_PLAY)
-        {
-            syncPlay = syncPlay == 1 ? 0 : 1;
-            btn.displayString = I18n.translateToLocal(syncPlay == 1 ? "gui.yes" : "gui.no");
-        }
-        else if(btn.id == ID_SYNC_TRACK)
-        {
-            syncTrack = syncTrack == 1 ? 0 : 1;
-            btn.displayString = I18n.translateToLocal(syncTrack == 1 ? "gui.yes" : "gui.no");
-
-            for(GuiButton btn1 : buttonList)
-            {
-                if(btn1.id == ID_SYNC_PLAY)
-                {
-                    btn1.enabled = syncTrack == 0;
-                    if(!btn1.enabled)
-                    {
-                        syncPlay = 1;
-                        btn1.displayString = I18n.translateToLocal("gui.yes");
-                    }
-                    break;
-                }
-            }
-        }
-        else if(btn.id == ID_RELOAD_INSTRUMENTS)
-        {
-            if(doneTimeout <= 0)
-            {
-                InstrumentLibrary.reloadInstruments(this);
-            }
-        }
-        else if(btn.id == ID_RELOAD_TRACKS)
-        {
-            if(doneTimeout <= 0)
-            {
-                AbcLibrary.reloadTracks(this);
-            }
-        }
-        else if(btn.id == ID_TOGGLE_TITLE)
-        {
-            Clef.config.showFileTitle = Clef.config.showFileTitle == 1 ? 0 : 1;
-            Clef.config.save();
-            Collections.sort(tracks);
-        }
     }
 
     public void setIndex(int i)
@@ -439,7 +370,7 @@ public class GuiPlayTrack extends GuiScreen
 
     public boolean isSelectedIndex(int i)
     {
-        return (!disableListWhenSyncTrack  || syncTrack == 0) && index == i;
+        return (bandName.getText().isEmpty() || !disableListWhenSyncTrack  || syncTrack == 0) && index == i;
     }
 
     public void confirmSelection(boolean doubleClick)
@@ -450,77 +381,11 @@ public class GuiPlayTrack extends GuiScreen
         }
         Clef.channel.sendToServer(new PacketPlayABC(index >= 0 && index < tracks.size() ? tracks.get(index).md5 : "", bandName.getText(), syncPlay == 1, syncTrack == 1));
         closeScreen();
-        mc.setIngameFocus();
+        this.minecraft.mouseHelper.grabMouse();
     }
 
-    protected void drawTooltip(List par1List, int par2, int par3)
+    public FontRenderer getFontRenderer()
     {
-        if (!par1List.isEmpty())
-        {
-            GlStateManager.disableRescaleNormal();
-            GlStateManager.disableDepth();
-            int k = 0;
-
-            for(Object aPar1List : par1List)
-            {
-                String s = (String)aPar1List;
-                int l = this.fontRenderer.getStringWidth(s);
-
-                if(l > k)
-                {
-                    k = l;
-                }
-            }
-
-            int i1 = par2 + 12;
-            int j1 = par3 - 12;
-            int k1 = 8;
-
-            if (par1List.size() > 1)
-            {
-                k1 += 2 + (par1List.size() - 1) * 10;
-            }
-
-            if (i1 + k > this.width)
-            {
-                i1 -= 28 + k;
-            }
-
-            if (j1 + k1 + 6 > this.height)
-            {
-                j1 = this.height - k1 - 6;
-            }
-
-            this.zLevel = 300.0F;
-            int l1 = -267386864;
-            this.drawGradientRect(i1 - 3, j1 - 4, i1 + k + 3, j1 - 3, l1, l1);
-            this.drawGradientRect(i1 - 3, j1 + k1 + 3, i1 + k + 3, j1 + k1 + 4, l1, l1);
-            this.drawGradientRect(i1 - 3, j1 - 3, i1 + k + 3, j1 + k1 + 3, l1, l1);
-            this.drawGradientRect(i1 - 4, j1 - 3, i1 - 3, j1 + k1 + 3, l1, l1);
-            this.drawGradientRect(i1 + k + 3, j1 - 3, i1 + k + 4, j1 + k1 + 3, l1, l1);
-            int i2 = 1347420415;
-            int j2 = (i2 & 16711422) >> 1 | i2 & -16777216;
-            this.drawGradientRect(i1 - 3, j1 - 3 + 1, i1 - 3 + 1, j1 + k1 + 3 - 1, i2, j2);
-            this.drawGradientRect(i1 + k + 2, j1 - 3 + 1, i1 + k + 3, j1 + k1 + 3 - 1, i2, j2);
-            this.drawGradientRect(i1 - 3, j1 - 3, i1 + k + 3, j1 - 3 + 1, i2, i2);
-            this.drawGradientRect(i1 - 3, j1 + k1 + 2, i1 + k + 3, j1 + k1 + 3, j2, j2);
-
-            for (int k2 = 0; k2 < par1List.size(); ++k2)
-            {
-                String s1 = (String)par1List.get(k2);
-                this.fontRenderer.drawStringWithShadow(s1, i1, j1, -1);
-
-                if (k2 == 0)
-                {
-                    j1 += 2;
-                }
-
-                j1 += 10;
-            }
-
-            this.zLevel = 0.0F;
-            GlStateManager.enableDepth();
-            GlStateManager.enableRescaleNormal();
-        }
+        return font;
     }
 }

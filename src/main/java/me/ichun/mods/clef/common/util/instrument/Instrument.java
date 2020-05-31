@@ -8,47 +8,57 @@ import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentInfo;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentPackInfo;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentTuning;
-import me.ichun.mods.ichunutil.client.render.TextureAtlasSpriteBufferedImage;
+import me.ichun.mods.ichunutil.client.render.RenderHelper;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.client.renderer.TransformationMatrix;
+import net.minecraft.client.renderer.Vector3f;
+import net.minecraft.client.renderer.model.BakedQuad;
+import net.minecraft.client.renderer.model.IBakedModel;
+import net.minecraft.client.renderer.model.ItemCameraTransforms;
+import net.minecraft.client.renderer.texture.NativeImage;
+import net.minecraft.client.renderer.texture.Texture;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureUtil;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.client.resources.IResourceManager;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.resources.IResourceManager;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.model.ItemLayerModel;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.common.model.TransformationHelper;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+@SuppressWarnings("deprecation")
 public class Instrument
         implements Comparable<Instrument>
 {
     public final InstrumentInfo info;
-    public final BufferedImage iconImg;
-    public final BufferedImage handImg;
+    public final byte[] iconBytes; //Raw input stream bytes
+    public final byte[] handBytes; //Raw input stream bytes
     public InstrumentTuning tuning;
     public InstrumentPackInfo packInfo;
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public BakedModelInstrument iconModel;
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public BakedModelInstrument handModel;
+    @OnlyIn(Dist.CLIENT)
+    public ImmutableMap<ItemCameraTransforms.TransformType, TransformationMatrix> transformationMap;
 
-    public Instrument(InstrumentInfo info, BufferedImage iconImg, BufferedImage handImg)
+
+    public Instrument(InstrumentInfo info, byte[] iconBytes, byte[] handBytes)
     {
         this.info = info;
-        this.iconImg = iconImg;
-        this.handImg = handImg;
+        this.iconBytes = iconBytes;
+        this.handBytes = handBytes;
     }
 
     public boolean hasAvailableKey(int key)
@@ -94,13 +104,13 @@ public class Instrument
             out.closeEntry();
 
             out.putNextEntry(new ZipEntry("items/instruments/" + info.inventoryIcon));
-            ImageIO.write(iconImg, "png", out);
+            out.write(iconBytes, 0, iconBytes.length);
             out.closeEntry();
 
             if(!info.inventoryIcon.equals(info.activeImage))
             {
                 out.putNextEntry(new ZipEntry("items/instruments/" + info.activeImage));
-                ImageIO.write(handImg, "png", out);
+                out.write(handBytes, 0, handBytes.length);
                 out.closeEntry();
             }
 
@@ -131,66 +141,91 @@ public class Instrument
         return null;
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public void setupModels()
     {
         if(iconModel == null && handModel == null)
         {
-            Minecraft mc = Minecraft.getMinecraft();
+            Minecraft mc = Minecraft.getInstance();
 
             ResourceLocation iconRl = new ResourceLocation("clef", "instrument/" + info.itemName + "/icon.png");
             ResourceLocation handRl = new ResourceLocation("clef", "instrument/" + info.itemName + "/hand.png");
 
-            InstrumentTexture iconTx = new InstrumentTexture(iconRl, iconImg);
-            InstrumentTexture handTx = new InstrumentTexture(handRl, handImg);
+            InstrumentTexture iconTx = new InstrumentTexture(iconRl, iconBytes);
+            InstrumentTexture handTx = new InstrumentTexture(handRl, handBytes);
 
             mc.getTextureManager().loadTexture(iconTx.rl, iconTx);
             mc.getTextureManager().loadTexture(handTx.rl, handTx);
 
-            iconModel = new BakedModelInstrument(iconTx.quads, iconTx.tasi, ImmutableMap.copyOf(new HashMap<>()), this, iconRl);
-            handModel = new BakedModelInstrument(handTx.quads, handTx.tasi, ImmutableMap.copyOf(new HashMap<>()), this, handRl);
+            iconModel = new BakedModelInstrument(iconTx.quads, iconTx.tas, ImmutableMap.copyOf(new HashMap<>()), this, iconRl);
+            handModel = new BakedModelInstrument(handTx.quads, handTx.tas, ImmutableMap.copyOf(new HashMap<>()), this, handRl);
+
+            HashMap<ItemCameraTransforms.TransformType, TransformationMatrix> map = new HashMap<>();
+            IBakedModel model = Minecraft.getInstance().getItemRenderer().getItemModelWithOverrides(new ItemStack(Items.BRICK), null, null);
+            ItemCameraTransforms cameraTransforms = model.getItemCameraTransforms();
+            //taken from item/generated.json
+            map.put(ItemCameraTransforms.TransformType.THIRD_PERSON_RIGHT_HAND, new TransformationMatrix(new Vector3f( 0, 3F / 16F, 1F / 16F ), null, null, null));
+            map.put(ItemCameraTransforms.TransformType.THIRD_PERSON_LEFT_HAND, new TransformationMatrix(new Vector3f( 0, 3F / 16F, 1F / 16F ), null, null, null));
+            map.put(ItemCameraTransforms.TransformType.GROUND, TransformationHelper.toTransformation(cameraTransforms.ground));
+            map.put(ItemCameraTransforms.TransformType.HEAD, TransformationHelper.toTransformation(cameraTransforms.head));
+            map.put(ItemCameraTransforms.TransformType.FIXED, TransformationHelper.toTransformation(cameraTransforms.fixed));
+            transformationMap = ImmutableMap.copyOf(map);
         }
     }
 
-    @SideOnly(Side.CLIENT)
-    public class InstrumentTexture extends AbstractTexture
+    @OnlyIn(Dist.CLIENT)
+    public class InstrumentTexture extends Texture
     {
         public final ResourceLocation rl;
-        public final BufferedImage image;
+        public NativeImage image;
         public ImmutableList<BakedQuad> quads;
-        public TextureAtlasSpriteBufferedImage tasi;
+        public TextureAtlasSprite tas;
 
-        public InstrumentTexture(ResourceLocation rl, BufferedImage image)
+        public InstrumentTexture(ResourceLocation rl, byte[] imageBytes)
         {
             this.rl = rl;
-            int size = Math.max(Math.max(image.getWidth(), image.getHeight()), 16);
-            BufferedImage image1 = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
-            int halfX = (int)Math.floor((size - image.getWidth()) / 2D); //offsetX
-            int halfY = (int)Math.floor((size - image.getHeight()) / 2D); //offsetY
-            for(int x = 0; x < image.getWidth(); x++)
+            try (NativeImage image = NativeImage.read(new ByteArrayInputStream(imageBytes)))
             {
-                for(int y = 0; y < image.getHeight(); y++)
+                int size = Math.max(Math.max(image.getWidth(), image.getHeight()), 16);
+                //            BufferedImage image1 = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+                NativeImage image1 = new NativeImage(size, size, true);
+                int halfX = (int)Math.floor((size - image.getWidth()) / 2D); //offsetX
+                int halfY = (int)Math.floor((size - image.getHeight()) / 2D); //offsetY
+                for(int x = 0; x < image.getWidth(); x++)
                 {
-                    int clr = image.getRGB(x, y);
-                    if(clr != 0xffffffff)
+                    for(int y = 0; y < image.getHeight(); y++)
                     {
-                        image1.setRGB(halfX + x, halfY + y, clr);
+                        int clr = image.getPixelRGBA(x, y);
+                        //                        System.out.println(Integer.toHexString(clr));
+                        //                        if(clr != 0xffffff)
+                        {
+                            image1.setPixelRGBA(halfX + x, halfY + y, clr);
+                        }
                     }
                 }
+                this.image = image1;
+
+                this.tas = RenderHelper.buildTASFromNativeImage(this.rl, this.image);
+                ImmutableList.Builder<BakedQuad> builder = ImmutableList.builder();
+                builder.addAll(ItemLayerModel.getQuadsForSprite(0, tas, TransformationMatrix.identity()));
+                this.quads = builder.build();
             }
-            this.image = image1;
+            catch(IOException e)
+            {
+                this.image = null;
+                Clef.LOGGER.error("Failed to read NativeImage for " + rl.toString());
+                e.printStackTrace();
+            }
         }
 
         @Override
         public void loadTexture(IResourceManager resourceManager) throws IOException
         {
-            TextureUtil.uploadTextureImageAllocate(this.getGlTextureId(), image, false, false);
-
-            ImmutableList.Builder<BakedQuad> builder = ImmutableList.builder();
-            tasi = new TextureAtlasSpriteBufferedImage(this.rl, this.image);
-            tasi.load(Minecraft.getMinecraft().getResourceManager(), rl);
-            builder.addAll(ItemLayerModel.getQuadsForSprite(0, tasi, DefaultVertexFormats.ITEM, Optional.empty()));
-            quads = builder.build();
+            if(image != null)
+            {
+                TextureUtil.prepareImage(getGlTextureId(), image.getWidth(), image.getHeight());
+                image.uploadTextureSub(0, 0, 0, false);
+            }
         }
     }
 }

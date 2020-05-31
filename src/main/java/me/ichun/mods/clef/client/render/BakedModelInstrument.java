@@ -2,43 +2,44 @@ package me.ichun.mods.clef.client.render;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.mojang.blaze3d.matrix.MatrixStack;
+import me.ichun.mods.clef.common.item.ItemLayerModel;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
-import me.ichun.mods.ichunutil.client.model.item.ModelBaseWrapper;
-import net.minecraft.block.state.IBlockState;
+import me.ichun.mods.ichunutil.client.model.item.ItemModelRenderer;
+import me.ichun.mods.ichunutil.client.render.RenderHelper;
+import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.block.model.IBakedModel;
-import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
-import net.minecraft.client.renderer.block.model.ItemOverrideList;
+import net.minecraft.client.renderer.TransformationMatrix;
+import net.minecraft.client.renderer.model.*;
+import net.minecraft.client.renderer.texture.AtlasTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.item.Items;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 import net.minecraftforge.client.model.PerspectiveMapWrapper;
-import net.minecraftforge.common.model.TRSRTransformation;
-import org.apache.commons.lang3.tuple.Pair;
 
-import javax.vecmath.Matrix4f;
-import javax.vecmath.Quat4f;
-import javax.vecmath.Vector3f;
-import java.util.HashMap;
+import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Random;
 
-public class BakedModelInstrument
+@SuppressWarnings("deprecation")
+public class BakedModelInstrument //mostly taken from forge's BakedItemModel
         implements IBakedModel
 {
+    public static BakedModelInstrument currentModel = null;
+
     private final ImmutableList<BakedQuad> quads;
     private final TextureAtlasSprite particle;
-    private final ImmutableMap<ItemCameraTransforms.TransformType, TRSRTransformation> transforms;
+    private final ImmutableMap<ItemCameraTransforms.TransformType, TransformationMatrix> transforms;
     private final Instrument instrument;
     public final ResourceLocation instTx;
 
-    public BakedModelInstrument(ImmutableList<BakedQuad> quads, TextureAtlasSprite particle, ImmutableMap<ItemCameraTransforms.TransformType, TRSRTransformation> transforms, Instrument instrument, ResourceLocation instTx)
+    public BakedModelInstrument(ImmutableList<BakedQuad> quads, TextureAtlasSprite particle, ImmutableMap<ItemCameraTransforms.TransformType, TransformationMatrix> transforms, Instrument instrument, ResourceLocation instTx)
     {
         this.quads = quads;
         this.particle = particle;
@@ -51,8 +52,13 @@ public class BakedModelInstrument
     public boolean isAmbientOcclusion() { return true; }
     @Override
     public boolean isGui3d() { return false; }
+    @Override //??
+    public boolean func_230044_c_()
+    {
+        return false;
+    }
     @Override
-    public boolean isBuiltInRenderer() { return false; }
+    public boolean isBuiltInRenderer() { return true; }
     @Override
     public TextureAtlasSprite getParticleTexture() { return particle; }
     @Override
@@ -60,32 +66,32 @@ public class BakedModelInstrument
     @Override
     public ItemOverrideList getOverrides() { return BakedModelInstrument.ItemOverrideListHandler.INSTANCE; }
     @Override
-    public List<BakedQuad> getQuads(IBlockState state, EnumFacing side, long rand)
+    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, Random rand)
     {
+//        if(instrument != null)
+//        {
+//            ImmutableList.Builder<BakedQuad> builder = ImmutableList.builder();
+//            builder.addAll(ItemLayerModel.getQuadsForSprite(0, particle, TransformationMatrix.identity()));
+//            return builder.build();
+//        }
         if(side == null)
         {
-            if(instrument != null)
-            {
-                Minecraft.getMinecraft().getTextureManager().bindTexture(instTx);
-            }
             return quads;
         }
         return ImmutableList.of();
     }
 
     @Override
-    public Pair<? extends IBakedModel, Matrix4f> handlePerspective(ItemCameraTransforms.TransformType type)
+    public IBakedModel handlePerspective(ItemCameraTransforms.TransformType type, MatrixStack mat)
     {
         if(instrument != null)
         {
-            HashMap<ItemCameraTransforms.TransformType, TRSRTransformation> map = new HashMap<>();
-            map.put(ItemCameraTransforms.TransformType.FIRST_PERSON_LEFT_HAND, new TRSRTransformation(new Vector3f(1F, 0F, 1F), TRSRTransformation.quatFromXYZDegrees(new Vector3f(0F, 180F, 0F)), new Vector3f(1F, 1F, 1F), new Quat4f()));
-            map.put(ItemCameraTransforms.TransformType.THIRD_PERSON_LEFT_HAND, new TRSRTransformation(new Vector3f(0.1F, 0F + (instrument.handImg.getHeight() <= 16F ? 0F : MathHelper.clamp((float)instrument.info.activeHandPosition[1], -0.3F, 0.3F)), 0.025F - (instrument.handImg.getWidth() <= 16F ? 0F : MathHelper.clamp((float)instrument.info.activeHandPosition[0], -0.5F, 0.5F))), TRSRTransformation.quatFromXYZDegrees(new Vector3f(0F, 80F, 0F)), new Vector3f(-1F, 1F, 1F),  TRSRTransformation.quatFromXYZDegrees(new Vector3f(0F, 0F, 0F))));
-            map.put(ItemCameraTransforms.TransformType.THIRD_PERSON_RIGHT_HAND, new TRSRTransformation(new Vector3f(-0.1F, 0F + (instrument.handImg.getHeight() <= 16F ? 0F : MathHelper.clamp((float)instrument.info.activeHandPosition[1], -0.3F, 0.3F)), 1F - (instrument.handImg.getWidth() <= 16F ? 0F : MathHelper.clamp((float)instrument.info.activeHandPosition[0], -0.5F, 0.5F))), TRSRTransformation.quatFromXYZDegrees(new Vector3f(0F, 80F, 0F)), new Vector3f(1F, 1F, 1F), TRSRTransformation.quatFromXYZDegrees(new Vector3f(0F, 0F, 0F))));
-            ImmutableMap<ItemCameraTransforms.TransformType, TRSRTransformation> transforms = ImmutableMap.copyOf(map);
-            return PerspectiveMapWrapper.handlePerspective(ModelBaseWrapper.isEntityRender(type) ? instrument.handModel : instrument.iconModel, transforms, type);
+            currentModel = ItemModelRenderer.isEntityRender(type) ? instrument.handModel : instrument.iconModel;
+            PerspectiveMapWrapper.handlePerspective(currentModel, instrument.transformationMap, type, mat);
+            return currentModel;
         }
-        return PerspectiveMapWrapper.handlePerspective(this, transforms, type);
+        currentModel = this;
+        return PerspectiveMapWrapper.handlePerspective(this, transforms, type, mat);
     }
 
     private static final class ItemOverrideListHandler extends ItemOverrideList
@@ -94,13 +100,13 @@ public class BakedModelInstrument
 
         private ItemOverrideListHandler()
         {
-            super(ImmutableList.of());
+            super();
         }
 
         @Override
-        public IBakedModel handleItemState(IBakedModel originalModel, ItemStack stack, World world, EntityLivingBase entity)
+        public IBakedModel getModelWithOverrides(IBakedModel originalModel, ItemStack stack, @Nullable World world, @Nullable LivingEntity entity)
         {
-            NBTTagCompound tag = stack.getTagCompound();
+            CompoundNBT tag = stack.getTag();
             if(tag != null)
             {
                 Instrument instrument = InstrumentLibrary.getInstrumentByName(tag.getString("itemName"));

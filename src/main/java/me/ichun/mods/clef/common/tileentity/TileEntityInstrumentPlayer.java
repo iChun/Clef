@@ -1,24 +1,31 @@
 package me.ichun.mods.clef.common.tileentity;
 
 import me.ichun.mods.clef.common.Clef;
+import me.ichun.mods.clef.common.inventory.ContainerInstrumentPlayer;
 import me.ichun.mods.clef.common.packet.PacketPlayingTracks;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
 import me.ichun.mods.clef.common.util.abc.TrackFile;
 import me.ichun.mods.clef.common.util.abc.play.Track;
-import me.ichun.mods.ichunutil.common.core.util.IOUtil;
 import me.ichun.mods.ichunutil.common.iChunUtil;
-import net.minecraft.entity.player.EntityPlayer;
+import me.ichun.mods.ichunutil.common.util.IOUtil;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.ItemStackHelper;
+import net.minecraft.inventory.container.Container;
+import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.NetworkManager;
-import net.minecraft.network.play.server.SPacketUpdateTileEntity;
+import net.minecraft.network.play.server.SUpdateTileEntityPacket;
+import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ITickable;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraftforge.fml.network.PacketDistributor;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import javax.annotation.Nullable;
@@ -26,7 +33,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 public class TileEntityInstrumentPlayer extends TileEntity
-        implements ITickable, IInventory
+        implements ITickableTileEntity, IInventory, INamedContainerProvider
 {
     public int tries = 20;
     public ArrayList<TrackFile> tracks = new ArrayList<>();
@@ -40,7 +47,7 @@ public class TileEntityInstrumentPlayer extends TileEntity
     public int playlistIndex = 0;
     public HashSet<String> playedTracks = new HashSet<>(); //for shuffle
 
-    private NonNullList<ItemStack> contents = NonNullList.withSize(9, ItemStack.EMPTY);
+    private NonNullList<ItemStack> contents = NonNullList.withSize(9, ItemStack.EMPTY); //TODO properly handle ItemStack.EMPTY
     public boolean previousRedstoneState;
 
     public boolean justCreatedInstrument;
@@ -48,10 +55,11 @@ public class TileEntityInstrumentPlayer extends TileEntity
 
     public TileEntityInstrumentPlayer()
     {
+        super(Clef.TileEntityTypes.INSTRUMENT_PLAYER.get());
     }
 
     @Override
-    public void update()
+    public void tick()
     {
         if(!getWorld().isRemote)
         {
@@ -83,7 +91,7 @@ public class TileEntityInstrumentPlayer extends TileEntity
                 boolean hasInst = false;
                 for(ItemStack is : contents)
                 {
-                    if(is != null && is.getItem() == Clef.itemInstrument)
+                    if(is != null && is.getItem() == Clef.Items.INSTRUMENT.get())
                     {
                         hasInst = true;
                         break;
@@ -139,10 +147,10 @@ public class TileEntityInstrumentPlayer extends TileEntity
                         }
 
                         Clef.eventHandlerServer.tracksPlaying.add(track);
-                        HashSet<BlockPos> players = track.instrumentPlayers.computeIfAbsent(getWorld().provider.getDimension(), v -> new HashSet<>());
+                        HashSet<BlockPos> players = track.instrumentPlayers.computeIfAbsent(getWorld().getDimension().getType().getRegistryName(), v -> new HashSet<>());
                         if(players.add(getPos()))
                         {
-                            Clef.channel.sendToAll(new PacketPlayingTracks(track));
+                            Clef.channel.sendTo(new PacketPlayingTracks(track), PacketDistributor.ALL.noArg());
                         }
 
                         lastTrack = track;
@@ -163,10 +171,10 @@ public class TileEntityInstrumentPlayer extends TileEntity
                         Track track = Clef.eventHandlerServer.findTrackByBand(bandName);
                         if(track != null)
                         {
-                            HashSet<BlockPos> players = track.instrumentPlayers.computeIfAbsent(getWorld().provider.getDimension(), v -> new HashSet<>());
+                            HashSet<BlockPos> players = track.instrumentPlayers.computeIfAbsent(getWorld().getDimension().getType().getRegistryName(), v -> new HashSet<>());
                             if(players.add(getPos()))
                             {
-                                Clef.channel.sendToAll(new PacketPlayingTracks(track));
+                                Clef.channel.sendTo(new PacketPlayingTracks(track), PacketDistributor.ALL.noArg());
                             }
                         }
                     }
@@ -197,87 +205,87 @@ public class TileEntityInstrumentPlayer extends TileEntity
             Track track = Clef.eventHandlerServer.getTrackPlayedByPlayer(this);
             if(track != null)
             {
-                HashSet<BlockPos> players = track.instrumentPlayers.get(getWorld().provider.getDimension());
+                HashSet<BlockPos> players = track.instrumentPlayers.get(getWorld().getDimension().getType().getRegistryName());
                 if(players != null)
                 {
                     players.remove(getPos());
                     if(players.isEmpty())
                     {
-                        track.instrumentPlayers.remove(getWorld().provider.getDimension());
+                        track.instrumentPlayers.remove(getWorld().getDimension().getType().getRegistryName());
                     }
                 }
                 if(!track.hasObjectsPlaying())
                 {
                     track.stop();
                 }
-                Clef.channel.sendToAll(new PacketPlayingTracks(track));
+                Clef.channel.sendTo(new PacketPlayingTracks(track), PacketDistributor.ALL.noArg());
             }
         }
     }
 
     @Override
-    public NBTTagCompound getUpdateTag()
+    public CompoundNBT getUpdateTag()
     {
-        return this.writeToNBT(new NBTTagCompound());
+        return this.write(new CompoundNBT());
     }
 
     @Override
-    public SPacketUpdateTileEntity getUpdatePacket()
+    public SUpdateTileEntityPacket getUpdatePacket()
     {
-        return new SPacketUpdateTileEntity(getPos(), 0, getUpdateTag());
+        return new SUpdateTileEntityPacket(getPos(), 0, getUpdateTag());
     }
 
     @Override
-    public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt)
+    public void onDataPacket(NetworkManager net, SUpdateTileEntityPacket pkt)
     {
-        readFromNBT(pkt.getNbtCompound());
+        read(pkt.getNbtCompound());
     }
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound tag)
+    public CompoundNBT write(CompoundNBT tag)
     {
-        super.writeToNBT(tag);
+        super.write(tag);
 
         ItemStackHelper.saveAllItems(tag, this.contents);
-        tag.setBoolean("powered", this.previousRedstoneState);
+        tag.putBoolean("powered", this.previousRedstoneState);
 
-        tag.setInteger("trackCount", tracks.size());
+        tag.putInt("trackCount", tracks.size());
         for(int i = 0 ; i < tracks.size(); i++)
         {
             TrackFile file = tracks.get(i);
-            tag.setString("track_" + i, file.md5);
+            tag.putString("track_" + i, file.md5);
         }
 
-        tag.setString("bandName", bandName);
-        tag.setBoolean("syncPlay", syncPlay);
-        tag.setBoolean("syncTrack", syncTrack);
-        tag.setInteger("repeat", repeat);
-        tag.setBoolean("shuffle", shuffle);
+        tag.putString("bandName", bandName);
+        tag.putBoolean("syncPlay", syncPlay);
+        tag.putBoolean("syncTrack", syncTrack);
+        tag.putInt("repeat", repeat);
+        tag.putBoolean("shuffle", shuffle);
 
-        tag.setInteger("playedCount", playedTracks.size());
+        tag.putInt("playedCount", playedTracks.size());
         int i = 0;
         for(String s : playedTracks)
         {
-            tag.setString("played_" + i, s);
+            tag.putString("played_" + i, s);
             i++;
         }
 
-        tag.setInteger("playlistIndex", playlistIndex);
+        tag.putInt("playlistIndex", playlistIndex);
 
         return tag;
     }
 
     @Override
-    public void readFromNBT(NBTTagCompound tag)
+    public void read(CompoundNBT tag)
     {
-        super.readFromNBT(tag);
+        super.read(tag);
         this.contents = NonNullList.withSize(this.getSizeInventory(), ItemStack.EMPTY);
         ItemStackHelper.loadAllItems(tag, this.contents);
 
         this.previousRedstoneState = tag.getBoolean("powered");
 
         tracks.clear();
-        int size = tag.getInteger("trackCount");
+        int size = tag.getInt("trackCount");
         for(int i = 0; i < size; i++)
         {
             TrackFile file = AbcLibrary.getTrack(tag.getString("track_" + i));
@@ -286,7 +294,7 @@ public class TileEntityInstrumentPlayer extends TileEntity
                 tracks.add(file);
             }
         }
-        size = tag.getInteger("playedCount");
+        size = tag.getInt("playedCount");
         for(int i = 0; i < size; i++)
         {
             playedTracks.add(tag.getString("played_" + i));
@@ -295,22 +303,23 @@ public class TileEntityInstrumentPlayer extends TileEntity
         bandName = tag.getString("bandName");
         syncPlay = tag.getBoolean("syncPlay");
         syncTrack = tag.getBoolean("syncTrack");
-        repeat = tag.getInteger("repeat");
+        repeat = tag.getInt("repeat");
         shuffle = tag.getBoolean("shuffle");
 
-        playlistIndex = MathHelper.clamp(tag.getInteger("playlistIndex"), 0, tracks.size());
+        playlistIndex = MathHelper.clamp(tag.getInt("playlistIndex"), 0, tracks.size());
     }
 
     @Override
-    public String getName()
+    public ITextComponent getDisplayName()
     {
-        return "clef.instrument_player";
+        return new TranslationTextComponent("clef.instrument_player");
     }
 
+    @Nullable
     @Override
-    public boolean hasCustomName()
+    public Container createMenu(int id, PlayerInventory playerInventory, PlayerEntity player)
     {
-        return false;
+        return new ContainerInstrumentPlayer(id, playerInventory, () -> this);
     }
 
     @Override
@@ -380,43 +389,33 @@ public class TileEntityInstrumentPlayer extends TileEntity
     }
 
     @Override
-    public boolean isUsableByPlayer(EntityPlayer player)
+    public boolean isUsableByPlayer(PlayerEntity player)
     {
         return this.world.getTileEntity(this.pos) == this && player.getDistanceSq((double)this.pos.getX() + 0.5D, (double)this.pos.getY() + 0.5D, (double)this.pos.getZ() + 0.5D) <= 64.0D;
     }
 
     @Override
-    public void openInventory(EntityPlayer player)
-    {
-    }
-
-    @Override
-    public void closeInventory(EntityPlayer player)
-    {
-    }
-
-    @Override
     public boolean isItemValidForSlot(int index, ItemStack stack)
     {
-        return stack.getItem() == Clef.itemInstrument;
+        return stack.getItem() == Clef.Items.INSTRUMENT.get();
     }
 
-    @Override
-    public int getField(int id)
-    {
-        return 0;
-    }
-
-    @Override
-    public void setField(int id, int value)
-    {
-    }
-
-    @Override
-    public int getFieldCount()
-    {
-        return 0;
-    }
+//    @Override
+//    public int getField(int id)
+//    {
+//        return 0;
+//    }
+//
+//    @Override
+//    public void setField(int id, int value)
+//    {
+//    }
+//
+//    @Override
+//    public int getFieldCount()
+//    {
+//        return 0;
+//    }
 
     @Override
     public void clear()

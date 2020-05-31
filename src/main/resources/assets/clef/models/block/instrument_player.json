@@ -1,0 +1,7 @@
+{
+    "parent": "block/cube_top",
+    "textures": {
+        "top": "clef:blocks/instrument_player_top",
+        "side": "block/note_block"
+    }
+}

@@ -6,22 +6,23 @@ import me.ichun.mods.clef.client.gui.GuiPlayTrack;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.packet.PacketFileFragment;
 import me.ichun.mods.clef.common.packet.PacketRequestFile;
+import me.ichun.mods.clef.common.util.ResourceHelper;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentInfo;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentModPackInfo;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentPackInfo;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentTuning;
+import me.ichun.mods.ichunutil.common.network.PacketChannel;
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.text.translation.LanguageMap;
-import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.LogicalSide;
+import net.minecraftforge.fml.server.LanguageHook;
+import net.minecraftforge.fml.server.ServerLifecycleHooks;
 import org.apache.commons.io.IOUtils;
 
-import javax.imageio.ImageIO;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -36,7 +37,7 @@ public class InstrumentLibrary
     public static void init()
     {
         instruments.clear();
-        File defaultPack = new File(Clef.getResourceHelper().instrumentDir, "starbound.cia");
+        File defaultPack = new File(ResourceHelper.getInstrumentDir().toFile(), "starbound.cia");
         if(!defaultPack.exists())
         {
             try(InputStream in = Clef.class.getResourceAsStream("/starbound.cia"))
@@ -48,7 +49,7 @@ public class InstrumentLibrary
             catch(IOException ignored){}
         }
         Clef.LOGGER.info("Loading instruments");
-        Clef.LOGGER.info("Loaded " + readInstruments(Clef.getResourceHelper().instrumentDir, instruments) + " instruments");
+        Clef.LOGGER.info("Loaded " + readInstruments(ResourceHelper.getInstrumentDir().toFile(), instruments) + " instruments");
     }
 
     private static int readInstruments(File dir, ArrayList<Instrument> instruments)
@@ -141,10 +142,10 @@ public class InstrumentLibrary
                     }
                     try(InputStream iconStm = zipFile.getInputStream(icon); InputStream handStm = zipFile.getInputStream(hand); InputStream tuningStm = zipFile.getInputStream(tuning))
                     {
-                        Instrument instrument = new Instrument(info, ImageIO.read(iconStm), ImageIO.read(handStm));
+                        Instrument instrument = new Instrument(info, IOUtils.toByteArray(iconStm), IOUtils.toByteArray(handStm));
 
                         StringWriter writer = new StringWriter();
-                        IOUtils.copy(tuningStm, writer, Charset.defaultCharset());
+                        IOUtils.copy(tuningStm, writer, StandardCharsets.UTF_8);
                         String jsonString = writer.toString();
 
                         InstrumentTuning tuning1 = (new Gson()).fromJson(jsonString, InstrumentTuning.class);
@@ -259,36 +260,28 @@ public class InstrumentLibrary
         return instrumentCount;
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public static void reloadInstruments(GuiPlayTrack gui)
     {
         ArrayList<Instrument> instruments = new ArrayList<>();
+        HashMap<String, String> localization = new HashMap<>();
         Clef.LOGGER.info("Reloading instruments");
-        Clef.LOGGER.info("Reloaded " + readInstruments(Clef.getResourceHelper().instrumentDir, instruments) + " instruments");
+        Clef.LOGGER.info("Reloaded " + readInstruments(ResourceHelper.getInstrumentDir().toFile(), instruments) + " instruments");
         for(Instrument instrument : InstrumentLibrary.instruments) //delete the textures to free up memory.
         {
             if(instrument.iconModel != null)
             {
-                Minecraft.getMinecraft().getTextureManager().deleteTexture(instrument.iconModel.instTx);
+                Minecraft.getInstance().getTextureManager().deleteTexture(instrument.iconModel.instTx);
             }
             if(instrument.handModel != null)
             {
-                Minecraft.getMinecraft().getTextureManager().deleteTexture(instrument.handModel.instTx);
+                Minecraft.getInstance().getTextureManager().deleteTexture(instrument.handModel.instTx);
             }
         }
         InstrumentLibrary.instruments = instruments;
         gui.doneTimeout = 20;
     }
 
-    public static void injectLocalization(Instrument instrument)
-    {
-        String localName = "item.clef.instrument." + instrument.info.itemName + ".name=" + instrument.info.shortdescription;
-        String localDesc = "item.clef.instrument." + instrument.info.itemName + ".desc=" + instrument.info.description;
-        InputStream streamName = new ByteArrayInputStream(localName.getBytes(StandardCharsets.UTF_8));
-        InputStream streamDesc = new ByteArrayInputStream(localDesc.getBytes(StandardCharsets.UTF_8));
-        LanguageMap.inject(streamName);
-        LanguageMap.inject(streamDesc);
-    }
 
     public static Instrument getInstrumentByName(String s)
     {
@@ -306,9 +299,9 @@ public class InstrumentLibrary
     public static HashSet<String> requestedInstrumentsFromServer = new HashSet<>();
     public static HashSet<String> requestedInstrumentsFromPlayers = new HashSet<>();
 
-    public static void checkForInstrument(ItemStack is, EntityPlayer player) //Primarily called by server. Can be called by client though
+    public static void checkForInstrument(ItemStack is, ServerPlayerEntity player) //Primarily called by server. Can be called by client though
     {
-        NBTTagCompound tag = is.getTagCompound();
+        CompoundNBT tag = is.getTag();
         if(tag != null)
         {
             String instName = tag.getString("itemName");
@@ -326,12 +319,12 @@ public class InstrumentLibrary
 
     public static void assignRandomInstrument(ItemStack is)
     {
-        NBTTagCompound tag = new NBTTagCompound();
-        tag.setString("itemName", instruments.get((int)Math.floor(Math.random() * instruments.size())).info.itemName);
-        is.setTagCompound(tag);
+        CompoundNBT tag = new CompoundNBT();
+        tag.putString("itemName", instruments.get((int)Math.floor(Math.random() * instruments.size())).info.itemName);
+        is.setTag(tag);
     }
 
-    public static void requestInstrument(String name, EntityPlayer player)
+    public static void requestInstrument(String name, ServerPlayerEntity player)
     {
         if(player == null)
         {
@@ -351,7 +344,7 @@ public class InstrumentLibrary
 
     public static boolean isInstrumentDisabled(String name)
     {
-        for(String s : Clef.config.disabledInstruments)
+        for(String s : Clef.configCommon.disabledInstruments)
         {
             if(s.equalsIgnoreCase(name))
             {
@@ -361,7 +354,7 @@ public class InstrumentLibrary
         return false;
     }
 
-    public static void packageAndSendInstrument(String name, EntityPlayer player) //side is the side receiving this request
+    public static void packageAndSendInstrument(String name, ServerPlayerEntity player) //side is the side receiving this request
     {
         if(name.isEmpty())
         {
@@ -387,7 +380,7 @@ public class InstrumentLibrary
                     return;
                 }
 
-                Clef.LOGGER.info("Sending instrument " + instrument.info.itemName + " to " + (player == null ? "the server" : player.getName()));
+                Clef.LOGGER.info("Sending instrument " + instrument.info.itemName + " to " + (player == null ? "the server" : player.getName().getUnformattedComponentText()));
 
                 int fileSize = file.length;
                 int packetsToSend = (int)Math.ceil((float)fileSize / 32000F);
@@ -396,17 +389,17 @@ public class InstrumentLibrary
 
                 while(fileSize > 0)
                 {
-                    byte[] fileBytes = new byte[fileSize > 32000 ? 32000 : fileSize];
+                    byte[] fileBytes = new byte[Math.min(fileSize, 32000)];
                     System.arraycopy(file, index, fileBytes, 0, fileBytes.length);
                     index += fileBytes.length;
 
                     if(player != null)
                     {
-                        Clef.channel.sendTo(new PacketFileFragment(instrument.info.itemName + ".cia", packetsToSend, packetCount, fileSize > 32000 ? 32000 : fileSize, fileBytes), player);
+                        Clef.channel.sendTo(new PacketFileFragment(instrument.info.itemName + ".cia", packetsToSend, packetCount, fileBytes), player);
                     }
                     else
                     {
-                        Clef.channel.sendToServer(new PacketFileFragment(instrument.info.itemName + ".cia", packetsToSend, packetCount, fileSize > 32000 ? 32000 : fileSize, fileBytes));
+                        Clef.channel.sendToServer(new PacketFileFragment(instrument.info.itemName + ".cia", packetsToSend, packetCount, fileBytes));
                     }
 
                     packetCount++;
@@ -418,18 +411,18 @@ public class InstrumentLibrary
         {
             //Ask players for it if server
             HashSet<String> players = requestsFromPlayers.computeIfAbsent(name, v -> new HashSet<>());
-            players.add(player.getName());
+            players.add(player.getName().getUnformattedComponentText());
             if(requestedInstrumentsFromPlayers.add(name))
             {
-                Clef.channel.sendToAllExcept(new PacketRequestFile(name, true), player);
+                Clef.channel.sendTo(new PacketRequestFile(name, true), PacketChannel.ALL_EXCEPT.with(() -> player));
             }
         }
         //Do nothing if client
     }
 
-    public static void handleReceivedFile(String fileName, byte[] fileData, Side side)
+    public static void handleReceivedFile(String fileName, byte[] fileData, LogicalSide side)
     {
-        File dir = new File(Clef.getResourceHelper().instrumentDir, "received");
+        File dir = new File(ResourceHelper.getInstrumentDir().toFile(), "received");
         File file = new File(dir, fileName);
         try
         {
@@ -445,19 +438,20 @@ public class InstrumentLibrary
 
             Clef.LOGGER.info("Received " + fileName + ". Reading.");
             readInstrumentPack(file, instruments);
+            LanguageHook.captureLanguageMap(new HashMap<>()); //the old localization should already be injected and captures, just add an empty map to retrigger the injections.
 
-            if(!isInstrumentDisabled(fileName.substring(0, fileName.length() - 4)))
+            String instName = fileName.substring(0, fileName.length() - 4);
+            if(!isInstrumentDisabled(instName))
             {
                 if(side.isServer())
                 {
-                    String instName = fileName.substring(0, fileName.length() - 4);
                     requestedInstrumentsFromPlayers.remove(instName);
                     HashSet<String> playersRequesting = requestsFromPlayers.get(instName);
                     if(playersRequesting != null)
                     {
                         for(String s : playersRequesting)
                         {
-                            EntityPlayerMP player = FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList().getPlayerByUsername(s);
+                            ServerPlayerEntity player = ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayerByUsername(s);
                             if(player != null)
                             {
                                 packageAndSendInstrument(instName, player);
@@ -467,7 +461,7 @@ public class InstrumentLibrary
                 }
                 else
                 {
-                    requestedInstrumentsFromServer.remove(fileName.substring(0, fileName.length() - 4));
+                    requestedInstrumentsFromServer.remove(instName);
                 }
             }
         }

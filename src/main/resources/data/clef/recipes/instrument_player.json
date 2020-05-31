@@ -7,20 +7,20 @@
   ],
   "key": {
     "W": {
-      "item": "#plankWood"
+      "tag": "minecraft:planks"
     },
     "C": {
       "item": "minecraft:chest"
     },
     "N": {
-      "item": "minecraft:noteblock"
+      "item": "minecraft:note_block"
     },
     "R": {
       "item": "minecraft:redstone_torch"
     }
   },
   "result": {
-    "item": "clef:block_instrument_player"
+    "item": "clef:instrument_player"
   }
 }
  

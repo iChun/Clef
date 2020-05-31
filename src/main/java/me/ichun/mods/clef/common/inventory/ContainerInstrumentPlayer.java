@@ -1,42 +1,66 @@
 package me.ichun.mods.clef.common.inventory;
 
+import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.tileentity.TileEntityInstrumentPlayer;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.SoundEvents;
-import net.minecraft.inventory.ClickType;
-import net.minecraft.inventory.Container;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.container.ClickType;
+import net.minecraft.inventory.container.ContainerType;
+import net.minecraft.inventory.container.Slot;
+import net.minecraft.network.PacketBuffer;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.SoundEvents;
+import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.InventoryHelper;
-import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.SoundCategory;
+import net.minecraft.util.math.BlockPos;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.function.Supplier;
 
 public class ContainerInstrumentPlayer extends Container
 {
-    private final TileEntityInstrumentPlayer inventory;
+    @Nonnull
+    public final TileEntityInstrumentPlayer inventory;
 
-    public ContainerInstrumentPlayer(TileEntityInstrumentPlayer inventory)
+    public ContainerInstrumentPlayer(int id, PlayerInventory inv, PacketBuffer data)
     {
-        this.inventory = inventory;
+        this(id, inv, () -> {
+            BlockPos pos = data.readBlockPos();
+            TileEntity te = inv.player.world.getTileEntity(pos);
+            if(!(te instanceof TileEntityInstrumentPlayer))
+            {
+                te = new TileEntityInstrumentPlayer();
+                te.setPos(pos); //I think this is the important stuff?
+            }
+            return (TileEntityInstrumentPlayer)te;
+        });
+    }
+
+    public ContainerInstrumentPlayer(int id, PlayerInventory inv, Supplier<TileEntityInstrumentPlayer> inventory)
+    {
+        super(Clef.ContainerTypes.INSTRUMENT_PLAYER.get(), id);
+        this.inventory = inventory.get();
 
         for(int l = 0; l < 3; ++l)
         {
             for(int k = 0; k < 3; ++k)
             {
-                this.addSlotToContainer(new Slot(inventory, k + l * 3, 189 + k * 18, l * 18 + 136));
+                this.addSlot(new Slot(this.inventory, k + l * 3, 189 + k * 18, l * 18 + 136));
             }
         }
     }
 
     @Override
-    public boolean canInteractWith(EntityPlayer playerIn)
+    public boolean canInteractWith(PlayerEntity playerIn)
     {
         return this.inventory.isUsableByPlayer(playerIn);
     }
 
-    @Nullable
-    public ItemStack slotClick(int slotId, int dragType, ClickType clickTypeIn, EntityPlayer player)
+    @Override
+    public ItemStack slotClick(int slotId, int dragType, ClickType clickTypeIn, PlayerEntity player)
     {
         if(inventorySlots.get(slotId) != null)
         {
@@ -53,5 +77,11 @@ public class ContainerInstrumentPlayer extends Container
             }
         }
         return super.slotClick(slotId, dragType, clickTypeIn, player);
+    }
+
+    @Override
+    public void onContainerClosed(PlayerEntity playerIn) {
+        super.onContainerClosed(playerIn);
+        this.inventory.closeInventory(playerIn);
     }
 }

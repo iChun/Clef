@@ -33,6 +33,6 @@ public class TrackInfo
 
     public String getTitle()
     {
-        return Clef.config.showFileTitle == 1 ? fileTitle : title;
+        return Clef.configClient.showFileTitle ? fileTitle : title;
     }
 }

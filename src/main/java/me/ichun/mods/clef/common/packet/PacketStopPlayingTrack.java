@@ -1,11 +1,9 @@
 package me.ichun.mods.clef.common.packet;
 
-import io.netty.buffer.ByteBuf;
 import me.ichun.mods.clef.common.Clef;
-import me.ichun.mods.ichunutil.common.core.network.AbstractPacket;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
-import net.minecraftforge.fml.relauncher.Side;
+import me.ichun.mods.ichunutil.common.network.AbstractPacket;
+import net.minecraft.network.PacketBuffer;
+import net.minecraftforge.fml.network.NetworkEvent;
 
 public class PacketStopPlayingTrack extends AbstractPacket
 {
@@ -19,26 +17,22 @@ public class PacketStopPlayingTrack extends AbstractPacket
     }
 
     @Override
-    public void writeTo(ByteBuf buf)
+    public void writeTo(PacketBuffer buf)
     {
-        ByteBufUtils.writeUTF8String(buf, trackId);
+        buf.writeString(trackId);
     }
 
     @Override
-    public void readFrom(ByteBuf buf)
+    public void readFrom(PacketBuffer buf)
     {
-        trackId = ByteBufUtils.readUTF8String(buf);
+        trackId = readString(buf);
     }
 
     @Override
-    public void execute(Side side, EntityPlayer player)
+    public void process(NetworkEvent.Context context) //receivingSide() SERVER
     {
-        Clef.eventHandlerServer.stopPlayingTrack(player, trackId);
-    }
-
-    @Override
-    public Side receivingSide()
-    {
-        return Side.SERVER;
+        context.enqueueWork(() -> {
+            Clef.eventHandlerServer.stopPlayingTrack(context.getSender(), trackId);
+        });
     }
 }
