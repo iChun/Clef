@@ -22,7 +22,6 @@ import org.lwjgl.opengl.GL13;
 
 import java.util.ArrayList;
 
-@SuppressWarnings("deprecation")
 public class GuiPlayTrackBlock extends GuiPlayTrack
         implements IHasContainer<ContainerInstrumentPlayer>
 {
@@ -120,16 +119,15 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
 
             //order up
             this.addButton(new Button(guiLeft + 6, guiTop + 205, 20, 20, "", btn -> {
-                if(index >= 0 && index < playlist.size())
-                {
-                    if(index > 0)
-                    {
+                if(index >= 0 && index < playlist.size()) {
+                    if (index > 0) {
                         TrackFile file = playlist.get(index);
                         playlist.remove(index);
                         playlist.add(index - 1, file);
                         index--;
                     }
                 }
+                trackList.setTracks(playlist);
             }));
 
             //order down
@@ -144,6 +142,7 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
                         index++;
                     }
                 }
+                trackList.setTracks(playlist);
             }));
 
             //delete
@@ -156,6 +155,7 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
                         index = playlist.size() - 1;
                     }
                 }
+                trackList.setTracks(playlist);
             }));
         }
     }
@@ -285,7 +285,7 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
         index = -1;
         playlistView = !playlistView;
         init(minecraft, minecraft.getMainWindow().getScaledWidth(), minecraft.getMainWindow().getScaledHeight());
-        trackList.tracks = playlistView ? playlist : tracks;
+        trackList.setTracks(playlistView ? playlist : tracks);
     }
 
     @Override

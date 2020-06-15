@@ -96,7 +96,7 @@ public class EventHandlerServer
     }
 
     @SubscribeEvent
-    public void onLivingSpawn(LivingSpawnEvent event)
+    public void onLivingSpawn(LivingSpawnEvent.SpecialSpawn event)
     {
         if(!event.getEntityLiving().getEntityWorld().isRemote && event.getEntityLiving() instanceof ZombieEntity && event.getEntityLiving().getRNG().nextFloat() < (Clef.configCommon.zombieSpawnRate / 10000F))
         {

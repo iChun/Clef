@@ -23,7 +23,6 @@ import org.lwjgl.glfw.GLFW;
 import java.util.ArrayList;
 import java.util.Collections;
 
-@SuppressWarnings("deprecation")
 public class GuiPlayTrack extends Screen
 {
     public static final ResourceLocation texBackground = new ResourceLocation("clef", "textures/gui/track_select.png");
