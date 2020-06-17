@@ -119,8 +119,10 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
 
             //order up
             this.addButton(new Button(guiLeft + 6, guiTop + 205, 20, 20, "", btn -> {
-                if(index >= 0 && index < playlist.size()) {
-                    if (index > 0) {
+                if(index >= 0 && index < playlist.size())
+                {
+                    if (index > 0)
+                    {
                         TrackFile file = playlist.get(index);
                         playlist.remove(index);
                         playlist.add(index - 1, file);

@@ -3,7 +3,6 @@ package me.ichun.mods.clef.common.util.abc.play;
 import me.ichun.mods.clef.client.sound.InstrumentEntitySound;
 import me.ichun.mods.clef.client.sound.InstrumentSound;
 import me.ichun.mods.clef.common.Clef;
-import me.ichun.mods.clef.common.config.ConfigClient;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentTuning;
 import net.minecraft.client.Minecraft;
@@ -17,8 +16,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.lwjgl.openal.AL10;
-import org.lwjgl.openal.AL11;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,15 +53,19 @@ public class PlayedNote
         float pitch = (float)Math.pow(2.0D, (double)tuning.keyOffset / 12.0D);
         int falloffTime = (int) Math.ceil(instrument.tuning.fadeout * 20F);
         float volume = 0.7F * (Clef.configClient.instrumentVolume / 100F);
-        if (noteLocation == Minecraft.getInstance().player) {
+        if (noteLocation == Minecraft.getInstance().player)
+        {
             this.instrumentSound = new InstrumentSound(SoundEvents.BLOCK_NOTE_BLOCK_HARP, category, duration, falloffTime, volume, pitch, 0, 0, 0);
             relative = true;
-        } else if (noteLocation instanceof LivingEntity) {
+        } else if (noteLocation instanceof LivingEntity)
+        {
             this.instrumentSound = new InstrumentEntitySound(SoundEvents.BLOCK_NOTE_BLOCK_HARP, category, duration, falloffTime, volume, pitch, (LivingEntity) noteLocation);
-        } else if (noteLocation instanceof BlockPos) {
+        } else if (noteLocation instanceof BlockPos)
+        {
             BlockPos pos = (BlockPos) noteLocation;
             this.instrumentSound = new InstrumentSound(SoundEvents.BLOCK_NOTE_BLOCK_HARP, category, duration, falloffTime, volume, pitch, pos.getX() + 0.5F, pos.getY() + 0.5f, pos.getZ() + 0.5F);
-        } else {
+        } else
+        {
             throw new IllegalArgumentException("Cannot handle noteLocation of type " + noteLocation.getClass());
         }
     }
