@@ -7,6 +7,7 @@ import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.packet.PacketFileFragment;
 import me.ichun.mods.clef.common.packet.PacketRequestFile;
 import me.ichun.mods.clef.common.util.ResourceHelper;
+import me.ichun.mods.clef.common.util.abc.play.NotePlayThread;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentInfo;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentModPackInfo;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentPackInfo;
@@ -54,19 +55,27 @@ public class InstrumentLibrary
 
     private static int readInstruments(File dir, ArrayList<Instrument> instruments)
     {
-        int instrumentsCount = 0;
-        for(File file : dir.listFiles())
+        boolean result = NotePlayThread.INSTANCE.acquireLock();
+        try
         {
-            if(file.isDirectory())
+            int instrumentsCount = 0;
+            for(File file : dir.listFiles())
             {
-                instrumentsCount += readInstruments(file, instruments);
+                if(file.isDirectory())
+                {
+                    instrumentsCount += readInstruments(file, instruments);
+                }
+                else
+                {
+                    instrumentsCount += readInstrumentPack(file, instruments);
+                }
             }
-            else
-            {
-                instrumentsCount += readInstrumentPack(file, instruments);
-            }
+            return instrumentsCount;
         }
-        return instrumentsCount;
+        finally
+        {
+            NotePlayThread.INSTANCE.releaseLock(result);
+        }
     }
 
     public static int readInstrumentPack(File file, ArrayList<Instrument> instruments)

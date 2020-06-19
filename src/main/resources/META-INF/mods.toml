@@ -15,7 +15,7 @@ issueTrackerURL="https://github.com/iChun/Clef/issues"
 [[dependencies.clef]]
     modId="forge"
     mandatory=true
-    versionRange="[31,)"
+    versionRange="[31.2.9,)"
     ordering="NONE"
     side="BOTH"
 [[dependencies.clef]]

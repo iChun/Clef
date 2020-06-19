@@ -180,7 +180,7 @@ public class EventHandlerServer
             while(ite.hasNext())
             {
                 Track track = ite.next();
-                if(!track.update())
+                if(!track.tick())
                 {
                     ite.remove();
                     continue;

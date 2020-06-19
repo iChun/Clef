@@ -30,6 +30,7 @@ public abstract class Note
     public int key = NOTE_REST; //key - abc....EFG
     public double duration = 1;
     public int durationInTicks = 5;
+    public float durationInPartialTicks = 0F;
 
     public ArrayList<Construct> constructs = new ArrayList<>();
 

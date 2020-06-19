@@ -7,7 +7,9 @@ import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.item.ItemInstrument;
 import me.ichun.mods.clef.common.packet.PacketStopPlayingTrack;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
+import me.ichun.mods.clef.common.util.abc.play.NotePlayThread;
 import me.ichun.mods.clef.common.util.abc.play.Track;
+import me.ichun.mods.clef.common.util.abc.play.TrackTracker;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.TransformationMatrix;
@@ -47,7 +49,15 @@ public class EventHandlerClient
             Minecraft mc = Minecraft.getInstance();
             if(!mc.isGamePaused())
             {
-                tracksPlaying.removeIf(track -> !track.update());
+                boolean wasLocked = NotePlayThread.INSTANCE.startNewTick();
+                try
+                {
+                    tracksPlaying.removeIf(track -> !track.tick());
+                }
+                finally
+                {
+                    NotePlayThread.INSTANCE.endTick(wasLocked);
+                }
             }
         }
     }

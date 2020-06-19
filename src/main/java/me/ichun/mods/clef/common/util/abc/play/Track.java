@@ -7,6 +7,7 @@ import me.ichun.mods.clef.common.packet.PacketPlayingTracks;
 import me.ichun.mods.clef.common.packet.PacketRequestFile;
 import me.ichun.mods.clef.common.tileentity.TileEntityInstrumentPlayer;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
+import me.ichun.mods.clef.common.util.abc.AbcParser;
 import me.ichun.mods.clef.common.util.abc.play.components.Note;
 import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
@@ -35,6 +36,7 @@ public class Track
     public static final int MAX_TRACKING_RANGE = 48;
     private final String id;
     private final String band;
+    private final TrackTracker trackTracker = new TrackTracker(this);
     private String md5;
     private TrackInfo track;
 
@@ -93,7 +95,7 @@ public class Track
         return track;
     }
 
-    public boolean update() //returns false if it's time to stop playing.
+    public boolean tick() //returns false if it's time to stop playing.
     {
         if(track == null)
         {
@@ -119,6 +121,7 @@ public class Track
 
         if(isRemote)
         {
+            trackTracker.startNewTick(playProg);
             if(playProg == 0 && Clef.configClient.showRecordPlayingMessageForTracks)
             {
                 showNowPlaying();
@@ -153,15 +156,8 @@ public class Track
                                 Instrument instrument = InstrumentLibrary.getInstrumentByName(tag.getString("itemName"));
                                 if(instrument != null)
                                 {
-                                    HashSet<Note> notes = track.notes.get(playProg);
-                                    for(Note note : notes)
-                                    {
-                                        int time = note.playNote(this, playProg, instrument, player);
-                                        if(time > timeToSilence && note.key != Note.NOTE_REST)
-                                        {
-                                            timeToSilence = time;
-                                        }
-                                    }
+                                    HashSet<Note>[] notes = track.notes.get(playProg);
+                                    trackTracker.addTickInfo(new NotesTickInfo(player, instrument, notes, true));
                                 }
                                 else
                                 {
@@ -195,11 +191,8 @@ public class Track
                                         Instrument instrument = InstrumentLibrary.getInstrumentByName(is.getTag().getString("itemName"));
                                         if(instrument != null)
                                         {
-                                            HashSet<Note> notes = track.notes.get(playProg);
-                                            for(Note note : notes)
-                                            {
-                                                note.playNote(this, playProg, instrument, player.getPos());
-                                            }
+                                            HashSet<Note>[] notes = track.notes.get(playProg);
+                                            trackTracker.addTickInfo(new NotesTickInfo(player.getPos(), instrument, notes));
                                         }
                                     }
                                 }
@@ -223,11 +216,8 @@ public class Track
                                 Instrument instrument = InstrumentLibrary.getInstrumentByName(tag.getString("itemName"));
                                 if(instrument != null)
                                 {
-                                    HashSet<Note> notes = track.notes.get(playProg);
-                                    for(Note note : notes)
-                                    {
-                                        note.playNote(this, playProg, instrument, ent);
-                                    }
+                                    HashSet<Note>[] notes = track.notes.get(playProg);
+                                    trackTracker.addTickInfo(new NotesTickInfo(ent, instrument, notes, false));
                                 }
                                 else
                                 {

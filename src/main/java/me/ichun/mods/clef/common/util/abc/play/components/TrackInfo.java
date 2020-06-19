@@ -14,7 +14,7 @@ public class TrackInfo
     public String composer = ""; //C
     public String transcriber = ""; //Z
 
-    public TreeMap<Integer, HashSet<Note>> notes = new TreeMap<>(Ordering.natural());
+    public TreeMap<Integer, HashSet<Note>[]> notes = new TreeMap<>(Ordering.natural());
     public int trackLength = 0;
 
     public TrackInfo()

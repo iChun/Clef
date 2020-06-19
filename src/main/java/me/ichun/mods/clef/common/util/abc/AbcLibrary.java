@@ -6,6 +6,7 @@ import me.ichun.mods.clef.common.packet.PacketFileFragment;
 import me.ichun.mods.clef.common.packet.PacketPlayingTracks;
 import me.ichun.mods.clef.common.packet.PacketRequestFile;
 import me.ichun.mods.clef.common.util.ResourceHelper;
+import me.ichun.mods.clef.common.util.abc.play.NotePlayThread;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
 import me.ichun.mods.ichunutil.common.util.IOUtil;
@@ -125,23 +126,31 @@ public class AbcLibrary
     @OnlyIn(Dist.CLIENT)
     public static void reloadTracks(GuiPlayTrack gui)
     {
-        ArrayList<TrackFile> tracks = new ArrayList<>();
-        Clef.LOGGER.info("Reloading abc files");
-        Clef.LOGGER.info("Reloaded " + readAbcs(ResourceHelper.getAbcDir().toFile(), tracks) + " abc files");
-        if(tracks.isEmpty())
+        boolean result = NotePlayThread.INSTANCE.acquireLock();
+        try
         {
-            TrackInfo track = new TrackInfo();
-            track.setTitle("You have no tracks");
-            track.setFileTitle("You have no tracks");
-            track.trackLength = 10;
-            tracks.add(new TrackFile(track, new File(ResourceHelper.getAbcDir().toFile(), "You have no tracks.abc"), ""));
-        }
-        AbcLibrary.tracks = tracks;
+            ArrayList<TrackFile> tracks = new ArrayList<>();
+            Clef.LOGGER.info("Reloading abc files");
+            Clef.LOGGER.info("Reloaded " + readAbcs(ResourceHelper.getAbcDir().toFile(), tracks) + " abc files");
+            if (tracks.isEmpty())
+            {
+                TrackInfo track = new TrackInfo();
+                track.setTitle("You have no tracks");
+                track.setFileTitle("You have no tracks");
+                track.trackLength = 10;
+                tracks.add(new TrackFile(track, new File(ResourceHelper.getAbcDir().toFile(), "You have no tracks.abc"), ""));
+            }
+            AbcLibrary.tracks = tracks;
 
-        gui.tracks = tracks;
-        gui.index = -1;
-        gui.doneTimeout = 20;
-        gui.init(Minecraft.getInstance(), Minecraft.getInstance().getMainWindow().getScaledWidth(), Minecraft.getInstance().getMainWindow().getScaledHeight());
+            gui.tracks = tracks;
+            gui.index = -1;
+            gui.doneTimeout = 20;
+            gui.init(Minecraft.getInstance(), Minecraft.getInstance().getMainWindow().getScaledWidth(), Minecraft.getInstance().getMainWindow().getScaledHeight());
+        }
+        finally
+        {
+            NotePlayThread.INSTANCE.releaseLock(result);
+        }
     }
 
     public static boolean hasTrack(String md5)
