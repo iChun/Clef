@@ -24,54 +24,46 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
 
 @OnlyIn(Dist.CLIENT)
 public class PlayedNote
 {
-    public final Instrument instrument;
-    public final int key;
-    public final int startTick;
-    public final int duration;
-    public final InstrumentSound instrumentSound;
-    public Object noteLocation;
+    private static final ConcurrentHashMap<ResourceLocation, CompletableFuture<AudioStreamBuffer>> CLEF_CACHE = new ConcurrentHashMap<>();
+    public static final Random rand = new Random();
 
-    public boolean played;
-    private boolean relative;
-
-    public final Random rand = new Random();
-
-    public PlayedNote(Instrument instrument, int startTick, int duration, int key, SoundCategory category, Object noteLocation)
+    public static void clearCache()
     {
-        this.instrument = instrument;
-        this.key = key;
-        this.startTick = startTick;
-        this.duration = duration;
-        this.noteLocation = noteLocation;
+        CLEF_CACHE.clear();
+    }
 
+    public static void start(Instrument instrument, int startTick, int duration, int key, SoundCategory category, Object noteLocation)
+    {
+        InstrumentSound instrumentSound;
         InstrumentTuning.TuningInfo tuning = instrument.tuning.keyToTuningMap.get(key);
         float pitch = (float)Math.pow(2.0D, (double)tuning.keyOffset / 12.0D);
         int falloffTime = (int) Math.ceil(instrument.tuning.fadeout * 20F);
         float volume = 0.7F * (Clef.configClient.instrumentVolume / 100F);
+        boolean relative;
         if (noteLocation == Minecraft.getInstance().player)
         {
-            this.instrumentSound = new InstrumentSound(SoundEvents.BLOCK_NOTE_BLOCK_HARP, category, duration, falloffTime, volume, pitch, 0, 0, 0);
+            instrumentSound = new InstrumentSound(SoundEvents.BLOCK_NOTE_BLOCK_HARP, category, duration, falloffTime, volume, pitch, 0, 0, 0);
             relative = true;
         } else if (noteLocation instanceof LivingEntity)
         {
-            this.instrumentSound = new InstrumentEntitySound(SoundEvents.BLOCK_NOTE_BLOCK_HARP, category, duration, falloffTime, volume, pitch, (LivingEntity) noteLocation);
+            instrumentSound = new InstrumentEntitySound(SoundEvents.BLOCK_NOTE_BLOCK_HARP, category, duration, falloffTime, volume, pitch, (LivingEntity) noteLocation);
+            relative = false;
         } else if (noteLocation instanceof BlockPos)
         {
             BlockPos pos = (BlockPos) noteLocation;
-            this.instrumentSound = new InstrumentSound(SoundEvents.BLOCK_NOTE_BLOCK_HARP, category, duration, falloffTime, volume, pitch, pos.getX() + 0.5F, pos.getY() + 0.5f, pos.getZ() + 0.5F);
+            instrumentSound = new InstrumentSound(SoundEvents.BLOCK_NOTE_BLOCK_HARP, category, duration, falloffTime, volume, pitch, pos.getX() + 0.5F, pos.getY() + 0.5f, pos.getZ() + 0.5F);
+            relative = false;
         } else
         {
             throw new IllegalArgumentException("Cannot handle noteLocation of type " + noteLocation.getClass());
         }
-    }
-
-    public PlayedNote start()
-    {
         //        if(true)
         //        {
         //            Minecraft.getInstance().getSoundHandler().play(SimpleSound.master(SoundEvents.ENTITY_PIG_AMBIENT, (float)Math.pow(2.0D, (double)((key) - 12 - 48) / 12.0D)));
@@ -93,7 +85,6 @@ public class PlayedNote
             SoundCategory soundcategory = instrumentSound.getCategory();
             float f1 = soundManager.getClampedVolume(instrumentSound);
 
-            InstrumentTuning.TuningInfo tuning = instrument.tuning.keyToTuningMap.get(key);
             float f2 = (float)Math.pow(2.0D, (double)tuning.keyOffset / 12.0D);
 
             ISound.AttenuationType isound$attenuationtype = instrumentSound.getAttenuationType();
@@ -103,9 +94,13 @@ public class PlayedNote
             ChannelManager.Entry channelmanager$entry = soundManager.channelManager.createChannel(SoundSystem.Mode.STATIC);
 
             //            soundManager.sndSystem.newSource(false, uniqueId, getURLForSoundResource(instrument, key - tuning.keyOffset), "clef:" + instrument.info.itemName + ":" + (key - tuning.keyOffset) + ".ogg", false, instrumentSound.getXPosF(), instrumentSound.getYPosF(), instrumentSound.getZPosF(), instrumentSound.getAttenuationType().getTypeInt(), f);
-            soundManager.playingSoundsStopTime.put(instrumentSound, soundManager.ticks + duration + (int)(instrument.tuning.fadeout * 20F) + 20);
-            soundManager.playingSoundsChannel.put(instrumentSound, channelmanager$entry);
-            soundManager.categorySounds.put(soundcategory, instrumentSound);
+            mc.runAsync(() -> {
+                soundManager.playingSoundsStopTime.put(instrumentSound, soundManager.ticks + duration + (int)(instrument.tuning.fadeout * 20F) + 20);
+                soundManager.playingSoundsChannel.put(instrumentSound, channelmanager$entry);
+                soundManager.categorySounds.put(soundcategory, instrumentSound);
+                soundManager.tickableSounds.add(instrumentSound);
+            }); //clef: this may run offthread
+
             channelmanager$entry.runOnSoundExecutor((source) -> {
                 source.setPitch(f2);
                 source.setGain(f1);
@@ -139,18 +134,14 @@ public class PlayedNote
                     });
                 });
             }*/
-            soundManager.tickableSounds.add(instrumentSound);
             //END SoundEngine.play
-
-            played = true;
         }
-
-        return this;
     }
 
     //Taken from AudioStreamManager.createResource
-    public CompletableFuture<AudioStreamBuffer> createResource(AudioStreamManager audioStreamManager, ResourceLocation rl, Supplier<InputStream> inputStream) {
-        return audioStreamManager.bufferCache.computeIfAbsent(rl, (newRL) -> {
+    public static CompletableFuture<AudioStreamBuffer> createResource(AudioStreamManager audioStreamManager, ResourceLocation rl, Supplier<InputStream> inputStream) {
+        //Use a custom cache instead of the AudioStreammanager's cache to be thread safe
+        return CLEF_CACHE.computeIfAbsent(rl, (newRL) -> {
             return CompletableFuture.supplyAsync(() -> {
                 try (
                         IAudioStream iaudiostream = new OggAudioStream(inputStream.get());

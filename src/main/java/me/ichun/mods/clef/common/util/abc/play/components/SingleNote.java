@@ -20,7 +20,7 @@ public class SingleNote extends Note
     {
         if(key != Note.NOTE_REST && instrument.hasAvailableKey(key))
         {
-            new PlayedNote(instrument, currentProg, durationInTicks, key, noteLocation instanceof Entity ? ((Entity)noteLocation).getSoundCategory() : SoundCategory.BLOCKS, noteLocation).start();
+            PlayedNote.start(instrument, currentProg, durationInTicks, key, noteLocation instanceof Entity ? ((Entity)noteLocation).getSoundCategory() : SoundCategory.BLOCKS, noteLocation);
         }
         return durationInTicks;
     }
@@ -91,7 +91,9 @@ public class SingleNote extends Note
             }
         }
 
-        this.durationInTicks = (int)Math.round(info[0] * (info[1] / info[4]) * duration); //tempo * duration * (unit note length / tempo splits)
+        float scaledDuration = (float) (info[0] * (info[1] / info[4]) * duration);
+        this.durationInTicks = (int) scaledDuration; //tempo * duration * (unit note length / tempo splits)
+        this.durationInPartialTicks = scaledDuration - (int) scaledDuration;
         if(hasNote)
         {
             if(!rest)

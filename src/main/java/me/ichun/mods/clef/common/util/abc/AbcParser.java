@@ -21,6 +21,9 @@ import java.util.List;
 
 public class AbcParser
 {
+    //This specifies how many "sub ticks" during one tick should be considered.
+    public static final int SUB_TICKS = 5;
+
     //The order of abc constructs for a note is: <grace notes>, <chord symbols>, <annotations>/<decorations> (e.g. Irish roll, staccato marker or up/downbow), <accidentals>, <note>, <octave>, <note length>, i.e. ~^c'3 or even "Gm7"v.=G,2.
     public static final char[] accidentals = new char[] { '^', '=', '_' };
     public static final char[] notes = new char[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'z', 'x', 'Z', 'X' };
@@ -686,15 +689,25 @@ public class AbcParser
             };
             HashMap<Integer, Integer> keySignatures = new HashMap<>();
             HashMap<Integer, Integer> keyAccidentals = new HashMap<>();
+            float currentParticialTick = 0F; //track particial ticks as well, to make timing more accurate
             int currentTick = 0;
             for(Note note : trackNotes)
             {
-                HashSet<Note> noteAtTime = abc.notes.computeIfAbsent(currentTick, v -> new HashSet<>());
+                //noinspection unchecked
+                HashSet<Note>[] noteAtTime = abc.notes.computeIfAbsent(currentTick, v -> new HashSet[SUB_TICKS]);
                 if(note.setup(info, keyAccidentals, keySignatures))//if true, not a special note, move to next spot.
                 {
-                    noteAtTime.add(note); //only add the actual notes. No specials.
-                    abc.trackLength = currentTick + note.durationInTicks; // adds to the length of the note.
+                    int subIndex = Math.min(SUB_TICKS, (int) (currentParticialTick * SUB_TICKS));
+                    if (noteAtTime[subIndex] == null)
+                        noteAtTime[subIndex] = new HashSet<>();
+                    noteAtTime[subIndex].add(note); //only add the actual notes. No specials.
+                    abc.trackLength = currentTick + note.durationInTicks + (int) (note.durationInPartialTicks + 0.99F); // adds to the length of the note.
                     currentTick += note.durationInTicks;
+                    currentParticialTick += note.durationInPartialTicks;
+                    //Make sure particialTick stays between 0..1
+                    int currentSubTicksAsInt = (int) currentParticialTick;
+                    currentParticialTick = currentParticialTick - currentSubTicksAsInt;
+                    currentTick += currentSubTicksAsInt;
                 }
                 note.constructs.trimToSize();
             }
