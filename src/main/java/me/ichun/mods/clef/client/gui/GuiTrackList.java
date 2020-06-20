@@ -16,22 +16,28 @@ import net.minecraft.util.math.MathHelper;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class GuiTrackList extends ExtendedList<GuiTrackList.TrackEntry>
 {
     private GuiPlayTrack parent;
-    public ArrayList<TrackFile> tracks;
+    private List<TrackFile> tracks;
 
     public GuiTrackList(GuiPlayTrack parent, int width, int height, int top, int bottom, int left, int entryHeight, ArrayList<TrackFile> track)
     {
         super(Minecraft.getInstance(), width, height, top, bottom, entryHeight);
         setLeftPos(left);
         this.parent = parent;
-        this.tracks = track;
-        ArrayList<TrackFile> trackFiles = this.tracks;
-        for(int i = 0; i < trackFiles.size(); i++)
+        setTracks(track);
+    }
+
+    public void setTracks(List<TrackFile> tracks)
+    {
+        this.tracks = tracks;
+        this.children().clear();
+        for(int i = 0; i < tracks.size(); i++)
         {
-            TrackFile trackFile = trackFiles.get(i);
+            TrackFile trackFile = tracks.get(i);
             addEntry(new TrackEntry(trackFile, i));
         }
     }

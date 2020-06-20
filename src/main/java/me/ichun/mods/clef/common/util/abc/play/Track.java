@@ -32,6 +32,7 @@ import java.util.*;
 
 public class Track
 {
+    public static final int MAX_TRACKING_RANGE = 48;
     private final String id;
     private final String band;
     private String md5;
@@ -141,7 +142,7 @@ public class Track
                 {
                     Map.Entry<PlayerEntity, Integer> e = playerIte.next();
                     PlayerEntity player = e.getKey();
-                    if(player.isAlive() && player.getDistance(mcPlayer) < 48D)
+                    if(player.isAlive() && player.getDistance(mcPlayer) < MAX_TRACKING_RANGE)
                     {
                         ItemStack is = ItemInstrument.getUsableInstrument(player);
                         if(!is.isEmpty())
@@ -180,7 +181,7 @@ public class Track
                 {
                     for(BlockPos pos : poses)
                     {
-                        if(mcPlayer.getDistanceSq(pos.getX(), pos.getY(), pos.getZ()) < (48D * 48D))
+                        if(mcPlayer.getDistanceSq(pos.getX(), pos.getY(), pos.getZ()) < (MAX_TRACKING_RANGE * MAX_TRACKING_RANGE))
                         {
                             TileEntity te = mcPlayer.world.getTileEntity(pos);
                             if(te instanceof TileEntityInstrumentPlayer)
@@ -211,7 +212,7 @@ public class Track
                 {
                     Integer i = ite1.next();
                     Entity ent = mcPlayer.world.getEntityByID(i);
-                    if(ent instanceof ZombieEntity && ent.isAlive() && mcPlayer.getDistance(ent) < 48D)
+                    if(ent instanceof ZombieEntity && ent.isAlive() && mcPlayer.getDistance(ent) < MAX_TRACKING_RANGE)
                     {
                         ItemStack is = ItemInstrument.getUsableInstrument((ZombieEntity)ent);
                         if(!is.isEmpty())
@@ -371,7 +372,7 @@ public class Track
         {
             for(BlockPos pos : poses)
             {
-                if(Minecraft.getInstance().player.getDistanceSq(pos.getX(), pos.getY(), pos.getZ()) < (48D * 48D))
+                if(Minecraft.getInstance().player.getDistanceSq(pos.getX(), pos.getY(), pos.getZ()) < (MAX_TRACKING_RANGE * MAX_TRACKING_RANGE))
                 {
                     return true;
                 }

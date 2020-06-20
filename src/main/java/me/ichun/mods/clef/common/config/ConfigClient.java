@@ -1,6 +1,7 @@
 package me.ichun.mods.clef.common.config;
 
 import me.ichun.mods.clef.common.Clef;
+import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.ichunutil.common.config.ConfigBase;
 import me.ichun.mods.ichunutil.common.config.annotations.CategoryDivider;
 import me.ichun.mods.ichunutil.common.config.annotations.Prop;
@@ -21,6 +22,9 @@ public class ConfigClient extends ConfigBase
 
     @Prop(min = 0, max = 100)
     public int instrumentVolume = 100;
+
+    @Prop(min = 16, max = Track.MAX_TRACKING_RANGE)
+    public int instrumentHearableDistance = 32;
 
     @Prop
     public boolean showRecordPlayingMessageForTracks = false;

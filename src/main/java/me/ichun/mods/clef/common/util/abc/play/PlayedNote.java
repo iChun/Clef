@@ -1,15 +1,18 @@
 package me.ichun.mods.clef.common.util.abc.play;
 
+import me.ichun.mods.clef.client.sound.InstrumentEntitySound;
 import me.ichun.mods.clef.client.sound.InstrumentSound;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
 import me.ichun.mods.clef.common.util.instrument.component.InstrumentTuning;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.*;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.Util;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -34,8 +37,9 @@ public class PlayedNote
     public Object noteLocation;
 
     public boolean played;
+    private boolean relative;
 
-    public Random rand = new Random();
+    public final Random rand = new Random();
 
     public PlayedNote(Instrument instrument, int startTick, int duration, int key, SoundCategory category, Object noteLocation)
     {
@@ -47,7 +51,23 @@ public class PlayedNote
 
         InstrumentTuning.TuningInfo tuning = instrument.tuning.keyToTuningMap.get(key);
         float pitch = (float)Math.pow(2.0D, (double)tuning.keyOffset / 12.0D);
-        this.instrumentSound = new InstrumentSound(SoundEvents.BLOCK_NOTE_BLOCK_HARP, category, duration, (int)Math.ceil(instrument.tuning.fadeout * 20F), 0.7F * (Clef.configClient.instrumentVolume / 100F), pitch, noteLocation);
+        int falloffTime = (int) Math.ceil(instrument.tuning.fadeout * 20F);
+        float volume = 0.7F * (Clef.configClient.instrumentVolume / 100F);
+        if (noteLocation == Minecraft.getInstance().player)
+        {
+            this.instrumentSound = new InstrumentSound(SoundEvents.BLOCK_NOTE_BLOCK_HARP, category, duration, falloffTime, volume, pitch, 0, 0, 0);
+            relative = true;
+        } else if (noteLocation instanceof LivingEntity)
+        {
+            this.instrumentSound = new InstrumentEntitySound(SoundEvents.BLOCK_NOTE_BLOCK_HARP, category, duration, falloffTime, volume, pitch, (LivingEntity) noteLocation);
+        } else if (noteLocation instanceof BlockPos)
+        {
+            BlockPos pos = (BlockPos) noteLocation;
+            this.instrumentSound = new InstrumentSound(SoundEvents.BLOCK_NOTE_BLOCK_HARP, category, duration, falloffTime, volume, pitch, pos.getX() + 0.5F, pos.getY() + 0.5f, pos.getZ() + 0.5F);
+        } else
+        {
+            throw new IllegalArgumentException("Cannot handle noteLocation of type " + noteLocation.getClass());
+        }
     }
 
     public PlayedNote start()
@@ -65,10 +85,10 @@ public class PlayedNote
         {
             instrumentSound.createAccessor(mc.getSoundHandler());
 
-            Sound sound = instrumentSound.getSound();
+//            Sound sound = instrumentSound.getSound(); clef: sound is not needed
 
             float f3 = instrumentSound.getVolume();
-            float f = Math.max(f3, 1.0F) * (float)sound.getAttenuationDistance();
+            float f = Math.max(f3, 1.0F) * (float) Clef.configClient.instrumentHearableDistance/*sound.getAttenuationDistance()*/; //clef: make instruments hearable from further away
 
             SoundCategory soundcategory = instrumentSound.getCategory();
             float f1 = soundManager.getClampedVolume(instrumentSound);
@@ -77,7 +97,6 @@ public class PlayedNote
             float f2 = (float)Math.pow(2.0D, (double)tuning.keyOffset / 12.0D);
 
             ISound.AttenuationType isound$attenuationtype = instrumentSound.getAttenuationType();
-            boolean flag = false;
 
             //SoundEngine.play
             Vec3d vec3d = new Vec3d(instrumentSound.getX(), instrumentSound.getY(), instrumentSound.getZ());
@@ -98,10 +117,11 @@ public class PlayedNote
 
                 source.setLooping(false);
                 source.updateSource(vec3d);
-                source.setRelative(flag);
+                source.setRelative(relative); //clef: relative sound for player
             });
             final ISound isound = instrumentSound;
-            if (!sound.isStreaming()) {
+            //clef:sound is always not streaming
+            if (true/*!sound.isStreaming()*/) {
                 int randKey = rand.nextInt(tuning.streamsLength());
                 createResource(soundManager.audioStreamManager, new ResourceLocation("clef", instrument.info.itemName.toLowerCase(Locale.ROOT) + "_" + (key - tuning.keyOffset) + randKey + ".ogg"), () -> tuning.get(randKey)).thenAccept((buffer) -> {
                     channelmanager$entry.runOnSoundExecutor((source) -> {
@@ -110,7 +130,7 @@ public class PlayedNote
                         net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.sound.PlaySoundSourceEvent(soundManager, isound, source));
                     });
                 });
-            } else {
+            } /*else {
                 soundManager.audioStreamManager.createStreamingResource(sound.getSoundAsOggLocation()).thenAccept((buffer) -> {
                     channelmanager$entry.runOnSoundExecutor((source) -> {
                         source.func_216433_a(buffer);
@@ -118,7 +138,7 @@ public class PlayedNote
                         net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.sound.PlayStreamingSourceEvent(soundManager, isound, source));
                     });
                 });
-            }
+            }*/
             soundManager.tickableSounds.add(instrumentSound);
             //END SoundEngine.play
 
