@@ -3,7 +3,6 @@ package me.ichun.mods.clef.common.util;
 import me.ichun.mods.clef.common.Clef;
 import net.minecraftforge.fml.loading.FMLPaths;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

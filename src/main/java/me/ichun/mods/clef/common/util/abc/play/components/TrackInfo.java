@@ -2,6 +2,7 @@ package me.ichun.mods.clef.common.util.abc.play.components;
 
 import com.google.common.collect.Ordering;
 import me.ichun.mods.clef.common.Clef;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 
 import java.util.HashSet;
 import java.util.TreeMap;
@@ -33,6 +34,6 @@ public class TrackInfo
 
     public String getTitle()
     {
-        return Clef.configClient.showFileTitle ? fileTitle : title;
+        return FMLEnvironment.dist.isDedicatedServer() ? fileTitle : Clef.configClient.showFileTitle ? fileTitle : title;
     }
 }

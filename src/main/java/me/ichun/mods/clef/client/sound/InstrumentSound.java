@@ -2,13 +2,9 @@ package me.ichun.mods.clef.client.sound;
 
 import net.minecraft.client.audio.ITickableSound;
 import net.minecraft.client.audio.LocatableSound;
-import net.minecraft.client.audio.Sound;
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
 
 public class InstrumentSound extends LocatableSound implements ITickableSound
 {

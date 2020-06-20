@@ -20,6 +20,7 @@ import net.minecraft.nbt.CompoundNBT;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.LogicalSide;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.server.LanguageHook;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
 import org.apache.commons.io.IOUtils;
@@ -50,32 +51,33 @@ public class InstrumentLibrary
             catch(IOException ignored){}
         }
         Clef.LOGGER.info("Loading instruments");
-        Clef.LOGGER.info("Loaded " + readInstruments(ResourceHelper.getInstrumentDir().toFile(), instruments) + " instruments");
+        if(FMLEnvironment.dist.isClient())
+        {
+            boolean result = NotePlayThread.INSTANCE.acquireLock();
+            Clef.LOGGER.info("Loaded " + readInstruments(ResourceHelper.getInstrumentDir().toFile(), instruments) + " instruments");
+            NotePlayThread.INSTANCE.releaseLock(result);
+        }
+        else
+        {
+            Clef.LOGGER.info("Loaded " + readInstruments(ResourceHelper.getInstrumentDir().toFile(), instruments) + " instruments");
+        }
     }
 
     private static int readInstruments(File dir, ArrayList<Instrument> instruments)
     {
-        boolean result = NotePlayThread.INSTANCE.acquireLock();
-        try
+        int instrumentsCount = 0;
+        for(File file : dir.listFiles())
         {
-            int instrumentsCount = 0;
-            for(File file : dir.listFiles())
+            if(file.isDirectory())
             {
-                if(file.isDirectory())
-                {
-                    instrumentsCount += readInstruments(file, instruments);
-                }
-                else
-                {
-                    instrumentsCount += readInstrumentPack(file, instruments);
-                }
+                instrumentsCount += readInstruments(file, instruments);
             }
-            return instrumentsCount;
+            else
+            {
+                instrumentsCount += readInstrumentPack(file, instruments);
+            }
         }
-        finally
-        {
-            NotePlayThread.INSTANCE.releaseLock(result);
-        }
+        return instrumentsCount;
     }
 
     public static int readInstrumentPack(File file, ArrayList<Instrument> instruments)
@@ -275,7 +277,15 @@ public class InstrumentLibrary
         ArrayList<Instrument> instruments = new ArrayList<>();
         HashMap<String, String> localization = new HashMap<>();
         Clef.LOGGER.info("Reloading instruments");
-        Clef.LOGGER.info("Reloaded " + readInstruments(ResourceHelper.getInstrumentDir().toFile(), instruments) + " instruments");
+        boolean result = NotePlayThread.INSTANCE.acquireLock();
+        try
+        {
+            Clef.LOGGER.info("Reloaded " + readInstruments(ResourceHelper.getInstrumentDir().toFile(), instruments) + " instruments");
+        }
+        finally
+        {
+            NotePlayThread.INSTANCE.releaseLock(result);
+        }
         for(Instrument instrument : InstrumentLibrary.instruments) //delete the textures to free up memory.
         {
             if(instrument.iconModel != null)

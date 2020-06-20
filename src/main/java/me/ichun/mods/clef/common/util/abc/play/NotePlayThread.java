@@ -4,6 +4,8 @@ import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.util.abc.AbcParser;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Util;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -17,6 +19,7 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Manages all notes that need to be played at a certain tick
  */
+@OnlyIn(Dist.CLIENT)
 public class NotePlayThread extends Thread
 {
     public static final NotePlayThread INSTANCE = new NotePlayThread();

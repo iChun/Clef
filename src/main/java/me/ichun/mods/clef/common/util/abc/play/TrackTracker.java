@@ -3,14 +3,16 @@ package me.ichun.mods.clef.common.util.abc.play;
 
 import me.ichun.mods.clef.common.util.abc.AbcParser;
 import me.ichun.mods.clef.common.util.abc.play.components.Note;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.locks.LockSupport;
 
 /**
  * Tracks which notes need to be played this tick for a specific track
  */
+@OnlyIn(Dist.CLIENT)
 public class TrackTracker
 {
     private final Track track;

@@ -7,7 +7,6 @@ import me.ichun.mods.clef.common.packet.PacketPlayingTracks;
 import me.ichun.mods.clef.common.packet.PacketRequestFile;
 import me.ichun.mods.clef.common.tileentity.TileEntityInstrumentPlayer;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
-import me.ichun.mods.clef.common.util.abc.AbcParser;
 import me.ichun.mods.clef.common.util.abc.play.components.Note;
 import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
@@ -36,7 +35,6 @@ public class Track
     public static final int MAX_TRACKING_RANGE = 48;
     private final String id;
     private final String band;
-    private final TrackTracker trackTracker = new TrackTracker(this);
     private String md5;
     private TrackInfo track;
 
@@ -50,6 +48,9 @@ public class Track
     public HashSet<String> playersNames = new HashSet<>();
     public IdentityHashMap<PlayerEntity, Integer> players = new IdentityHashMap<>();
     public IntOpenHashSet zombies = new IntOpenHashSet();
+
+    @OnlyIn(Dist.CLIENT)
+    private final TrackTracker trackTracker = new TrackTracker(this);
 
     public Track(String id, String band, String md5, @Nullable TrackInfo track, boolean isRemote)
     {
