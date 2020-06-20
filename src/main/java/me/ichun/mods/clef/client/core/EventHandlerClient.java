@@ -8,6 +8,7 @@ import me.ichun.mods.clef.common.item.ItemInstrument;
 import me.ichun.mods.clef.common.packet.PacketStopPlayingTrack;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
 import me.ichun.mods.clef.common.util.abc.play.NotePlayThread;
+import me.ichun.mods.clef.common.util.abc.play.PlayedNote;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.clef.common.util.abc.play.TrackTracker;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
@@ -22,10 +23,13 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.SoundEvent;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.ModelBakeEvent;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.event.TextureStitchEvent;
+import net.minecraftforge.client.event.sound.SoundLoadEvent;
+import net.minecraftforge.client.event.sound.SoundSetupEvent;
 import net.minecraftforge.client.model.ItemLayerModel;
 import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.event.TickEvent;
@@ -44,19 +48,22 @@ public class EventHandlerClient
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event)
     {
-        if(event.phase == TickEvent.Phase.END)
+        if(event.phase == TickEvent.Phase.START)
         {
             Minecraft mc = Minecraft.getInstance();
             if(!mc.isGamePaused())
             {
-                boolean wasLocked = NotePlayThread.INSTANCE.startNewTick();
-                try
-                {
-                    tracksPlaying.removeIf(track -> !track.tick());
-                }
-                finally
-                {
-                    NotePlayThread.INSTANCE.endTick(wasLocked);
+                if (!tracksPlaying.isEmpty())
+                    {
+                    boolean wasLocked = NotePlayThread.INSTANCE.startNewTick();
+                    try
+                    {
+                        tracksPlaying.removeIf(track -> !track.tick());
+                    }
+                    finally
+                    {
+                        NotePlayThread.INSTANCE.endTick(wasLocked);
+                    }
                 }
             }
         }
@@ -126,6 +133,20 @@ public class EventHandlerClient
         if(!is.isEmpty() && !(!event.getPlayer().getHeldItemMainhand().isEmpty() && !event.getPlayer().getHeldItemOffhand().isEmpty()))
         {
             stopPlayingTrack(event.getPlayer());
+        }
+    }
+
+    @SubscribeEvent
+    public void onSoundSystemReload(SoundLoadEvent event)
+    {
+        boolean locked = NotePlayThread.INSTANCE.acquireLock();
+        try
+        {
+            PlayedNote.clearCache();
+        }
+        finally
+        {
+            NotePlayThread.INSTANCE.releaseLock(locked);
         }
     }
 

@@ -24,12 +24,20 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
 
 @OnlyIn(Dist.CLIENT)
 public class PlayedNote
 {
+    private static final ConcurrentHashMap<ResourceLocation, CompletableFuture<AudioStreamBuffer>> CLEF_CACHE = new ConcurrentHashMap<>();
     public static final Random rand = new Random();
+
+    public static void clearCache()
+    {
+        CLEF_CACHE.clear();
+    }
 
     public static void start(Instrument instrument, int startTick, int duration, int key, SoundCategory category, Object noteLocation)
     {
@@ -132,7 +140,7 @@ public class PlayedNote
 
     //Taken from AudioStreamManager.createResource
     public static CompletableFuture<AudioStreamBuffer> createResource(AudioStreamManager audioStreamManager, ResourceLocation rl, Supplier<InputStream> inputStream) {
-        return audioStreamManager.bufferCache.computeIfAbsent(rl, (newRL) -> {
+        return CLEF_CACHE.computeIfAbsent(rl, (newRL) -> {
             return CompletableFuture.supplyAsync(() -> {
                 try (
                         IAudioStream iaudiostream = new OggAudioStream(inputStream.get());

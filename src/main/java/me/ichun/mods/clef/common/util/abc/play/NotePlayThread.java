@@ -1,5 +1,6 @@
 package me.ichun.mods.clef.common.util.abc.play;
 
+import com.google.common.base.Stopwatch;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.util.abc.AbcParser;
 import net.minecraft.client.Minecraft;
@@ -31,6 +32,7 @@ public class NotePlayThread extends Thread
     {
         INSTANCE.setName("Clef NotePlay Thread");
         INSTANCE.setDaemon(true);
+        INSTANCE.setPriority(7); //slightly above normal to get better scheduler accuracy
         INSTANCE.start();
     }
 
@@ -42,9 +44,12 @@ public class NotePlayThread extends Thread
     public boolean startNewTick()
     {
         boolean result = acquireLock();
-        for (int i = runTick.get(); i <= AbcParser.SUB_TICKS; i++)
+        if (!done)
         {
-            runSubTicks();
+            for (int i = runTick.get(); i < AbcParser.SUB_TICKS; i++)
+            {
+                runSubTicks();
+            }
         }
         trackerSet.forEach(TrackTracker::reset);
         runTick.set(0);
@@ -55,6 +60,10 @@ public class NotePlayThread extends Thread
     {
         done = false;
         releaseLock(wasLocked);
+        synchronized (this)
+        {
+            notifyAll();
+        }
     }
 
     public boolean acquireLock()
@@ -109,13 +118,20 @@ public class NotePlayThread extends Thread
     {
         while (Minecraft.getInstance().isRunning())
         {
-            while (done && Minecraft.getInstance().isRunning())
+            synchronized (this)
             {
-                LockSupport.parkNanos(10000);
+                while (done && Minecraft.getInstance().isRunning())
+                {
+                    try {
+                        wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
             if (!Minecraft.getInstance().isRunning()) break;
             long startTime = Util.nanoTime();
-            for (int i = runTick.get(); i <= AbcParser.SUB_TICKS; i++)
+            for (int i = runTick.get(); i < AbcParser.SUB_TICKS; i++)
             {
                 lock.lock();
                 try
@@ -128,7 +144,7 @@ public class NotePlayThread extends Thread
 
                 long now = Util.nanoTime();
                 long targetTime = startTime + (INTERVAL_NANOS * (i + 1));
-                long sleepTime = targetTime - now; //sleep shorter, so we are as acurate as possible (if we wake up early, we just spin)
+                long sleepTime = targetTime - now - 100; //sleep shorter, so we are as accurate as possible (if we wake up early, we just spin)
                 int nanos = (int) (sleepTime % 1000000);
                 long millis = (sleepTime - nanos) / 1000000;
                 if (runTick.get() >= AbcParser.SUB_TICKS)
@@ -136,7 +152,7 @@ public class NotePlayThread extends Thread
                     done = true;
                     break;
                 }
-                if (millis > 2)
+                if (millis > 1)
                 {
                     try
                     {
@@ -146,11 +162,6 @@ public class NotePlayThread extends Thread
                         //ignore
                     }
                 }
-
-                if (targetTime < Util.nanoTime())
-                    System.out.println("No spin :/");
-                else
-                    System.out.println("Spin!");
 
                 while (targetTime > Util.nanoTime())
                 {

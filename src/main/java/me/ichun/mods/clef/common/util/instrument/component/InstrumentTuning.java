@@ -7,13 +7,14 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class InstrumentTuning
 {
     public float fadeout;
     public Map<String, TuningInt> mapping;
 
-    public transient HashMap<Integer, TuningInfo> keyToTuningMap = new HashMap<>();
+    public transient ConcurrentHashMap<Integer, TuningInfo> keyToTuningMap = new ConcurrentHashMap<>();
     public transient HashMap<String, byte[]> audioToOutputStream = new HashMap<>(); //this is so we can re-archive the sound and send the files
 
     public InstrumentTuning(){}
