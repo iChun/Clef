@@ -72,8 +72,6 @@ public class Clef
 
     public static PacketChannel channel;
 
-    public static ItemGroup creativeTabInstruments;
-
     private static ThreadReadFiles threadReadFiles;
 
     public Clef()
@@ -97,7 +95,7 @@ public class Clef
 
         Clef.channel = new PacketChannel(new ResourceLocation(MOD_ID, "channel"), PROTOCOL, PacketRequestFile.class, PacketFileFragment.class, PacketPlayABC.class, PacketPlayingTracks.class, PacketStopPlayingTrack.class, PacketInstrumentPlayerInfo.class, PacketCreateInstrument.class);
 
-        DistExecutor.runWhenOn(Dist.CLIENT, () -> () -> {
+        DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> () -> {
             configClient = new ConfigClient().init();
 
             bus.addListener(this::onClientSetup);

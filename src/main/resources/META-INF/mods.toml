@@ -13,14 +13,8 @@ issueTrackerURL="https://github.com/iChun/Clef/issues"
     '''
 
 [[dependencies.clef]]
-    modId="forge"
+    modId="ichunutil"
     mandatory=true
-    versionRange="[31.2.9,)"
-    ordering="NONE"
-    side="BOTH"
-[[dependencies.clef]]
-    modId="minecraft"
-    mandatory=true
-    versionRange="[1.15.2,1.16)"
+    versionRange="[8.0.0,9)"
     ordering="NONE"
     side="BOTH"

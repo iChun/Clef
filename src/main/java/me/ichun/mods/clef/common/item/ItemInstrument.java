@@ -48,7 +48,7 @@ public class ItemInstrument extends Item
 {
     public ItemInstrument(Properties properties)
     {
-        super(DistExecutor.runForDist(() -> () -> attachISTER(properties), () -> () -> properties));
+        super(DistExecutor.safeRunForDist(() -> () -> attachISTER(properties), () -> () -> properties));
         //        super(properties);
     }
 

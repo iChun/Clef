@@ -40,7 +40,6 @@ public class PacketInstrumentPlayerInfo extends AbstractPacket
     @Override
     public void writeTo(PacketBuffer buf)
     {
-        PacketBuffer pb = new PacketBuffer(buf);
         buf.writeInt(abc_md5s.size());
         for(String s : abc_md5s)
         {
@@ -51,13 +50,12 @@ public class PacketInstrumentPlayerInfo extends AbstractPacket
         buf.writeBoolean(syncTrack);
         buf.writeInt(repeat);
         buf.writeBoolean(shuffle);
-        pb.writeBlockPos(pos);
+        buf.writeBlockPos(pos);
     }
 
     @Override
     public void readFrom(PacketBuffer buf)
     {
-        PacketBuffer pb = new PacketBuffer(buf);
         abc_md5s = new ArrayList<>();
         int size = buf.readInt();
         for(int i = 0; i < size; i++)
@@ -69,7 +67,7 @@ public class PacketInstrumentPlayerInfo extends AbstractPacket
         syncTrack = buf.readBoolean();
         repeat = buf.readInt();
         shuffle = buf.readBoolean();
-        pos = pb.readBlockPos();
+        pos = buf.readBlockPos();
     }
 
     @Override
