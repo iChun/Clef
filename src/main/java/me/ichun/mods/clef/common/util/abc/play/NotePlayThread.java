@@ -1,6 +1,5 @@
 package me.ichun.mods.clef.common.util.abc.play;
 
-import com.google.common.base.Stopwatch;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.util.abc.AbcParser;
 import net.minecraft.client.Minecraft;
@@ -13,7 +12,6 @@ import java.util.WeakHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -36,11 +34,18 @@ public class NotePlayThread extends Thread
         INSTANCE.start();
     }
 
+    /**
+     * Adds a tracker to a list, to make sure the scheduled sub ticks are played
+     */
     public void ensurePresent(TrackTracker trackTracker)
     {
         trackerSet.add(trackTracker);
     }
 
+    /**
+     * Finishes all non-played sounds when the NotePlay Thread has been late, and prepares the thread to wait for new work
+     * @return If the lock could be acquired
+     */
     public boolean startNewTick()
     {
         boolean result = acquireLock();
@@ -56,6 +61,10 @@ public class NotePlayThread extends Thread
         return result;
     }
 
+    /**
+     * Sends the thread off to run the work scheduled
+     * @param wasLocked The result of {@link #startNewTick()}
+     */
     public void endTick(boolean wasLocked)
     {
         done = false;
@@ -90,6 +99,11 @@ public class NotePlayThread extends Thread
             lock.unlock();
     }
 
+    /**
+     * Runs the current subtick, playing all sounds from all trackers queued for this subtick.
+     * Requires {@link #lock} to be locked by the calling thread
+     * @return True if the tick limit has been reached, and no further data is available
+     */
     private boolean runSubTicks()
     {
         Iterator<TrackTracker> iterator = trackerSet.iterator();
@@ -122,10 +136,12 @@ public class NotePlayThread extends Thread
             {
                 while (done && Minecraft.getInstance().isRunning())
                 {
-                    try {
+                    try
+                    {
                         wait();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                    } catch (InterruptedException e)
+                    {
+                        //doesn't really matter
                     }
                 }
             }
@@ -142,6 +158,7 @@ public class NotePlayThread extends Thread
                     lock.unlock();
                 }
 
+                //Calculate how much time we spend on this play and how much time we still have left to sleep
                 long now = Util.nanoTime();
                 long targetTime = startTime + (INTERVAL_NANOS * (i + 1));
                 long sleepTime = targetTime - now - 100; //sleep shorter, so we are as accurate as possible (if we wake up early, we just spin)
@@ -165,7 +182,7 @@ public class NotePlayThread extends Thread
 
                 while (targetTime > Util.nanoTime())
                 {
-                    //spin!
+                    //spin for the rest of the time left!
                 }
                 if (done) break;
             }

@@ -34,7 +34,12 @@ public abstract class Note
 
     public ArrayList<Construct> constructs = new ArrayList<>();
 
-    public abstract int playNote(Track track, int currentProg, Instrument instrument, Object noteLocation); //returns false if it's a special "note"
+    /**
+     * Plays this note.
+     * This may be called on the client or Clef note player thread, so be thread-safe
+     * @return false if it's a special "note"
+     */
+    public abstract int playNote(Track track, int currentProg, Instrument instrument, Object noteLocation);
 
     public abstract boolean setup(double[] info, HashMap<Integer, Integer> keyAccidentals, HashMap<Integer, Integer> keySignature); //returns false if it's a special "note"
 

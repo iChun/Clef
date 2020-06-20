@@ -8,11 +8,17 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.locks.LockSupport;
 
+/**
+ * Tracks which notes need to be played this tick for a specific track
+ */
 public class TrackTracker
 {
     private final Track track;
     private final Set<NotesTickInfo> masterSet = new HashSet<>();
     private int playProg;
+    /**
+     * Used to check if this tracker is still active or can be removed
+     */
     private boolean shutdown = false;
 
     public TrackTracker(Track track)
@@ -35,6 +41,10 @@ public class TrackTracker
         masterSet.add(noteInfo);
     }
 
+    /**
+     * Runs all the sounds that are scheduled from this track for this subtick
+     * @param runTick The subtick to play
+     */
     public void runSubTick(int runTick)
     {
         for (NotesTickInfo noteInfo : masterSet)

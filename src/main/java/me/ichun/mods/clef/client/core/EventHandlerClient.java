@@ -139,6 +139,7 @@ public class EventHandlerClient
     @SubscribeEvent
     public void onSoundSystemReload(SoundLoadEvent event)
     {
+        //Clear the stored buffers (vanilla does that as well)
         boolean locked = NotePlayThread.INSTANCE.acquireLock();
         try
         {

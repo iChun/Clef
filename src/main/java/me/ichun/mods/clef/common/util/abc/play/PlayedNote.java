@@ -140,6 +140,7 @@ public class PlayedNote
 
     //Taken from AudioStreamManager.createResource
     public static CompletableFuture<AudioStreamBuffer> createResource(AudioStreamManager audioStreamManager, ResourceLocation rl, Supplier<InputStream> inputStream) {
+        //Use a custom cache instead of the AudioStreammanager's cache to be thread safe
         return CLEF_CACHE.computeIfAbsent(rl, (newRL) -> {
             return CompletableFuture.supplyAsync(() -> {
                 try (
