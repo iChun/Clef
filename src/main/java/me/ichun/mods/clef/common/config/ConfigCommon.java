@@ -37,6 +37,9 @@ public class ConfigCommon extends ConfigBase
     @Prop
     public List<String> disabledLootChests = new ArrayList<>();
 
+    @Prop
+    public boolean showFileTitle = true;
+
     public ConfigCommon()
     {
         super(ModLoadingContext.get().getActiveContainer().getModId() + "-common.toml");

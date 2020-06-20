@@ -139,8 +139,8 @@ public class GuiPlayTrack extends Screen
         }));
         //toggle title
         this.addButton(new Button(guiLeft + 231, guiTop + 137, 20, 20, "", btn -> {
-            Clef.configClient.showFileTitle = !Clef.configClient.showFileTitle;
-            Clef.configClient.save();
+            Clef.configCommon.showFileTitle = !Clef.configCommon.showFileTitle;
+            Clef.configCommon.save();
             Collections.sort(tracks);
         }));
     }

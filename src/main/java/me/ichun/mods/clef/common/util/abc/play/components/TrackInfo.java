@@ -34,6 +34,6 @@ public class TrackInfo
 
     public String getTitle()
     {
-        return FMLEnvironment.dist.isDedicatedServer() ? fileTitle : Clef.configClient.showFileTitle ? fileTitle : title;
+        return Clef.configCommon.showFileTitle ? fileTitle : title;
     }
 }

@@ -12,13 +12,9 @@ import javax.annotation.Nonnull;
 
 public class ConfigClient extends ConfigBase
 {
-    //TODO LOCALISE COMMENTS
     @CategoryDivider(name = "clientOnly")
     @Prop
     public String favoriteBand = "";
-
-    @Prop
-    public boolean showFileTitle = true;
 
     @Prop(min = 0, max = 100)
     public int instrumentVolume = 100;
