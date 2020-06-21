@@ -1,4 +1,4 @@
-package me.ichun.mods.clef.common.config;
+package me.ichun.mods.clef.client.config;
 
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.util.abc.play.Track;

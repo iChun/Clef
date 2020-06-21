@@ -6,7 +6,7 @@ import me.ichun.mods.clef.client.core.EventHandlerClient;
 import me.ichun.mods.clef.client.gui.GuiPlayTrackBlock;
 import me.ichun.mods.clef.client.render.BakedModelInstrument;
 import me.ichun.mods.clef.common.block.BlockInstrumentPlayer;
-import me.ichun.mods.clef.common.config.ConfigClient;
+import me.ichun.mods.clef.client.config.ConfigClient;
 import me.ichun.mods.clef.common.config.ConfigCommon;
 import me.ichun.mods.clef.common.config.ConfigServer;
 import me.ichun.mods.clef.common.core.EventHandlerServer;
