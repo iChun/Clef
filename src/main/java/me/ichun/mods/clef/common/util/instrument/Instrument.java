@@ -187,7 +187,6 @@ public class Instrument
             try (NativeImage image = NativeImage.read(new ByteArrayInputStream(imageBytes)))
             {
                 int size = Math.max(Math.max(image.getWidth(), image.getHeight()), 16);
-                //            BufferedImage image1 = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
                 NativeImage image1 = new NativeImage(size, size, true);
                 int halfX = (int)Math.floor((size - image.getWidth()) / 2D); //offsetX
                 int halfY = (int)Math.floor((size - image.getHeight()) / 2D); //offsetY
