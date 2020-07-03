@@ -144,14 +144,14 @@ public class Clef
 
     public static class Blocks
     {
-        private static final DeferredRegister<Block> REGISTRY = new DeferredRegister<>(ForgeRegistries.BLOCKS, MOD_ID);
+        private static final DeferredRegister<Block> REGISTRY = DeferredRegister.create(ForgeRegistries.BLOCKS, MOD_ID);
 
         public static final RegistryObject<BlockInstrumentPlayer> INSTRUMENT_PLAYER = REGISTRY.register("instrument_player", BlockInstrumentPlayer::new);
     }
 
     public static class Items
     {
-        private static final DeferredRegister<Item> REGISTRY = new DeferredRegister<>(ForgeRegistries.ITEMS, MOD_ID);
+        private static final DeferredRegister<Item> REGISTRY = DeferredRegister.create(ForgeRegistries.ITEMS, MOD_ID);
 
         public static final ItemGroup GROUP_INSTRUMENTS = new ItemGroup("clef") {
             @Override
@@ -168,14 +168,14 @@ public class Clef
 
     public static class ContainerTypes
     {
-        private static final DeferredRegister<ContainerType<?>> REGISTRY = new DeferredRegister<>(ForgeRegistries.CONTAINERS, MOD_ID);
+        private static final DeferredRegister<ContainerType<?>> REGISTRY = DeferredRegister.create(ForgeRegistries.CONTAINERS, MOD_ID);
 
         public static final RegistryObject<ContainerType<ContainerInstrumentPlayer>> INSTRUMENT_PLAYER = REGISTRY.register("instrument_player", () -> IForgeContainerType.create(ContainerInstrumentPlayer::new));
     }
 
     public static class TileEntityTypes
     {
-        private static final DeferredRegister<TileEntityType<?>> REGISTRY = new DeferredRegister<>(ForgeRegistries.TILE_ENTITIES, MOD_ID);
+        private static final DeferredRegister<TileEntityType<?>> REGISTRY = DeferredRegister.create(ForgeRegistries.TILE_ENTITIES, MOD_ID);
 
         public static final RegistryObject<TileEntityType<TileEntityInstrumentPlayer>> INSTRUMENT_PLAYER = REGISTRY.register("instrument_player", () -> TileEntityType.Builder.create(TileEntityInstrumentPlayer::new, Blocks.INSTRUMENT_PLAYER.get()).build(null));
     }

@@ -50,7 +50,7 @@ public class Track
     public IntOpenHashSet zombies = new IntOpenHashSet();
 
     @OnlyIn(Dist.CLIENT)
-    private final TrackTracker trackTracker = new TrackTracker(this);
+    private TrackTracker trackTracker;
 
     public Track(String id, String band, String md5, @Nullable TrackInfo track, boolean isRemote)
     {
@@ -59,6 +59,11 @@ public class Track
         this.band = band;
         this.track = track;
         this.isRemote = isRemote;
+
+        if(isRemote)
+        {
+            trackTracker = new TrackTracker(this);
+        }
     }
 
     public void addPlayer(String playerName)

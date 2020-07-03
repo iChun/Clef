@@ -26,6 +26,7 @@ import net.minecraft.world.storage.loot.LootPool;
 import net.minecraft.world.storage.loot.conditions.ILootCondition;
 import net.minecraftforge.event.LootTableLoadEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingSpawnEvent;
@@ -64,37 +65,51 @@ public class EventHandlerServer
     }
 
     @SubscribeEvent
-    public void onItemDrop(LivingDropsEvent event)
+    public void onItemToss(ItemTossEvent event)
     {
-        if(!event.getEntityLiving().getEntityWorld().isRemote && event.getEntityLiving() instanceof ServerPlayerEntity)
+        if(!event.getPlayer().getEntityWorld().isRemote)
         {
-            for(ItemEntity item : event.getDrops())
-            {
-                if(item.getItem().getItem() == Clef.Items.INSTRUMENT.get())
-                {
-                    CompoundNBT tag = item.getItem().getTag();
-                    if(tag != null)
-                    {
-                        String instName = tag.getString("itemName");
-                        Instrument is = InstrumentLibrary.getInstrumentByName(instName);
-                        if(is == null) //request the item then?
-                        {
-                            InstrumentLibrary.requestInstrument(instName, (ServerPlayerEntity)event.getEntityLiving());
-                        }
-                    }
-                }
-            }
+            checkItem(event.getEntityItem(), (ServerPlayerEntity)event.getPlayer());
         }
     }
 
     @SubscribeEvent
     public void onLivingDeath(LivingDropsEvent event)
     {
+        //Player drops
+        if(!event.getEntityLiving().getEntityWorld().isRemote && event.getEntityLiving() instanceof ServerPlayerEntity)
+        {
+            for(ItemEntity item : event.getDrops())
+            {
+                checkItem(item, (ServerPlayerEntity)event.getEntityLiving());
+            }
+        }
+
+        //Living drops
         if(!event.getEntityLiving().getEntityWorld().isRemote && (!Clef.configCommon.onlyHostileMobSpawn || event.getEntityLiving() instanceof IMob) && event.getEntityLiving().getRNG().nextFloat() < (Clef.configCommon.mobDropRate / 10000F) * (event.getLootingLevel() + 1))
         {
             ItemStack stack = new ItemStack(Clef.Items.INSTRUMENT.get());
             InstrumentLibrary.assignRandomInstrument(stack);
-            event.getDrops().add(event.getEntityLiving().entityDropItem(stack, 0F));
+            ItemEntity itementity = new ItemEntity(event.getEntityLiving().world, event.getEntityLiving().getPosX(), event.getEntityLiving().getPosY(), event.getEntityLiving().getPosZ(), stack);
+            itementity.setDefaultPickupDelay();
+            event.getDrops().add(itementity);
+        }
+    }
+
+    public void checkItem(ItemEntity item, ServerPlayerEntity player)
+    {
+        if(item.getItem().getItem() == Clef.Items.INSTRUMENT.get())
+        {
+            CompoundNBT tag = item.getItem().getTag();
+            if(tag != null)
+            {
+                String instName = tag.getString("itemName");
+                Instrument is = InstrumentLibrary.getInstrumentByName(instName);
+                if(is == null) //request the item then?
+                {
+                    InstrumentLibrary.requestInstrument(instName, player);
+                }
+            }
         }
     }
 
