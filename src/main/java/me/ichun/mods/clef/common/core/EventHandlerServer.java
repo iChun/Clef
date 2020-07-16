@@ -1,5 +1,8 @@
 package me.ichun.mods.clef.common.core;
 
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSerializationContext;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.item.ItemInstrument;
 import me.ichun.mods.clef.common.packet.PacketPlayingTracks;
@@ -17,13 +20,16 @@ import net.minecraft.entity.monster.ZombieEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.loot.ILootSerializer;
+import net.minecraft.loot.LootFunctionType;
+import net.minecraft.loot.functions.ILootFunction;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.Hand;
-import net.minecraft.world.storage.loot.ItemLootEntry;
-import net.minecraft.world.storage.loot.LootContext;
-import net.minecraft.world.storage.loot.LootFunction;
-import net.minecraft.world.storage.loot.LootPool;
-import net.minecraft.world.storage.loot.conditions.ILootCondition;
+import net.minecraft.loot.ItemLootEntry;
+import net.minecraft.loot.LootContext;
+import net.minecraft.loot.LootFunction;
+import net.minecraft.loot.LootPool;
+import net.minecraft.loot.conditions.ILootCondition;
 import net.minecraftforge.event.LootTableLoadEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
@@ -176,6 +182,13 @@ public class EventHandlerServer
             {
                 event.getTable().addPool(LootPool.builder()
                         .addEntry(ItemLootEntry.builder(Clef.Items.INSTRUMENT.get()).weight(Clef.configCommon.lootSpawnRate).acceptFunction(() -> new LootFunction(new ILootCondition[0]) {
+
+                            @Override
+                            public LootFunctionType func_230425_b_()
+                            {
+                                return null;
+                            }
+
                             @Override
                             protected ItemStack doApply(ItemStack stack, LootContext context)
                             {
@@ -240,7 +253,7 @@ public class EventHandlerServer
     {
         for(Track track : tracksPlaying)
         {
-            if(track.instrumentPlayers.containsKey(player.getWorld().getDimension().getType().getRegistryName()) && track.instrumentPlayers.get(player.getWorld().getDimension().getType().getRegistryName()).contains(player.getPos()))
+            if(track.instrumentPlayers.containsKey(player.getWorld().func_234923_W_().func_240901_a_()) && track.instrumentPlayers.get(player.getWorld().func_234923_W_().func_240901_a_()).contains(player.getPos()))
             {
                 return track;
             }

@@ -3,7 +3,7 @@ package me.ichun.mods.clef.client.sound;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.vector.Vector3d;
 
 public class InstrumentEntitySound extends InstrumentSound
 {
@@ -24,23 +24,23 @@ public class InstrumentEntitySound extends InstrumentSound
     }
 
     @Override
-    public float getX()
+    public double getX()
     {
-        Vec3d view = living.getLookVec();
-        return (float) (living.getPosX() + view.x * 0.3D);
+        Vector3d view = living.getLookVec();
+        return living.getPosX() + view.x * 0.3D;
     }
 
     @Override
-    public float getY()
+    public double getY()
     {
-        Vec3d view = living.getLookVec();
-        return (float) (living.getPosY() + living.getEyeHeight() + view.y * 0.3D);
+        Vector3d view = living.getLookVec();
+        return living.getPosY() + living.getEyeHeight() + view.y * 0.3D;
     }
 
     @Override
-    public float getZ()
+    public double getZ()
     {
-        Vec3d view = living.getLookVec();
-        return (float) (living.getPosZ() + view.z * 0.3D);
+        Vector3d view = living.getLookVec();
+        return living.getPosZ() + view.z * 0.3D;
     }
 }

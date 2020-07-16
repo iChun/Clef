@@ -1,5 +1,6 @@
 package me.ichun.mods.clef.client.gui;
 
+import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import me.ichun.mods.clef.common.util.abc.TrackFile;
@@ -13,7 +14,9 @@ import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.vector.Matrix4f;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,7 +61,7 @@ public class GuiTrackList extends ExtendedList<GuiTrackList.TrackEntry>
     }
 
     @Override
-    public void render(int mouseX, int mouseY, float partialTick)
+    public void render(MatrixStack stack, int mouseX, int mouseY, float partialTick)
     {
         RenderHelper.startGlScissor(getLeft(), getTop(), width, height - 1);
 
@@ -70,13 +73,10 @@ public class GuiTrackList extends ExtendedList<GuiTrackList.TrackEntry>
         RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
         int k = this.getRowLeft();
         int l = this.y0 + 4 - (int)this.getScrollAmount();
-        if (this.renderHeader) {
-            this.renderHeader(k, l, tessellator);
-        }
 
         int oriWidth = width;
         width = width - 6;
-        this.renderList(k, l, mouseX, mouseY, partialTick);
+        this.renderList(stack, k, l, mouseX, mouseY, partialTick);
         width = oriWidth;
 
         RenderSystem.disableDepthTest();
@@ -94,23 +94,24 @@ public class GuiTrackList extends ExtendedList<GuiTrackList.TrackEntry>
                 l1 = this.y0;
             }
 
-            bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-            bufferbuilder.pos((double)i, (double)this.y1, 0.0D).tex(0.0F, 1.0F).color(0, 0, 0, 255).endVertex();
-            bufferbuilder.pos((double)j, (double)this.y1, 0.0D).tex(1.0F, 1.0F).color(0, 0, 0, 255).endVertex();
-            bufferbuilder.pos((double)j, (double)this.y0, 0.0D).tex(1.0F, 0.0F).color(0, 0, 0, 255).endVertex();
-            bufferbuilder.pos((double)i, (double)this.y0, 0.0D).tex(0.0F, 0.0F).color(0, 0, 0, 255).endVertex();
+            Matrix4f matrix4f = stack.getLast().getMatrix();
+            bufferbuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR);
+            bufferbuilder.pos(matrix4f, i, this.y1, 0.0F).tex(0.0F, 1.0F).color(0, 0, 0, 255).endVertex();
+            bufferbuilder.pos(matrix4f, j, this.y1, 0.0F).tex(1.0F, 1.0F).color(0, 0, 0, 255).endVertex();
+            bufferbuilder.pos(matrix4f, j, this.y0, 0.0F).tex(1.0F, 0.0F).color(0, 0, 0, 255).endVertex();
+            bufferbuilder.pos(matrix4f, i, this.y0, 0.0F).tex(0.0F, 0.0F).color(0, 0, 0, 255).endVertex();
             tessellator.draw();
-            bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-            bufferbuilder.pos((double)i, (double)(l1 + k1), 0.0D).tex(0.0F, 1.0F).color(128, 128, 128, 255).endVertex();
-            bufferbuilder.pos((double)j, (double)(l1 + k1), 0.0D).tex(1.0F, 1.0F).color(128, 128, 128, 255).endVertex();
-            bufferbuilder.pos((double)j, (double)l1, 0.0D).tex(1.0F, 0.0F).color(128, 128, 128, 255).endVertex();
-            bufferbuilder.pos((double)i, (double)l1, 0.0D).tex(0.0F, 0.0F).color(128, 128, 128, 255).endVertex();
+            bufferbuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR);
+            bufferbuilder.pos(matrix4f, i, l1 + k1, 0.0F).tex(0.0F, 1.0F).color(128, 128, 128, 255).endVertex();
+            bufferbuilder.pos(matrix4f, j, l1 + k1, 0.0F).tex(1.0F, 1.0F).color(128, 128, 128, 255).endVertex();
+            bufferbuilder.pos(matrix4f, j, l1, 0.0F).tex(1.0F, 0.0F).color(128, 128, 128, 255).endVertex();
+            bufferbuilder.pos(matrix4f, i, l1, 0.0F).tex(0.0F, 0.0F).color(128, 128, 128, 255).endVertex();
             tessellator.draw();
-            bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-            bufferbuilder.pos((double)i, (double)(l1 + k1 - 1), 0.0D).tex(0.0F, 1.0F).color(192, 192, 192, 255).endVertex();
-            bufferbuilder.pos((double)(j - 1), (double)(l1 + k1 - 1), 0.0D).tex(1.0F, 1.0F).color(192, 192, 192, 255).endVertex();
-            bufferbuilder.pos((double)(j - 1), (double)l1, 0.0D).tex(1.0F, 0.0F).color(192, 192, 192, 255).endVertex();
-            bufferbuilder.pos((double)i, (double)l1, 0.0D).tex(0.0F, 0.0F).color(192, 192, 192, 255).endVertex();
+            bufferbuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR);
+            bufferbuilder.pos(matrix4f, i, l1 + k1 - 1, 0.0F).tex(0.0F, 1.0F).color(192, 192, 192, 255).endVertex();
+            bufferbuilder.pos(matrix4f, j - 1, l1 + k1 - 1, 0.0F).tex(1.0F, 1.0F).color(192, 192, 192, 255).endVertex();
+            bufferbuilder.pos(matrix4f, j - 1, l1, 0.0F).tex(1.0F, 0.0F).color(192, 192, 192, 255).endVertex();
+            bufferbuilder.pos(matrix4f, i, l1, 0.0F).tex(0.0F, 0.0F).color(192, 192, 192, 255).endVertex();
             tessellator.draw();
         }
 
@@ -120,11 +121,6 @@ public class GuiTrackList extends ExtendedList<GuiTrackList.TrackEntry>
         RenderSystem.disableBlend();
 
         RenderHelper.endGlScissor();
-    }
-
-    @Override
-    protected void renderHoleBackground(int p_renderHoleBackground_1_, int p_renderHoleBackground_2_, int p_renderHoleBackground_3_, int p_renderHoleBackground_4_)
-    {
     }
 
     @Override
@@ -172,14 +168,14 @@ public class GuiTrackList extends ExtendedList<GuiTrackList.TrackEntry>
         }
 
         @Override
-        public void render(int idx, int top, int left, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean p_194999_5_, float partialTicks)
+        public void render(MatrixStack stack, int idx, int top, int left, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean p_194999_5_, float partialTicks)
         {
             if(idx >= 0 && idx < tracks.size())
             {
                 FontRenderer font = parent.getFontRenderer();
-                RenderSystem.pushMatrix();
-                RenderSystem.scalef(0.5F, 0.5F, 1F);
-                String trim = font.trimStringToWidth(track.track.getTitle(), (width - 10) * 2);
+                stack.push();
+                stack.scale(0.5F, 0.5F, 1F);
+                String trim = font./*trimStringToWidth*/func_238412_a_(track.track.getTitle(), (width - 10) * 2);
                 if(isSelectedItem(idx) && !track.track.getTitle().endsWith(trim))
                 {
                     int lengthDiff = (int)Math.ceil((track.track.getTitle().length() - trim.length()) * 1.4D);
@@ -189,7 +185,7 @@ public class GuiTrackList extends ExtendedList<GuiTrackList.TrackEntry>
                     {
                         val = 0;
                     }
-                    String newTrim = font.trimStringToWidth(track.track.getTitle().substring(val), (width - 10) * 2);
+                    String newTrim = font./*trimStringToWidth*/func_238412_a_(track.track.getTitle().substring(val), (width - 10) * 2);
                     if(newString.length() > newTrim.length())
                     {
                         trim = newString;
@@ -199,8 +195,8 @@ public class GuiTrackList extends ExtendedList<GuiTrackList.TrackEntry>
                         trim = newTrim;
                     }
                 }
-                font.drawString(trim, (left + 2) * 2, top * 2, idx % 2 == 0 ? 0xFFFFFF : 0xAAAAAA);
-                RenderSystem.popMatrix();
+                font.drawString(stack, trim, (left + 2) * 2, top * 2, idx % 2 == 0 ? 0xFFFFFF : 0xAAAAAA);
+                stack.pop();
             }
         }
     }

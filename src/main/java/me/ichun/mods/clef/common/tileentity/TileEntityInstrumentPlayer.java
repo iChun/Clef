@@ -8,6 +8,7 @@ import me.ichun.mods.clef.common.util.abc.TrackFile;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.ichunutil.common.iChunUtil;
 import me.ichun.mods.ichunutil.common.util.IOUtil;
+import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.IInventory;
@@ -147,7 +148,7 @@ public class TileEntityInstrumentPlayer extends TileEntity
                         }
 
                         Clef.eventHandlerServer.tracksPlaying.add(track);
-                        HashSet<BlockPos> players = track.instrumentPlayers.computeIfAbsent(getWorld().getDimension().getType().getRegistryName(), v -> new HashSet<>());
+                        HashSet<BlockPos> players = track.instrumentPlayers.computeIfAbsent(world.func_234923_W_().func_240901_a_(), v -> new HashSet<>());
                         if(players.add(getPos()))
                         {
                             Clef.channel.sendTo(new PacketPlayingTracks(track), PacketDistributor.ALL.noArg());
@@ -171,7 +172,8 @@ public class TileEntityInstrumentPlayer extends TileEntity
                         Track track = Clef.eventHandlerServer.findTrackByBand(bandName);
                         if(track != null)
                         {
-                            HashSet<BlockPos> players = track.instrumentPlayers.computeIfAbsent(getWorld().getDimension().getType().getRegistryName(), v -> new HashSet<>());
+                            //getRegistryKey().toResourceLocation()
+                            HashSet<BlockPos> players = track.instrumentPlayers.computeIfAbsent(world.func_234923_W_().func_240901_a_(), v -> new HashSet<>());
                             if(players.add(getPos()))
                             {
                                 Clef.channel.sendTo(new PacketPlayingTracks(track), PacketDistributor.ALL.noArg());
@@ -205,13 +207,13 @@ public class TileEntityInstrumentPlayer extends TileEntity
             Track track = Clef.eventHandlerServer.getTrackPlayedByPlayer(this);
             if(track != null)
             {
-                HashSet<BlockPos> players = track.instrumentPlayers.get(getWorld().getDimension().getType().getRegistryName());
+                HashSet<BlockPos> players = track.instrumentPlayers.get(world.func_234923_W_().func_240901_a_());
                 if(players != null)
                 {
                     players.remove(getPos());
                     if(players.isEmpty())
                     {
-                        track.instrumentPlayers.remove(getWorld().getDimension().getType().getRegistryName());
+                        track.instrumentPlayers.remove(world.func_234923_W_().func_240901_a_());
                     }
                 }
                 if(!track.hasObjectsPlaying())
@@ -238,7 +240,7 @@ public class TileEntityInstrumentPlayer extends TileEntity
     @Override
     public void onDataPacket(NetworkManager net, SUpdateTileEntityPacket pkt)
     {
-        read(pkt.getNbtCompound());
+        read(null, pkt.getNbtCompound());
     }
 
     @Override
@@ -276,9 +278,9 @@ public class TileEntityInstrumentPlayer extends TileEntity
     }
 
     @Override
-    public void read(CompoundNBT tag)
+    public void read(BlockState state, CompoundNBT tag)
     {
-        super.read(tag);
+        super.read(state, tag);
         this.contents = NonNullList.withSize(this.getSizeInventory(), ItemStack.EMPTY);
         ItemStackHelper.loadAllItems(tag, this.contents);
 

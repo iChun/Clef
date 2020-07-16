@@ -13,7 +13,7 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.vector.Vector3d;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -89,8 +89,9 @@ public class PlayedNote
             ISound.AttenuationType isound$attenuationtype = instrumentSound.getAttenuationType();
 
             //SoundEngine.play
-            Vec3d vec3d = new Vec3d(instrumentSound.getX(), instrumentSound.getY(), instrumentSound.getZ());
-            ChannelManager.Entry channelmanager$entry = soundManager.channelManager.createChannel(SoundSystem.Mode.STATIC);
+            Vector3d vec3d = new Vector3d(instrumentSound.getX(), instrumentSound.getY(), instrumentSound.getZ());
+            CompletableFuture<ChannelManager.Entry> completablefuture = soundManager.channelManager./*createChannel*/func_239534_a_(SoundSystem.Mode.STATIC);
+            ChannelManager.Entry channelmanager$entry = completablefuture.join();
 
             //            soundManager.sndSystem.newSource(false, uniqueId, getURLForSoundResource(instrument, key - tuning.keyOffset), "clef:" + instrument.info.itemName + ":" + (key - tuning.keyOffset) + ".ogg", false, instrumentSound.getXPosF(), instrumentSound.getYPosF(), instrumentSound.getZPosF(), instrumentSound.getAttenuationType().getTypeInt(), f);
             mc.runAsync(() -> {
@@ -143,7 +144,7 @@ public class PlayedNote
         return CLEF_CACHE.computeIfAbsent(rl, (newRL) -> {
             return CompletableFuture.supplyAsync(() -> {
                 try (
-                        IAudioStream iaudiostream = new OggAudioStream(inputStream.get());
+                        OggAudioStream iaudiostream = new OggAudioStream(inputStream.get());
                 ) {
                     ByteBuffer bytebuffer = iaudiostream.func_216453_b();
                     AudioStreamBuffer audiostreambuffer = new AudioStreamBuffer(bytebuffer, iaudiostream.getAudioFormat());

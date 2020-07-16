@@ -23,6 +23,7 @@ import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.network.PacketDistributor;
@@ -178,7 +179,7 @@ public class Track
                         playerIte.remove();
                     }
                 }
-                HashSet<BlockPos> poses = instrumentPlayers.get(mcPlayer.getEntityWorld().getDimension().getType().getRegistryName());
+                HashSet<BlockPos> poses = instrumentPlayers.get(mcPlayer.getEntityWorld().func_234923_W_().func_240901_a_());
                 if(poses != null)
                 {
                     for(BlockPos pos : poses)
@@ -352,7 +353,7 @@ public class Track
     @OnlyIn(Dist.CLIENT)
     public void showNowPlaying()
     {
-        Minecraft.getInstance().ingameGUI.setRecordPlayingMessage(track.getTitle());
+        Minecraft.getInstance().ingameGUI./*setRecordPlayingMessage*/func_238451_a_(new StringTextComponent(track.getTitle()));
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -363,7 +364,7 @@ public class Track
         {
             return false;
         }
-        HashSet<BlockPos> poses = instrumentPlayers.get(world.getDimension().getType().getRegistryName());
+        HashSet<BlockPos> poses = instrumentPlayers.get(world.func_234923_W_().func_240901_a_());
         if(poses != null)
         {
             for(BlockPos pos : poses)

@@ -15,6 +15,6 @@ issueTrackerURL="https://github.com/iChun/Clef/issues"
 [[dependencies.clef]]
     modId="ichunutil"
     mandatory=true
-    versionRange="[8.0.0,9)"
+    versionRange="[9.0.0,10)"
     ordering="NONE"
     side="BOTH"
