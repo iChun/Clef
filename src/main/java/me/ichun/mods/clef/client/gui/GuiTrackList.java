@@ -37,7 +37,7 @@ public class GuiTrackList extends ExtendedList<GuiTrackList.TrackEntry>
     public void setTracks(List<TrackFile> tracks)
     {
         this.tracks = tracks;
-        this.children().clear();
+        this.getEventListeners().clear();
         for(int i = 0; i < tracks.size(); i++)
         {
             TrackFile trackFile = tracks.get(i);

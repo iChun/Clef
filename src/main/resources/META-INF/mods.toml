@@ -7,7 +7,7 @@ issueTrackerURL="https://github.com/iChun/Clef/issues"
     version="${file.jarVersion}" #mandatory
     displayName="Clef"
     displayURL="http://ichun.me/mods/clef/"
-    authors="iChun"
+    authors="iChun, ichttt"
     description='''
     𝄞
     '''

@@ -152,7 +152,7 @@ public class GuiPlayTrack extends Screen
     }
 
     @Override
-    public void removed()
+    public void onClose()
     {
         this.minecraft.keyboardListener.enableRepeatEvents(false);
     }
@@ -356,7 +356,7 @@ public class GuiPlayTrack extends Screen
                     buttonSyncTrack.setMessage(new TranslationTextComponent(syncTrack == 1 ? "gui.yes" : "gui.no"));
                 }
                 bandName.setFocused2(false);
-                setFocused(null);
+                setListener(null);
             }
         }
         return superResult;
