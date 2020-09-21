@@ -179,7 +179,7 @@ public class Track
                         playerIte.remove();
                     }
                 }
-                HashSet<BlockPos> poses = instrumentPlayers.get(mcPlayer.getEntityWorld().func_234923_W_().func_240901_a_());
+                HashSet<BlockPos> poses = instrumentPlayers.get(mcPlayer.getEntityWorld().getDimensionKey().getLocation());
                 if(poses != null)
                 {
                     for(BlockPos pos : poses)
@@ -364,7 +364,7 @@ public class Track
         {
             return false;
         }
-        HashSet<BlockPos> poses = instrumentPlayers.get(world.func_234923_W_().func_240901_a_());
+        HashSet<BlockPos> poses = instrumentPlayers.get(world.getDimensionKey().getLocation());
         if(poses != null)
         {
             for(BlockPos pos : poses)

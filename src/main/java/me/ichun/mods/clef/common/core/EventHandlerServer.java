@@ -184,7 +184,7 @@ public class EventHandlerServer
                         .addEntry(ItemLootEntry.builder(Clef.Items.INSTRUMENT.get()).weight(Clef.configCommon.lootSpawnRate).acceptFunction(() -> new LootFunction(new ILootCondition[0]) {
 
                             @Override
-                            public LootFunctionType func_230425_b_()
+                            public LootFunctionType getFunctionType()
                             {
                                 return null;
                             }
@@ -253,7 +253,7 @@ public class EventHandlerServer
     {
         for(Track track : tracksPlaying)
         {
-            if(track.instrumentPlayers.containsKey(player.getWorld().func_234923_W_().func_240901_a_()) && track.instrumentPlayers.get(player.getWorld().func_234923_W_().func_240901_a_()).contains(player.getPos()))
+            if(track.instrumentPlayers.containsKey(player.getWorld().getDimensionKey().getLocation()) && track.instrumentPlayers.get(player.getWorld().getDimensionKey().getLocation()).contains(player.getPos()))
             {
                 return track;
             }

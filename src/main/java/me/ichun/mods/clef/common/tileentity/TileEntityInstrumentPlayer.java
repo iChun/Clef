@@ -148,7 +148,7 @@ public class TileEntityInstrumentPlayer extends TileEntity
                         }
 
                         Clef.eventHandlerServer.tracksPlaying.add(track);
-                        HashSet<BlockPos> players = track.instrumentPlayers.computeIfAbsent(world.func_234923_W_().func_240901_a_(), v -> new HashSet<>());
+                        HashSet<BlockPos> players = track.instrumentPlayers.computeIfAbsent(world.getDimensionKey().getLocation(), v -> new HashSet<>());
                         if(players.add(getPos()))
                         {
                             Clef.channel.sendTo(new PacketPlayingTracks(track), PacketDistributor.ALL.noArg());
@@ -173,7 +173,7 @@ public class TileEntityInstrumentPlayer extends TileEntity
                         if(track != null)
                         {
                             //getRegistryKey().toResourceLocation()
-                            HashSet<BlockPos> players = track.instrumentPlayers.computeIfAbsent(world.func_234923_W_().func_240901_a_(), v -> new HashSet<>());
+                            HashSet<BlockPos> players = track.instrumentPlayers.computeIfAbsent(world.getDimensionKey().getLocation(), v -> new HashSet<>());
                             if(players.add(getPos()))
                             {
                                 Clef.channel.sendTo(new PacketPlayingTracks(track), PacketDistributor.ALL.noArg());
@@ -207,13 +207,13 @@ public class TileEntityInstrumentPlayer extends TileEntity
             Track track = Clef.eventHandlerServer.getTrackPlayedByPlayer(this);
             if(track != null)
             {
-                HashSet<BlockPos> players = track.instrumentPlayers.get(world.func_234923_W_().func_240901_a_());
+                HashSet<BlockPos> players = track.instrumentPlayers.get(world.getDimensionKey().getLocation());
                 if(players != null)
                 {
                     players.remove(getPos());
                     if(players.isEmpty())
                     {
-                        track.instrumentPlayers.remove(world.func_234923_W_().func_240901_a_());
+                        track.instrumentPlayers.remove(world.getDimensionKey().getLocation());
                     }
                 }
                 if(!track.hasObjectsPlaying())

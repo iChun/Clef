@@ -51,7 +51,7 @@ public class BakedModelInstrument //mostly taken from forge's BakedItemModel
     @Override
     public boolean isGui3d() { return false; }
     @Override //??
-    public boolean func_230044_c_()
+    public boolean isSideLit()
     {
         return false;
     }
@@ -103,7 +103,7 @@ public class BakedModelInstrument //mostly taken from forge's BakedItemModel
 
         @Nullable
         @Override
-        public IBakedModel func_239290_a_(IBakedModel originalModel, ItemStack stack, @Nullable ClientWorld world, @Nullable LivingEntity entity) // getModelWithOverrides
+        public IBakedModel getOverrideModel(IBakedModel originalModel, ItemStack stack, @Nullable ClientWorld world, @Nullable LivingEntity entity) // getModelWithOverrides
         {
             CompoundNBT tag = stack.getTag();
             if(tag != null)

@@ -90,7 +90,7 @@ public class PlayedNote
 
             //SoundEngine.play
             Vector3d vec3d = new Vector3d(instrumentSound.getX(), instrumentSound.getY(), instrumentSound.getZ());
-            CompletableFuture<ChannelManager.Entry> completablefuture = soundManager.channelManager./*createChannel*/func_239534_a_(SoundSystem.Mode.STATIC);
+            CompletableFuture<ChannelManager.Entry> completablefuture = soundManager.channelManager.requestSoundEntry(SoundSystem.Mode.STATIC);
             ChannelManager.Entry channelmanager$entry = completablefuture.join();
 
             //            soundManager.sndSystem.newSource(false, uniqueId, getURLForSoundResource(instrument, key - tuning.keyOffset), "clef:" + instrument.info.itemName + ":" + (key - tuning.keyOffset) + ".ogg", false, instrumentSound.getXPosF(), instrumentSound.getYPosF(), instrumentSound.getZPosF(), instrumentSound.getAttenuationType().getTypeInt(), f);
@@ -120,7 +120,7 @@ public class PlayedNote
                 int randKey = rand.nextInt(tuning.streamsLength());
                 createResource(soundManager.audioStreamManager, new ResourceLocation("clef", instrument.info.itemName.toLowerCase(Locale.ROOT) + "_" + (key - tuning.keyOffset) + randKey + ".ogg"), () -> tuning.get(randKey)).thenAccept((buffer) -> {
                     channelmanager$entry.runOnSoundExecutor((source) -> {
-                        source.func_216429_a(buffer);
+                        source.bindBuffer(buffer);
                         source.play();
                         net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.sound.PlaySoundSourceEvent(soundManager, isound, source));
                     });
@@ -146,7 +146,7 @@ public class PlayedNote
                 try (
                         OggAudioStream iaudiostream = new OggAudioStream(inputStream.get());
                 ) {
-                    ByteBuffer bytebuffer = iaudiostream.func_216453_b();
+                    ByteBuffer bytebuffer = iaudiostream.readOggSound();
                     AudioStreamBuffer audiostreambuffer = new AudioStreamBuffer(bytebuffer, iaudiostream.getAudioFormat());
                     return audiostreambuffer;
                 } catch (IOException ioexception) {
