@@ -32,6 +32,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 
 public class TileEntityInstrumentPlayer extends TileEntity
         implements ITickableTileEntity, IInventory, INamedContainerProvider
@@ -71,20 +72,22 @@ public class TileEntityInstrumentPlayer extends TileEntity
             if(!pending_md5s.isEmpty() && iChunUtil.eventHandlerServer.ticks % 100 == 0) //Only tries every 5 seconds, pending_md5s is only populated server end.
             {
                 tries++;
-                for(String s : pending_md5s)
+                Iterator<String> pendingMd5iIterator = pending_md5s.iterator();
+                while (pendingMd5iIterator.hasNext())
                 {
+                    String s = pendingMd5iIterator.next();
                     TrackFile file = AbcLibrary.getTrack(s);
-                    if(file == null && tries < 20)
+                    if (file != null)
+                    {
+                        pendingMd5iIterator.remove();
+                        tracks.add(file);
+                    }
+                    else if(tries > 20)
                     {
                         tracks.clear();
                         return;
                     }
-                    else
-                    {
-                        tracks.add(file);
-                    }
                 }
-                pending_md5s.clear();//It'll only get to this point if it gets all teh tracks.
             }
 
             if(previousRedstoneState)//aka isPowered

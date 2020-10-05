@@ -85,7 +85,7 @@ public class PacketInstrumentPlayerInfo extends AbstractPacket
                     TrackFile track = AbcLibrary.getTrack(s);
                     if(track == null)
                     {
-                        instrumentPlayer.pending_md5s = abc_md5s;
+                        instrumentPlayer.pending_md5s.add(s);
                         Clef.channel.sendTo(new PacketRequestFile(s, false), player);
                     }
                     else

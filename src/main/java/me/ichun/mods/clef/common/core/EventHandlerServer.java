@@ -178,7 +178,7 @@ public class EventHandlerServer
                     return;
                 }
             }
-            if(event.getName().getPath().contains("chest"))
+            if(event.getName().getPath().startsWith("chest"))
             {
                 event.getTable().addPool(LootPool.builder()
                         .addEntry(ItemLootEntry.builder(Clef.Items.INSTRUMENT.get()).weight(Clef.configCommon.lootSpawnRate).acceptFunction(() -> new LootFunction(new ILootCondition[0]) {
