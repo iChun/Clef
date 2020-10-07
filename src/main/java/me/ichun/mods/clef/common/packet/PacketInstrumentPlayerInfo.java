@@ -3,6 +3,8 @@ package me.ichun.mods.clef.common.packet;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.tileentity.TileEntityInstrumentPlayer;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
+import me.ichun.mods.clef.common.util.abc.BaseTrackFile;
+import me.ichun.mods.clef.common.util.abc.PendingTrackFile;
 import me.ichun.mods.clef.common.util.abc.TrackFile;
 import me.ichun.mods.ichunutil.common.network.AbstractPacket;
 import net.minecraft.block.BlockState;
@@ -82,16 +84,13 @@ public class PacketInstrumentPlayerInfo extends AbstractPacket
                 instrumentPlayer.tracks.clear();
                 for(String s : abc_md5s)
                 {
-                    TrackFile track = AbcLibrary.getTrack(s);
+                    BaseTrackFile track = AbcLibrary.getTrack(s);
                     if(track == null)
                     {
-                        instrumentPlayer.pending_md5s.add(s);
                         Clef.channel.sendTo(new PacketRequestFile(s, false), player);
+                        track = new PendingTrackFile(s);
                     }
-                    else
-                    {
-                        instrumentPlayer.tracks.add(track);
-                    }
+                    instrumentPlayer.tracks.add(track);
                 }
                 instrumentPlayer.bandName = bandName;
                 instrumentPlayer.syncPlay = syncPlay;

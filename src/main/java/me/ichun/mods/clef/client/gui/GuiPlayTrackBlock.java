@@ -7,6 +7,7 @@ import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.inventory.ContainerInstrumentPlayer;
 import me.ichun.mods.clef.common.packet.PacketInstrumentPlayerInfo;
 import me.ichun.mods.clef.common.tileentity.TileEntityInstrumentPlayer;
+import me.ichun.mods.clef.common.util.abc.BaseTrackFile;
 import me.ichun.mods.clef.common.util.abc.TrackFile;
 import me.ichun.mods.ichunutil.client.core.ResourceHelper;
 import net.minecraft.client.audio.SimpleSound;
@@ -24,6 +25,7 @@ import net.minecraft.util.text.TranslationTextComponent;
 import org.lwjgl.opengl.GL13;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class GuiPlayTrackBlock extends GuiPlayTrack
         implements IHasContainer<ContainerInstrumentPlayer>
@@ -35,7 +37,7 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
 
     public int repeat = 0;
     public int shuffle = 0;
-    public ArrayList<TrackFile> playlist;
+    public List<BaseTrackFile> playlist;
 
     public boolean playlistView = false;
 
@@ -126,7 +128,7 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
                 {
                     if (index > 0)
                     {
-                        TrackFile file = playlist.get(index);
+                        BaseTrackFile file = playlist.get(index);
                         playlist.remove(index);
                         playlist.add(index - 1, file);
                         index--;
@@ -141,7 +143,7 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
                 {
                     if(index < playlist.size() - 1)
                     {
-                        TrackFile file = playlist.get(index);
+                        BaseTrackFile file = playlist.get(index);
                         playlist.remove(index);
                         playlist.add(index + 1, file);
                         index++;
@@ -325,7 +327,7 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
             }
         }
         ArrayList<String> md5s = new ArrayList<>();
-        for(TrackFile track : playlist)
+        for(BaseTrackFile track : playlist)
         {
             md5s.add(track.md5);
         }

@@ -7,6 +7,9 @@ import me.ichun.mods.clef.common.packet.PacketPlayingTracks;
 import me.ichun.mods.clef.common.packet.PacketRequestFile;
 import me.ichun.mods.clef.common.tileentity.TileEntityInstrumentPlayer;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
+import me.ichun.mods.clef.common.util.abc.BaseTrackFile;
+import me.ichun.mods.clef.common.util.abc.PendingTrackFile;
+import me.ichun.mods.clef.common.util.abc.TrackFile;
 import me.ichun.mods.clef.common.util.abc.play.components.Note;
 import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
@@ -28,7 +31,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.network.PacketDistributor;
 
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 import java.util.*;
 
 public class Track
@@ -36,8 +39,7 @@ public class Track
     public static final int MAX_TRACKING_RANGE = 48;
     private final String id;
     private final String band;
-    private String md5;
-    private TrackInfo track;
+    private BaseTrackFile trackFile;
 
     public boolean isRemote;
 
@@ -53,12 +55,11 @@ public class Track
     @OnlyIn(Dist.CLIENT)
     private TrackTracker trackTracker;
 
-    public Track(String id, String band, String md5, @Nullable TrackInfo track, boolean isRemote)
+    public Track(String id, String band, @Nonnull BaseTrackFile trackFile, boolean isRemote)
     {
-        this.md5 = md5;
         this.id = id;
         this.band = band;
-        this.track = track;
+        this.trackFile = trackFile;
         this.isRemote = isRemote;
 
         if(isRemote)
@@ -82,45 +83,47 @@ public class Track
         return band;
     }
 
-    public String getMd5()
+    public void setTrack(BaseTrackFile track) //Only called by the server ever.
     {
-        return md5;
-    }
-
-    public void setTrack(String md5, TrackInfo track) //Only called by the server ever.
-    {
-        this.md5 = md5;
-        this.track = track;
+        this.trackFile = track;
         if(!isRemote)
         {
             Clef.channel.sendTo(new PacketPlayingTracks(this), PacketDistributor.ALL.noArg());
         }
     }
 
-    public TrackInfo getTrack()
+    public BaseTrackFile getTrackFile()
     {
-        return track;
+        return trackFile;
     }
 
     public boolean tick() //returns false if it's time to stop playing.
     {
-        if(track == null)
+        if(!trackFile.isSynced())
         {
-            if(!isRemote)
+            if (isRemote)
             {
-                return true; //We're still waiting for the track before we start playing.
+                if (shouldRequestTrack() && AbcLibrary.requestedABCFromServer.add(trackFile.md5))
+                {
+                    Clef.channel.sendToServer(new PacketRequestFile(trackFile.md5, false));
+                }
+                BaseTrackFile newFile = ((PendingTrackFile) trackFile).resolve();
+                if (newFile != null)
+                    trackFile = newFile;
+                else
+                {
+                    playProg++;
+                    return true;
+                }
             }
             else
             {
-                if(shouldRequestTrack() && AbcLibrary.requestedABCFromServer.add(md5))
-                {
-                    Clef.channel.sendToServer(new PacketRequestFile(md5, false));
-                }
-                playProg++;
+                //if we are on the server and here, we're still waiting for the track before we start playing.
                 return true;
             }
         }
 
+        TrackInfo track = ((TrackFile) this.trackFile).track;
         if(!playing || playProg > track.trackLength)
         {
             return false;
@@ -353,7 +356,11 @@ public class Track
     @OnlyIn(Dist.CLIENT)
     public void showNowPlaying()
     {
-        Minecraft.getInstance().ingameGUI./*setRecordPlayingMessage*/func_238451_a_(new StringTextComponent(track.getTitle()));
+        if (trackFile.isSynced())
+        {
+            Minecraft.getInstance().ingameGUI./*setRecordPlayingMessage*/func_238451_a_(new StringTextComponent(((TrackFile) trackFile).track.getTitle()));
+        }
+
     }
 
     @OnlyIn(Dist.CLIENT)

@@ -4,18 +4,27 @@ import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
 
 import java.io.File;
 
-public class TrackFile
+public class TrackFile extends BaseTrackFile
     implements Comparable<TrackFile>
 {
     public final TrackInfo track;
     public final File file;
-    public final String md5;
 
     public TrackFile(TrackInfo track, File file, String md5)
     {
+        super(md5);
         this.track = track;
         this.file = file;
-        this.md5 = md5;
+    }
+
+    @Override
+    public boolean isSynced() {
+        return true;
+    }
+
+    @Override
+    public String getTitle() {
+        return this.track.getTitle();
     }
 
     @Override

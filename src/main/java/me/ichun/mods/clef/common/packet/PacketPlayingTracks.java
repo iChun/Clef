@@ -2,6 +2,8 @@ package me.ichun.mods.clef.common.packet;
 
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
+import me.ichun.mods.clef.common.util.abc.BaseTrackFile;
+import me.ichun.mods.clef.common.util.abc.PendingTrackFile;
 import me.ichun.mods.clef.common.util.abc.TrackFile;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.ichunutil.common.network.AbstractPacket;
@@ -34,7 +36,7 @@ public class PacketPlayingTracks extends AbstractPacket
         {
             buf.writeString(track.getId());
             buf.writeString(track.getBandName());
-            buf.writeString(track.getMd5());
+            buf.writeString(track.getTrackFile().md5);
             buf.writeBoolean(track.playing);
             buf.writeInt(track.playProg);
             buf.writeInt(track.players.size());
@@ -70,8 +72,12 @@ public class PacketPlayingTracks extends AbstractPacket
             String id = readString(buf);
             String band = readString(buf);
             String md5 = readString(buf);
-            TrackFile file = AbcLibrary.getTrack(md5);
-            tracks[i] = new Track(id, band, md5, file != null ? file.track : null, true);
+            BaseTrackFile file = AbcLibrary.getTrack(md5);
+            if (file == null)
+            {
+                file = new PendingTrackFile(md5);
+            }
+            tracks[i] = new Track(id, band, file, true);
             tracks[i].playing = buf.readBoolean();
             tracks[i].playProg = buf.readInt();
             int playerCount = buf.readInt();

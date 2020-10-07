@@ -28,6 +28,7 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 public class GuiPlayTrack extends Screen
 {
@@ -56,7 +57,7 @@ public class GuiPlayTrack extends Screen
     public int index = -1;
     public int doneTimeout = 0;
 
-    public ArrayList<TrackFile> tracks;
+    public List<TrackFile> tracks;
     public String bandNameString = "";
 
     public int scrollTicker = 0;
@@ -71,7 +72,7 @@ public class GuiPlayTrack extends Screen
     public GuiPlayTrack()
     {
         super(new TranslationTextComponent("clef.gui.chooser"));
-        tracks = AbcLibrary.tracks;
+        tracks = AbcLibrary.getTracks();
         bandNameString = Clef.configClient.favoriteBand;
     }
 

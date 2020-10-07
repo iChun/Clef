@@ -1,8 +1,5 @@
 package me.ichun.mods.clef.common.core;
 
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSerializationContext;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.item.ItemInstrument;
 import me.ichun.mods.clef.common.packet.PacketPlayingTracks;
@@ -10,6 +7,7 @@ import me.ichun.mods.clef.common.tileentity.TileEntityInstrumentPlayer;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
 import me.ichun.mods.clef.common.util.abc.TrackFile;
 import me.ichun.mods.clef.common.util.abc.play.Track;
+import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
 import me.ichun.mods.clef.common.util.instrument.InstrumentLibrary;
 import me.ichun.mods.ichunutil.common.iChunUtil;
@@ -20,9 +18,7 @@ import net.minecraft.entity.monster.ZombieEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.loot.ILootSerializer;
 import net.minecraft.loot.LootFunctionType;
-import net.minecraft.loot.functions.ILootFunction;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.Hand;
 import net.minecraft.loot.ItemLootEntry;
@@ -44,6 +40,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 
 public class EventHandlerServer
 {
@@ -152,11 +149,12 @@ public class EventHandlerServer
                 }
                 else
                 {
-                    TrackFile randTrack = AbcLibrary.tracks.get(zombie.getRNG().nextInt(AbcLibrary.tracks.size()));
-                    track = new Track(RandomStringUtils.randomAscii(IOUtil.IDENTIFIER_LENGTH), "zombies", randTrack.md5, randTrack.track, false);
-                    if(track.getTrack().trackLength > 0)
+                    List<TrackFile> tracks = AbcLibrary.getTracks();
+                    TrackFile randTrack = tracks.get(zombie.getRNG().nextInt(tracks.size()));
+                    track = new Track(RandomStringUtils.randomAscii(IOUtil.IDENTIFIER_LENGTH), "zombies", randTrack, false);
+                    if(randTrack.track.trackLength > 0)
                     {
-                        track.playAtProgress(zombie.getRNG().nextInt(track.getTrack().trackLength));
+                        track.playAtProgress(zombie.getRNG().nextInt(randTrack.track.trackLength));
                     }
                     Clef.eventHandlerServer.tracksPlaying.add(track);
                     track.zombies.add(zombie.getEntityId());
@@ -291,7 +289,7 @@ public class EventHandlerServer
         HashSet<Track> tracks = new HashSet<>();
         for(Track track : tracksPlaying)
         {
-            if(track.getTrack() != null) //this means the track is actively played
+            if(track.getTrackFile() != null) //this means the track is actively played
             {
                 tracks.add(track);
             }
