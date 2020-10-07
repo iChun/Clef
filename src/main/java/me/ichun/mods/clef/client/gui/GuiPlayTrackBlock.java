@@ -189,6 +189,7 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
         super.render(stack, mouseX, mouseY, partialTicks);
 
         stack.push();
+        RenderSystem.pushMatrix();
         RenderSystem.translatef((float)guiLeft, (float)guiTop, 0.0F); //matrix stack not taken into account by all vanilla methods rn, so we need the RenderSystem (see ContainerScreen)
         RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.enableRescaleNormal();
@@ -218,6 +219,7 @@ public class GuiPlayTrackBlock extends GuiPlayTrack
         }
 
         stack.pop();
+        RenderSystem.popMatrix();
 
         RenderSystem.disableLighting();
         RenderSystem.disableDepthTest();
