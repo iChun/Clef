@@ -4,6 +4,8 @@ import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.inventory.ContainerInstrumentPlayer;
 import me.ichun.mods.clef.common.packet.PacketPlayingTracks;
 import me.ichun.mods.clef.common.util.abc.AbcLibrary;
+import me.ichun.mods.clef.common.util.abc.BaseTrackFile;
+import me.ichun.mods.clef.common.util.abc.PendingTrackFile;
 import me.ichun.mods.clef.common.util.abc.TrackFile;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.ichunutil.common.iChunUtil;
@@ -26,6 +28,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fml.network.PacketDistributor;
 import org.apache.commons.lang3.RandomStringUtils;
 
@@ -33,13 +36,12 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 public class TileEntityInstrumentPlayer extends TileEntity
         implements ITickableTileEntity, IInventory, INamedContainerProvider
 {
-    public int tries = 20;
-    public ArrayList<TrackFile> tracks = new ArrayList<>();
-    public ArrayList<String> pending_md5s = new ArrayList<>();
+    public ArrayList<BaseTrackFile> tracks = new ArrayList<>();
     public String bandName = "";
     public boolean syncPlay = true;
     public boolean syncTrack = false;
@@ -69,24 +71,33 @@ public class TileEntityInstrumentPlayer extends TileEntity
             {
                 justCreatedInstrument = false;
             }
-            if(!pending_md5s.isEmpty() && iChunUtil.eventHandlerServer.ticks % 100 == 0) //Only tries every 5 seconds, pending_md5s is only populated server end.
+            if(iChunUtil.eventHandlerServer.ticks % 100 == 0 && !tracks.stream().allMatch(BaseTrackFile::isSynced)) //Only tries every 5 seconds, pending_md5s is only populated server end.
             {
-                tries++;
-                Iterator<String> pendingMd5iIterator = pending_md5s.iterator();
-                while (pendingMd5iIterator.hasNext())
+                Set<BaseTrackFile> toRemove = null;
+                int size = tracks.size();
+                for (int i = 0; i < size; i++)
                 {
-                    String s = pendingMd5iIterator.next();
-                    TrackFile file = AbcLibrary.getTrack(s);
-                    if (file != null)
-                    {
-                        pendingMd5iIterator.remove();
-                        tracks.add(file);
+                    BaseTrackFile baseTrackFile = tracks.get(i);
+                    if (!baseTrackFile.isSynced()) {
+                        PendingTrackFile pending = (PendingTrackFile) baseTrackFile;
+                        TrackFile file = pending.resolve();
+                        if (file != null)
+                        {
+                            tracks.set(i, file); //replace the pending with the actual file
+                        }
+                        else if (pending.getResolveTries() > 20)
+                        {
+                            if (toRemove == null)
+                            {
+                                toRemove = new HashSet<>();
+                            }
+                            toRemove.add(pending);
+                        }
                     }
-                    else if(tries > 20)
-                    {
-                        tracks.clear();
-                        return;
-                    }
+                }
+                if (toRemove != null)
+                {
+                    tracks.removeAll(toRemove);
                 }
             }
 
@@ -107,23 +118,54 @@ public class TileEntityInstrumentPlayer extends TileEntity
                     if(track2 == null && (shuffle && playedTracks.size() < tracks.size() || !shuffle && playlistIndex < tracks.size()))
                     {
                         //play a new track
-                        TrackFile file = null;
+                        BaseTrackFile file = null;
+                        int index = -1;
                         if(shuffle)
                         {
                             int tries = 0;
                             while(tries < 1000)
                             {
-                                file = tracks.get(getWorld().rand.nextInt(tracks.size()));
-                                if(!playedTracks.contains(file.md5))
+                                index = getWorld().rand.nextInt(tracks.size());
+                                file = tracks.get(index);
+                                if ((tries < 500 && !file.isSynced()) || playedTracks.contains(file.md5))
+                                {
+                                    tries++;
+                                }
+                                else
                                 {
                                     break;
                                 }
-                                tries++;
                             }
                         }
                         else
                         {
+                            index = playlistIndex;
                             file = tracks.get(playlistIndex);
+                        }
+                        if (file == null)
+                        {
+                            //No valid file found! Just return
+                            return;
+                        }
+                        if (!file.isSynced())
+                        {
+                            //uh oh, that file is not synced or we did not find a valid file...
+                            //try and see if it is available now
+                            TrackFile newFile = AbcLibrary.getTrack(file.md5);
+                            if (newFile != null)
+                            {
+                                //we got lucky, the track is synced. Replace the entry in the list and play it
+                                if (index != -1)
+                                {
+                                    tracks.set(index, newFile);
+                                }
+                                file = newFile;
+                            }
+                            else
+                            {
+                                //Well shit, not found, just wait until we receive it or the timer runs out
+                                return;
+                            }
                         }
                         Track track;
                         if(!bandName.isEmpty())
@@ -133,7 +175,7 @@ public class TileEntityInstrumentPlayer extends TileEntity
                             Track track1 = track;
                             if(track == null || !syncTrack) //No band
                             {
-                                track = new Track(RandomStringUtils.randomAscii(IOUtil.IDENTIFIER_LENGTH), bandName, file.md5, file.track, false);
+                                track = new Track(RandomStringUtils.randomAscii(IOUtil.IDENTIFIER_LENGTH), bandName, file, false);
                             }
                             if(syncPlay && track1 != null)
                             {
@@ -147,7 +189,7 @@ public class TileEntityInstrumentPlayer extends TileEntity
                         }
                         else
                         {
-                            track = new Track(RandomStringUtils.randomAscii(IOUtil.IDENTIFIER_LENGTH), bandName, file.md5, file.track, false);
+                            track = new Track(RandomStringUtils.randomAscii(IOUtil.IDENTIFIER_LENGTH), bandName, file, false);
                         }
 
                         Clef.eventHandlerServer.tracksPlaying.add(track);
@@ -159,9 +201,9 @@ public class TileEntityInstrumentPlayer extends TileEntity
 
                         lastTrack = track;
 
-                        if(shuffle && repeat != 1 && file.md5.equals(track.getMd5()))
+                        if(shuffle && repeat != 1 && file.md5.equals(track.getTrackFile().md5))
                         {
-                            playedTracks.add(track.getMd5());
+                            playedTracks.add(track.getTrackFile().md5);
                         }
                         playlistIndex++;
                         if(repeat == 1 && playlistIndex >= tracks.size())
@@ -257,8 +299,9 @@ public class TileEntityInstrumentPlayer extends TileEntity
         tag.putInt("trackCount", tracks.size());
         for(int i = 0 ; i < tracks.size(); i++)
         {
-            TrackFile file = tracks.get(i);
+            BaseTrackFile file = tracks.get(i);
             tag.putString("track_" + i, file.md5);
+            tag.putString("track_title_" + i, file.getTitle());
         }
 
         tag.putString("bandName", bandName);
@@ -293,10 +336,16 @@ public class TileEntityInstrumentPlayer extends TileEntity
         int size = tag.getInt("trackCount");
         for(int i = 0; i < size; i++)
         {
-            TrackFile file = AbcLibrary.getTrack(tag.getString("track_" + i));
+            String md5 = tag.getString("track_" + i);
+            String title = tag.contains("track_title_" + i, Constants.NBT.TAG_STRING) ? tag.getString("track_title_" + i) : null;
+            TrackFile file = AbcLibrary.getTrack(md5);
             if(file != null)
             {
                 tracks.add(file);
+            }
+            else
+            {
+                tracks.add(new PendingTrackFile(md5, title));
             }
         }
         size = tag.getInt("playedCount");

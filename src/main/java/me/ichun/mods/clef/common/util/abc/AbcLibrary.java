@@ -1,5 +1,7 @@
 package me.ichun.mods.clef.common.util.abc;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import me.ichun.mods.clef.client.gui.GuiPlayTrack;
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.packet.PacketFileFragment;
@@ -24,12 +26,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public class AbcLibrary
 {
-    public static ArrayList<TrackFile> tracks = new ArrayList<>();
+    private static List<TrackFile> tracks = new ArrayList<>();
 
     public static void init()
     {
@@ -81,7 +85,7 @@ public class AbcLibrary
         }
     }
 
-    private static int readAbcs(File dir, ArrayList<TrackFile> tracks)
+    private static int readAbcs(File dir, List<TrackFile> tracks)
     {
         int trackCount = 0;
         for(File file : dir.listFiles())
@@ -98,7 +102,7 @@ public class AbcLibrary
         return trackCount;
     }
 
-    public static boolean readAbc(File file, ArrayList<TrackFile> tracks)
+    public static boolean readAbc(File file, List<TrackFile> tracks)
     {
         if(file.exists() && file.getName().endsWith(".abc"))
         {
@@ -108,12 +112,13 @@ public class AbcLibrary
                 TrackInfo track = AbcParser.parse(file);
                 if(track != null)
                 {
-                    tracks.add(new TrackFile(track, file, md5));
+                    TrackFile trackFile = new TrackFile(track, file, md5);
+                    tracks.add(trackFile);
                     Collections.sort(tracks);
 
                     if(EffectiveSide.get().isServer() && tracksWaitingForTrackInfo.containsKey(md5))
                     {
-                        tracksWaitingForTrackInfo.get(md5).setTrack(md5, track);
+                        tracksWaitingForTrackInfo.get(md5).setTrack(trackFile);
                         tracksWaitingForTrackInfo.remove(md5);
                     }
                     return true;
@@ -172,7 +177,11 @@ public class AbcLibrary
 
     public static void playAbc(String md5, String bandName, boolean syncPlay, boolean syncTrack, ServerPlayerEntity player) //CLIENT NEVER CALLS THIS.
     {
-        TrackFile file = getTrack(md5);
+        BaseTrackFile file = getTrack(md5);
+        if (file == null)
+        {
+            file = new PendingTrackFile(md5);
+        }
         Track track;
         if(!bandName.isEmpty())
         {
@@ -185,7 +194,7 @@ public class AbcLibrary
             Track track1 = track;
             if(track == null || !syncTrack) //No band
             {
-                track = new Track(RandomStringUtils.randomAscii(IOUtil.IDENTIFIER_LENGTH), bandName, md5, (file != null ? file.track : null), false);
+                track = new Track(RandomStringUtils.randomAscii(IOUtil.IDENTIFIER_LENGTH), bandName, file, false);
             }
             if(syncPlay && track1 != null)
             {
@@ -198,14 +207,14 @@ public class AbcLibrary
         }
         else
         {
-            track = new Track(RandomStringUtils.randomAscii(IOUtil.IDENTIFIER_LENGTH), bandName, md5, (file != null ? file.track : null), false);
+            track = new Track(RandomStringUtils.randomAscii(IOUtil.IDENTIFIER_LENGTH), bandName, file, false);
         }
 
-        if(file == null) //We don't have the ABC. Ask from the client.
+        if(!file.isSynced()) //We don't have the ABC. Ask from the client.
         {
             if(requestedABCFromPlayers.add(md5))
             {
-                if(track.getTrack() == null)
+                if(track.getTrackFile() == null)
                 {
                     tracksWaitingForTrackInfo.put(md5, track);
                 }
@@ -226,7 +235,7 @@ public class AbcLibrary
         //queue the track. track plays when the trackfile is set.
         Clef.eventHandlerServer.tracksPlaying.add(track);
         track.players.put(player, 0);
-        if(track.getTrack() != null)
+        if(track.getTrackFile() != null)
         {
             Clef.channel.sendTo(new PacketPlayingTracks(track), PacketDistributor.ALL.noArg());
         }
@@ -331,5 +340,15 @@ public class AbcLibrary
         {
             e.printStackTrace();
         }
+    }
+
+    public static List<TrackFile> getTracks()
+    {
+        return ImmutableList.copyOf(tracks);
+    }
+
+    public static void setTracks(List<TrackFile> tracks)
+    {
+        AbcLibrary.tracks = tracks;
     }
 }

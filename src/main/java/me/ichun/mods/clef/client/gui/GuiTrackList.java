@@ -3,6 +3,8 @@ package me.ichun.mods.clef.client.gui;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import me.ichun.mods.clef.common.util.abc.BaseTrackFile;
+import me.ichun.mods.clef.common.util.abc.PendingTrackFile;
 import me.ichun.mods.clef.common.util.abc.TrackFile;
 import me.ichun.mods.ichunutil.client.render.RenderHelper;
 import net.minecraft.client.Minecraft;
@@ -18,15 +20,14 @@ import net.minecraft.util.math.vector.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class GuiTrackList extends ExtendedList<GuiTrackList.TrackEntry>
 {
     private GuiPlayTrack parent;
-    private List<TrackFile> tracks;
+    private List<? extends BaseTrackFile> tracks;
 
-    public GuiTrackList(GuiPlayTrack parent, int width, int height, int top, int bottom, int left, int entryHeight, ArrayList<TrackFile> track)
+    public GuiTrackList(GuiPlayTrack parent, int width, int height, int top, int bottom, int left, int entryHeight, List<? extends BaseTrackFile> track)
     {
         super(Minecraft.getInstance(), width, height, top, bottom, entryHeight);
         setLeftPos(left);
@@ -34,13 +35,13 @@ public class GuiTrackList extends ExtendedList<GuiTrackList.TrackEntry>
         setTracks(track);
     }
 
-    public void setTracks(List<TrackFile> tracks)
+    public void setTracks(List<? extends BaseTrackFile> tracks)
     {
         this.tracks = tracks;
         this.getEventListeners().clear();
         for(int i = 0; i < tracks.size(); i++)
         {
-            TrackFile trackFile = tracks.get(i);
+            BaseTrackFile trackFile = tracks.get(i);
             addEntry(new TrackEntry(trackFile, i));
         }
     }
@@ -145,12 +146,12 @@ public class GuiTrackList extends ExtendedList<GuiTrackList.TrackEntry>
 
     public class TrackEntry extends AbstractList.AbstractListEntry<TrackEntry>
     {
-        public final TrackFile track;
+        public BaseTrackFile track;
         public final int index;
 
         public long lastClickTime = -1;
 
-        public TrackEntry(TrackFile track, int index)
+        public TrackEntry(BaseTrackFile track, int index)
         {
             this.track = track;
             this.index = index;
@@ -170,22 +171,31 @@ public class GuiTrackList extends ExtendedList<GuiTrackList.TrackEntry>
         @Override
         public void render(MatrixStack stack, int idx, int top, int left, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean p_194999_5_, float partialTicks)
         {
+            if (!track.isSynced())
+            {
+                TrackFile possibleResolved = ((PendingTrackFile) track).resolve();
+                if (possibleResolved != null)
+                {
+                    track = possibleResolved;
+                }
+            }
             if(idx >= 0 && idx < tracks.size())
             {
                 FontRenderer font = parent.getFontRenderer();
                 stack.push();
                 stack.scale(0.5F, 0.5F, 1F);
-                String trim = font./*trimStringToWidth*/func_238412_a_(track.track.getTitle(), (width - 10) * 2);
-                if(isSelectedItem(idx) && !track.track.getTitle().endsWith(trim))
+                String title = track.getTitle();
+                String trim = font./*trimStringToWidth*/func_238412_a_(title, (width - 10) * 2);
+                if(isSelectedItem(idx) && !title.endsWith(trim))
                 {
-                    int lengthDiff = (int)Math.ceil((track.track.getTitle().length() - trim.length()) * 1.4D);
-                    String newString = track.track.getTitle().substring(lengthDiff);
+                    int lengthDiff = (int)Math.ceil((title.length() - trim.length()) * 1.4D);
+                    String newString = title.substring(lengthDiff);
                     int val = ((parent.scrollTicker % (lengthDiff * 2 + 40)) / 2) - 10;
                     if(val < 0)
                     {
                         val = 0;
                     }
-                    String newTrim = font./*trimStringToWidth*/func_238412_a_(track.track.getTitle().substring(val), (width - 10) * 2);
+                    String newTrim = font./*trimStringToWidth*/func_238412_a_(title.substring(val), (width - 10) * 2);
                     if(newString.length() > newTrim.length())
                     {
                         trim = newString;
