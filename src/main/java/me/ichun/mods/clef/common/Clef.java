@@ -16,6 +16,7 @@ import me.ichun.mods.clef.common.packet.*;
 import me.ichun.mods.clef.common.thread.ThreadReadFiles;
 import me.ichun.mods.clef.common.tileentity.TileEntityInstrumentPlayer;
 import me.ichun.mods.clef.common.util.ResourceHelper;
+import me.ichun.mods.ichunutil.client.item.ItemEffectHandler;
 import me.ichun.mods.ichunutil.common.network.PacketChannel;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
@@ -102,6 +103,8 @@ public class Clef
             bus.addListener(this::onModelBake);
 
             MinecraftForge.EVENT_BUS.register(eventHandlerClient = new EventHandlerClient());
+
+            ItemEffectHandler.init();
         });
 
         threadReadFiles  = new ThreadReadFiles();

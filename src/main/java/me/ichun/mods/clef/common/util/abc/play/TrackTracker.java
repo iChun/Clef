@@ -59,7 +59,7 @@ public class TrackTracker
                     int time = toPlay.playNote(track, playProg, noteInfo.instrument, noteInfo.notePos);
                     if (noteInfo.checkRest && time > track.timeToSilence && toPlay.key != Note.NOTE_REST)
                     {
-                        track.timeToSilence = time;
+                        track.timeToSilence = time + 1;
                     }
                 }
             }
