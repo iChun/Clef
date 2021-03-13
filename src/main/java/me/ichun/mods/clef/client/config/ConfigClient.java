@@ -13,7 +13,6 @@ import javax.annotation.Nonnull;
 public class ConfigClient extends ConfigBase
 {
     @CategoryDivider(name = "clientOnly")
-    @Prop
     public String favoriteBand = "";
 
     @Prop(min = 0, max = 100)
@@ -22,7 +21,6 @@ public class ConfigClient extends ConfigBase
     @Prop(min = 16, max = Track.MAX_TRACKING_RANGE)
     public int instrumentHearableDistance = 32;
 
-    @Prop
     public boolean showRecordPlayingMessageForTracks = false;
 
     public ConfigClient()

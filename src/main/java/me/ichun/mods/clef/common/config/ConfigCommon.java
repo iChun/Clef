@@ -13,31 +13,26 @@ import java.util.List;
 public class ConfigCommon extends ConfigBase
 {
     @CategoryDivider
-    @Prop
     public boolean zombiesCanUseInstruments = true;
 
     @Prop(min = 0, max = 10000)
-    public int zombieSpawnRate = 100;
+    public int zombieSpawnRate = 50;
 
     @Prop(min = 0, max = 10000)
-    public int mobDropRate = 100;
+    public int mobDropRate = 50;
 
-    @Prop
     public boolean onlyHostileMobSpawn = true;
 
     @Prop(min = 0, max = 3)
     public int creatableInstruments = 3;
 
-    @Prop
     public List<String> disabledInstruments = new ArrayList<>();
 
     @Prop(min = 0, max = 20)
     public int lootSpawnRate = 1;
 
-    @Prop
     public List<String> disabledLootChests = new ArrayList<>();
 
-    @Prop
     public boolean showFileTitle = true;
 
     public ConfigCommon()

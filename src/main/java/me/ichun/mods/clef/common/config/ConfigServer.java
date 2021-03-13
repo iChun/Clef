@@ -12,7 +12,6 @@ import javax.annotation.Nonnull;
 public class ConfigServer extends ConfigBase
 {
     @CategoryDivider(name = "gameplay")
-    @Prop
     public boolean allowOneHandedTwoHandedInstrumentUse = true;
 
     public ConfigServer()

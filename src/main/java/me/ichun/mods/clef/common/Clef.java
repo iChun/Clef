@@ -96,7 +96,7 @@ public class Clef
 
         Clef.channel = new PacketChannel(new ResourceLocation(MOD_ID, "channel"), PROTOCOL, PacketRequestFile.class, PacketFileFragment.class, PacketPlayABC.class, PacketPlayingTracks.class, PacketStopPlayingTrack.class, PacketInstrumentPlayerInfo.class, PacketCreateInstrument.class);
 
-        DistExecutor.runWhenOn(Dist.CLIENT, () -> () -> {
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
             configClient = new ConfigClient().init();
 
             bus.addListener(this::onClientSetup);
@@ -107,7 +107,7 @@ public class Clef
             ItemEffectHandler.init();
         });
 
-        threadReadFiles  = new ThreadReadFiles();
+        threadReadFiles = new ThreadReadFiles();
         threadReadFiles.start();
     }
 
