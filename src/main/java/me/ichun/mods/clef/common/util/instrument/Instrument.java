@@ -63,7 +63,8 @@ public class Instrument
 
     public boolean hasAvailableKey(int key)
     {
-        return tuning.keyToTuningMap.containsKey(key) && tuning.keyToTuningMap.get(key).streamsLength() > 0;
+        InstrumentTuning.TuningInfo tuningInfo = tuning.keyToTuningMap.get(key);
+        return tuningInfo != null && tuningInfo.streamsLength() > 0;
     }
 
     @Override
@@ -174,7 +175,7 @@ public class Instrument
     }
 
     @OnlyIn(Dist.CLIENT)
-    public class InstrumentTexture extends Texture
+    public static class InstrumentTexture extends Texture
     {
         public final ResourceLocation rl;
         public NativeImage image;

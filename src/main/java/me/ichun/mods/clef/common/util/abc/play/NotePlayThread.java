@@ -161,25 +161,29 @@ public class NotePlayThread extends Thread
                     lock.unlock();
                 }
 
-                //Calculate how much time we spend on this play and how much time we still have left to sleep
-                long now = Util.nanoTime();
-                long targetTime = startTime + (INTERVAL_NANOS * (i + 1));
-                long sleepTime = targetTime - now - 100; //sleep shorter, so we are as accurate as possible (if we wake up early, we just spin)
-                int nanos = (int) (sleepTime % 1000000);
-                long millis = (sleepTime - nanos) / 1000000;
                 if (runTick.get() >= AbcParser.SUB_TICKS)
                 {
                     done = true;
                     break;
                 }
-                if (millis > 1)
+
+                //Calculate how much time we spend on this play and how much time we still have left to sleep
+                long targetTime = startTime + (INTERVAL_NANOS * (i + 1));
+                long now = Util.nanoTime();
+                long sleepTime = targetTime - now - 200; //sleep shorter, so we are as accurate as possible (if we wake up early, we just spin)
+                if (sleepTime > 0)
                 {
-                    try
+                    int nanos = (int) (sleepTime % 1000000);
+                    long millis = (sleepTime - nanos) / 1000000;
+                    if (millis > 1)
                     {
-                        Thread.sleep(millis, nanos);
-                    } catch (InterruptedException e)
-                    {
-                        //ignore
+                        try
+                        {
+                            Thread.sleep(millis, nanos);
+                        } catch (InterruptedException e)
+                        {
+                            //ignore
+                        }
                     }
                 }
 

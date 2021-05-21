@@ -6,7 +6,7 @@ public class InstrumentModPackInfo
     public String version = "";
     public PackMeta metadata = new PackMeta();
 
-    public class PackMeta
+    public static class PackMeta
     {
         public String author = "";
         public String description = "";
