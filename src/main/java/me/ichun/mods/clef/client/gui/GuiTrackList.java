@@ -185,7 +185,7 @@ public class GuiTrackList extends ExtendedList<GuiTrackList.TrackEntry>
                 stack.push();
                 stack.scale(0.5F, 0.5F, 1F);
                 String title = track.getTitle();
-                String trim = font./*trimStringToWidth*/func_238412_a_(title, (width - 10) * 2);
+                String trim = font.trimStringToWidth(title, (width - 10) * 2);
                 if(isSelectedItem(idx) && !title.endsWith(trim))
                 {
                     int lengthDiff = (int)Math.ceil((title.length() - trim.length()) * 1.4D);
@@ -195,7 +195,7 @@ public class GuiTrackList extends ExtendedList<GuiTrackList.TrackEntry>
                     {
                         val = 0;
                     }
-                    String newTrim = font./*trimStringToWidth*/func_238412_a_(title.substring(val), (width - 10) * 2);
+                    String newTrim = font.trimStringToWidth(title.substring(val), (width - 10) * 2);
                     if(newString.length() > newTrim.length())
                     {
                         trim = newString;
