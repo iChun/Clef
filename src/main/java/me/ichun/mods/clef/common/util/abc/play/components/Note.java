@@ -43,4 +43,8 @@ public abstract class Note
 
     public abstract boolean setup(double[] info, HashMap<Integer, Integer> keyAccidentals, HashMap<Integer, Integer> keySignature); //returns false if it's a special "note"
 
+    public void optimizeMemoryUsage() {
+        constructs.trimToSize();
+    }
+
 }

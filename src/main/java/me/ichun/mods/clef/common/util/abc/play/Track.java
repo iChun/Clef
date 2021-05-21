@@ -166,7 +166,7 @@ public class Track
                                 Instrument instrument = InstrumentLibrary.getInstrumentByName(tag.getString("itemName"));
                                 if(instrument != null)
                                 {
-                                    HashSet<Note>[] notes = track.notes.get(playProg);
+                                    Set<Note>[] notes = track.notes.get(playProg);
                                     trackTracker.addTickInfo(new NotesTickInfo(player, instrument, notes, true));
                                 }
                                 else
@@ -201,7 +201,7 @@ public class Track
                                         Instrument instrument = InstrumentLibrary.getInstrumentByName(is.getTag().getString("itemName"));
                                         if(instrument != null)
                                         {
-                                            HashSet<Note>[] notes = track.notes.get(playProg);
+                                            Set<Note>[] notes = track.notes.get(playProg);
                                             trackTracker.addTickInfo(new NotesTickInfo(player.getPos(), instrument, notes));
                                         }
                                     }
@@ -226,7 +226,7 @@ public class Track
                                 Instrument instrument = InstrumentLibrary.getInstrumentByName(tag.getString("itemName"));
                                 if(instrument != null)
                                 {
-                                    HashSet<Note>[] notes = track.notes.get(playProg);
+                                    Set<Note>[] notes = track.notes.get(playProg);
                                     trackTracker.addTickInfo(new NotesTickInfo(ent, instrument, notes, false));
                                 }
                                 else

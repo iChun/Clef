@@ -61,4 +61,10 @@ public class Chord extends Note
         this.durationInPartialTicks = scaledDuration - (int) scaledDuration;
         return true;
     }
+
+    @Override
+    public void optimizeMemoryUsage() {
+        super.optimizeMemoryUsage();
+        notes.trimToSize();
+    }
 }

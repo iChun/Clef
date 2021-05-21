@@ -15,9 +15,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class AbcParser
 {
@@ -694,13 +696,26 @@ public class AbcParser
             for(Note note : trackNotes)
             {
                 //noinspection unchecked
-                HashSet<Note>[] noteAtTime = abc.notes.computeIfAbsent(currentTick, v -> new HashSet[SUB_TICKS]);
+                Set<Note>[] noteAtTime = abc.notes.computeIfAbsent(currentTick, v -> new Set[SUB_TICKS]);
                 if(note.setup(info, keyAccidentals, keySignatures))//if true, not a special note, move to next spot.
                 {
                     int subIndex = Math.min(SUB_TICKS, (int) (currentParticialTick * SUB_TICKS));
+                    // Try to use a singleton instead of a hash set, as most of the time there is one one note per tick/subtick
+                    // singleton set has a much better memory footprint, this alone saves ~ 10% of memory (after full gc)
+                    // When having around 1200 abc files
                     if (noteAtTime[subIndex] == null)
-                        noteAtTime[subIndex] = new HashSet<>();
-                    noteAtTime[subIndex].add(note); //only add the actual notes. No specials.
+                    {
+                        noteAtTime[subIndex] = Collections.singleton(note);
+                    }
+                    else if (noteAtTime[subIndex] instanceof HashSet)
+                    {
+                        noteAtTime[subIndex].add(note); //only add the actual notes. No specials.
+                    }
+                    else
+                    {
+                        noteAtTime[subIndex] = new HashSet<>(noteAtTime[subIndex]);
+                        noteAtTime[subIndex].add(note);
+                    }
                     abc.trackLength = currentTick + note.durationInTicks + (int) (note.durationInPartialTicks + 0.99F); // adds to the length of the note.
                     currentTick += note.durationInTicks;
                     currentParticialTick += note.durationInPartialTicks;
@@ -709,7 +724,7 @@ public class AbcParser
                     currentParticialTick = currentParticialTick - currentSubTicksAsInt;
                     currentTick += currentSubTicksAsInt;
                 }
-                note.constructs.trimToSize();
+                note.optimizeMemoryUsage();
             }
             return abc;
         }

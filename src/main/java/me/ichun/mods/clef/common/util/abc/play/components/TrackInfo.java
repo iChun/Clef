@@ -5,6 +5,7 @@ import me.ichun.mods.clef.common.Clef;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 
 import java.util.HashSet;
+import java.util.Set;
 import java.util.TreeMap;
 
 public class TrackInfo
@@ -15,7 +16,7 @@ public class TrackInfo
     public String composer = ""; //C
     public String transcriber = ""; //Z
 
-    public TreeMap<Integer, HashSet<Note>[]> notes = new TreeMap<>(Ordering.natural());
+    public TreeMap<Integer, Set<Note>[]> notes = new TreeMap<>(Ordering.natural());
     public int trackLength = 0;
 
     public TrackInfo()
