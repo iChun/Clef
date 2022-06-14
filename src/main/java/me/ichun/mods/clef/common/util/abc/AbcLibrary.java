@@ -21,6 +21,7 @@ import net.minecraftforge.fml.common.thread.EffectiveSide;
 import net.minecraftforge.fml.network.PacketDistributor;
 import org.apache.commons.lang3.RandomStringUtils;
 
+import javax.sound.midi.MidiSystem;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -104,27 +105,41 @@ public class AbcLibrary
 
     public static boolean readAbc(File file, List<TrackFile> tracks)
     {
-        if(file.exists() && file.getName().endsWith(".abc"))
+        if(file.exists())
         {
-            String md5 = IOUtil.getMD5Checksum(file);
-            if(!(tracks == AbcLibrary.tracks && hasTrack(md5)))
-            {
-                TrackInfo track = AbcParser.parse(file);
-                if(track != null)
+            String fileName = file.getName();
+            boolean isAbcFile = fileName.endsWith(".abc");
+            boolean isMidiFile = fileName.endsWith(".mid");
+            if (isAbcFile || isMidiFile) {
+                String md5 = IOUtil.getMD5Checksum(file);
+                if(!(tracks == AbcLibrary.tracks && hasTrack(md5)))
                 {
-                    TrackFile trackFile = new TrackFile(track, file, md5);
-                    tracks.add(trackFile);
-                    Collections.sort(tracks);
-
-                    if(EffectiveSide.get().isServer() && tracksWaitingForTrackInfo.containsKey(md5))
+                    TrackInfo track;
+                    if (isAbcFile)
                     {
-                        tracksWaitingForTrackInfo.get(md5).setTrack(trackFile);
-                        tracksWaitingForTrackInfo.remove(md5);
+                        track = AbcParser.parse(file);
                     }
-                    return true;
+                    else
+                    {
+                        track = MidiParser.parse(file);
+                    }
+                    if(track != null)
+                    {
+                        TrackFile trackFile = new TrackFile(track, file, md5);
+                        tracks.add(trackFile);
+                        Collections.sort(tracks);
+
+                        if(EffectiveSide.get().isServer() && tracksWaitingForTrackInfo.containsKey(md5))
+                        {
+                            tracksWaitingForTrackInfo.get(md5).setTrack(trackFile);
+                            tracksWaitingForTrackInfo.remove(md5);
+                        }
+                        return true;
+                    }
                 }
             }
         }
+
         return false;
     }
 

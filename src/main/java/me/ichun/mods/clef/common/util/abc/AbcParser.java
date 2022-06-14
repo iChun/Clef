@@ -15,17 +15,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class AbcParser
 {
-    //This specifies how many "sub ticks" during one tick should be considered.
-    public static final int SUB_TICKS = 5;
-
     //The order of abc constructs for a note is: <grace notes>, <chord symbols>, <annotations>/<decorations> (e.g. Irish roll, staccato marker or up/downbow), <accidentals>, <note>, <octave>, <note length>, i.e. ~^c'3 or even "Gm7"v.=G,2.
     public static final char[] accidentals = new char[] { '^', '=', '_' };
     public static final char[] notes = new char[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'z', 'x', 'Z', 'X' };
@@ -426,7 +419,7 @@ public class AbcParser
                                                     if(key == c)
                                                     {
                                                         handled = true;
-                                                        singleNote.constructs.add(new me.ichun.mods.clef.common.util.abc.construct.Note(key));
+                                                        singleNote.constructs.add(me.ichun.mods.clef.common.util.abc.construct.Note.createFromABC(key));
                                                         break;
                                                     }
                                                 }
@@ -682,51 +675,7 @@ public class AbcParser
                 return null; //If the track has no notes, don't bother creating an "empty track".
             }
 
-            double[] info = new double[] {
-                    20D, //ticks per beat
-                    0.125D, //unit note length
-                    1D, //meter
-                    0D, //key.. unused.
-                    0.25D //tempo split
-            };
-            HashMap<Integer, Integer> keySignatures = new HashMap<>();
-            HashMap<Integer, Integer> keyAccidentals = new HashMap<>();
-            float currentParticialTick = 0F; //track particial ticks as well, to make timing more accurate
-            int currentTick = 0;
-            for(Note note : trackNotes)
-            {
-                //noinspection unchecked
-                Set<Note>[] noteAtTime = abc.notes.computeIfAbsent(currentTick, v -> new Set[SUB_TICKS]);
-                if(note.setup(info, keyAccidentals, keySignatures))//if true, not a special note, move to next spot.
-                {
-                    int subIndex = Math.min(SUB_TICKS, (int) (currentParticialTick * SUB_TICKS));
-                    // Try to use a singleton instead of a hash set, as most of the time there is one one note per tick/subtick
-                    // singleton set has a much better memory footprint, this alone saves ~ 10% of memory (after full gc)
-                    // When having around 1200 abc files
-                    if (noteAtTime[subIndex] == null)
-                    {
-                        noteAtTime[subIndex] = Collections.singleton(note);
-                    }
-                    else if (noteAtTime[subIndex] instanceof HashSet)
-                    {
-                        noteAtTime[subIndex].add(note); //only add the actual notes. No specials.
-                    }
-                    else
-                    {
-                        noteAtTime[subIndex] = new HashSet<>(noteAtTime[subIndex]);
-                        noteAtTime[subIndex].add(note);
-                    }
-                    abc.trackLength = currentTick + note.durationInTicks + (int) (note.durationInPartialTicks + 0.99F); // adds to the length of the note.
-                    currentTick += note.durationInTicks;
-                    currentParticialTick += note.durationInPartialTicks;
-                    //Make sure particialTick stays between 0..1
-                    int currentSubTicksAsInt = (int) currentParticialTick;
-                    currentParticialTick = currentParticialTick - currentSubTicksAsInt;
-                    currentTick += currentSubTicksAsInt;
-                }
-                note.optimizeMemoryUsage();
-            }
-            return abc;
+            return TrackBuilder.buildAbcTrack(trackNotes, abc);
         }
         catch(IOException | NumberFormatException e)
         {
