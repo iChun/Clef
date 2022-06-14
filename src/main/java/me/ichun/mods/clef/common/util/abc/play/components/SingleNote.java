@@ -20,7 +20,7 @@ public class SingleNote extends Note
     {
         if(key != Note.NOTE_REST && instrument.hasAvailableKey(key))
         {
-            PlayedNote.start(instrument, currentProg, durationInTicks, key, noteLocation instanceof Entity ? ((Entity)noteLocation).getSoundCategory() : SoundCategory.BLOCKS, noteLocation);
+            PlayedNote.start(instrument, currentProg, durationInTicks, key, noteLocation instanceof Entity ? ((Entity)noteLocation).getSoundCategory() : SoundCategory.BLOCKS, noteLocation, volume);
         }
         return durationInTicks;
     }

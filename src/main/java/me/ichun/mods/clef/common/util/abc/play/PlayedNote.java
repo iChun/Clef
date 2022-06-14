@@ -38,13 +38,13 @@ public class PlayedNote
         CLEF_CACHE.clear();
     }
 
-    public static void start(Instrument instrument, int startTick, int duration, int key, SoundCategory category, Object noteLocation)
+    public static void start(Instrument instrument, int startTick, int duration, int key, SoundCategory category, Object noteLocation, float noteVolume)
     {
         InstrumentSound instrumentSound;
         InstrumentTuning.TuningInfo tuning = instrument.tuning.keyToTuningMap.get(key);
         float pitch = (float)Math.pow(2.0D, (double)tuning.keyOffset / 12.0D);
         int falloffTime = (int) Math.ceil(instrument.tuning.fadeout * 20F);
-        float volume = 0.7F * (Clef.configClient.instrumentVolume / 100F);
+        float volume = noteVolume * (Clef.configClient.instrumentVolume / 100F);
         boolean relative;
         if (noteLocation == Minecraft.getInstance().player)
         {

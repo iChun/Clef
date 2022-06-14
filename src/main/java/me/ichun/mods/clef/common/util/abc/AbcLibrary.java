@@ -74,8 +74,8 @@ public class AbcLibrary
             }
             catch(IOException ignored){}
         }
-        Clef.LOGGER.info("Loading abc files");
-        Clef.LOGGER.info("Loaded " + readAbcs(ResourceHelper.getAbcDir().toFile(), tracks) + " abc files");
+        Clef.LOGGER.info("Loading abc/midi files");
+        Clef.LOGGER.info("Loaded " + readAbcs(ResourceHelper.getAbcDir().toFile(), tracks) + " abc/midi files");
         if(tracks.isEmpty())
         {
             TrackInfo track = new TrackInfo();
@@ -150,8 +150,8 @@ public class AbcLibrary
         try
         {
             ArrayList<TrackFile> tracks = new ArrayList<>();
-            Clef.LOGGER.info("Reloading abc files");
-            Clef.LOGGER.info("Reloaded " + readAbcs(ResourceHelper.getAbcDir().toFile(), tracks) + " abc files");
+            Clef.LOGGER.info("Reloading abc/midi files");
+            Clef.LOGGER.info("Reloaded " + readAbcs(ResourceHelper.getAbcDir().toFile(), tracks) + " abc/midi files");
             if (tracks.isEmpty())
             {
                 TrackInfo track = new TrackInfo();

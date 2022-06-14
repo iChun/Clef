@@ -1,6 +1,8 @@
 package me.ichun.mods.clef.common.util.abc;
 
+import me.ichun.mods.clef.common.util.abc.construct.special.Tempo;
 import me.ichun.mods.clef.common.util.abc.play.components.Note;
+import me.ichun.mods.clef.common.util.abc.play.components.Special;
 import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
 
 import java.util.Collection;
@@ -61,23 +63,33 @@ public class TrackBuilder
         HashMap<Integer, Integer> keySignatures = new HashMap<>();
         HashMap<Integer, Integer> keyAccidentals = new HashMap<>();
         int longestTime = 0;
-        for(Map.Entry<Long, Set<Note>> entry : trackNotes.entrySet())
+        long additionalTicksStartTimestamp = 0;
+        float additionalTicks = 0;
+        for (Map.Entry<Long, Set<Note>> entry : trackNotes.entrySet())
         {
-            float scaledDuration = TrackBuilder.convertTimeToTicks(entry.getKey(), info);
-            int durationInTicks = (int) scaledDuration;
-            float durationInPartialTicks = scaledDuration - (int) scaledDuration;
+            // timestamp in this context = midi time. Ticks = mc ticks
+            long startTimestamp = entry.getKey();
+            float startTime = TrackBuilder.convertTimeToTicks(startTimestamp - additionalTicksStartTimestamp, info) + additionalTicks;
+            int startTimeInTicks = (int) startTime;
+            float startTimeInPartialTicks = startTime - (int) startTime;
 
             //noinspection unchecked
-            Set<Note>[] noteAtTime = abc.notes.computeIfAbsent(durationInTicks, v -> new Set[SUB_TICKS]);
+            Set<Note>[] noteAtTime = abc.notes.computeIfAbsent(startTimeInTicks, v -> new Set[SUB_TICKS]);
 
             for (Note note : entry.getValue())
             {
-                if(note.setup(info, keyAccidentals, keySignatures))//if true, not a special note, move to next spot.
+                if (note instanceof Special && note.constructs.get(0) instanceof Tempo)
                 {
-                    insertNote(durationInPartialTicks, noteAtTime, note);
+                    // Tempo change - Sum the ticks up until now to keep consistent. Otherwise, we would miscalculate the start, as the time spend in the old tempo would also be multiplied by the new tempo
+                    additionalTicks += TrackBuilder.convertTimeToTicks(startTimestamp - additionalTicksStartTimestamp, info);
+                    additionalTicksStartTimestamp = startTimestamp;
+                }
+                if (note.setup(info, keyAccidentals, keySignatures))//if true, not a special note, move to next spot.
+                {
+                    insertNote(startTimeInPartialTicks, noteAtTime, note);
                 }
                 note.optimizeMemoryUsage();
-                int totalTimeUpToHere = (int) Math.ceil(note.durationInTicks + note.durationInPartialTicks + scaledDuration);
+                int totalTimeUpToHere = (int) Math.ceil(note.durationInTicks + note.durationInPartialTicks + startTime);
                 if (totalTimeUpToHere > longestTime) longestTime = totalTimeUpToHere;
             }
         }

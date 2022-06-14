@@ -7,6 +7,7 @@ import me.ichun.mods.clef.common.util.abc.play.components.Note;
 import me.ichun.mods.clef.common.util.abc.play.components.SingleNote;
 import me.ichun.mods.clef.common.util.abc.play.components.Special;
 import me.ichun.mods.clef.common.util.abc.play.components.TrackInfo;
+import net.minecraft.util.math.MathHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -26,7 +27,7 @@ import java.util.TreeMap;
 public class MidiParser
 {
     private static final Logger LOGGER = LogManager.getLogger(MidiParser.class);
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     public static TrackInfo parse(File file)
     {
@@ -46,7 +47,7 @@ public class MidiParser
                 return null;
             }
             int ticksPerBeat = sequence.getResolution();
-            trackNotes.computeIfAbsent(0L, unused -> new HashSet<>()).add(new Special(new Tempo(120, ticksPerBeat)));
+            trackNotes.computeIfAbsent(0L, unused -> new HashSet<>()).add(new Special(new Tempo(-1, ticksPerBeat)));
             for (Track track : sequence.getTracks())
             {
                 debug("-------------------------------------------------");
@@ -72,6 +73,7 @@ public class MidiParser
 
                                 int key = message.getData1();
                                 int velocity = message.getData2();
+                                note.volume = MathHelper.clamp(velocity / 128F, 0.2F, 0.8F);
                                 int keyToPlay = key % 12;
                                 if (key >= (6 * 12)) {
                                     note.constructs.add(new Octave('.'));
@@ -80,7 +82,8 @@ public class MidiParser
                                 }
                                 note.constructs.add(me.ichun.mods.clef.common.util.abc.construct.Note.createFromRawKey(keyToPlay));
                                 // try to find the end
-                                for (int j = i; j < track.size(); j++)
+                                boolean found = false;
+                                for (int j = i + 1; j < track.size(); j++)
                                 {
                                     MidiEvent possibleEnd = track.get(j);
                                     if (possibleEnd.getMessage() instanceof ShortMessage && ((ShortMessage) possibleEnd.getMessage()).getCommand() == ShortMessage.NOTE_OFF) {
@@ -89,12 +92,17 @@ public class MidiParser
                                         {
                                             // this is the end. Calculate the duration based of that
                                             note.duration = (possibleEnd.getTick() - midiEvent.getTick());
+                                            found = true;
                                             break;
                                         }
                                     }
                                 }
-                                Set<Note> notes = trackNotes.computeIfAbsent(midiEvent.getTick(), unused -> new HashSet<>());
-                                notes.add(note);
+                                if (found) {
+                                    Set<Note> notes = trackNotes.computeIfAbsent(midiEvent.getTick(), unused -> new HashSet<>());
+                                    notes.add(note);
+                                } else {
+                                    LOGGER.warn("Uh oh, we could not find the end for a key!");
+                                }
                             }
                                 break;
                             case ShortMessage.NOTE_OFF:
