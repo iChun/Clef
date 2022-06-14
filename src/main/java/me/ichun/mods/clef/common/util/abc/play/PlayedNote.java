@@ -92,6 +92,7 @@ public class PlayedNote
             Vector3d vec3d = new Vector3d(instrumentSound.getX(), instrumentSound.getY(), instrumentSound.getZ());
             CompletableFuture<ChannelManager.Entry> completablefuture = soundManager.channelManager.requestSoundEntry(SoundSystem.Mode.STATIC);
             ChannelManager.Entry channelmanager$entry = completablefuture.join();
+            if (channelmanager$entry == null) return; // no more sound sources available
 
             //            soundManager.sndSystem.newSource(false, uniqueId, getURLForSoundResource(instrument, key - tuning.keyOffset), "clef:" + instrument.info.itemName + ":" + (key - tuning.keyOffset) + ".ogg", false, instrumentSound.getXPosF(), instrumentSound.getYPosF(), instrumentSound.getZPosF(), instrumentSound.getAttenuationType().getTypeInt(), f);
             mc.runAsync(() -> {
