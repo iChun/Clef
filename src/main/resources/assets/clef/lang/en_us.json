@@ -10,7 +10,7 @@
   "clef.item.twoHanded": "Two Handed",
 
   "clef.gui.chooser": "Song Chooser",
-  "clef.gui.moreSongs": "You can get more songs online in abc format",
+  "clef.gui.moreSongs": "You can get more songs online in abc or midi (.mid) format",
 
   "clef.gui.chooseSong": "Choose a song",
   "clef.gui.play": "Play",

@@ -2,6 +2,7 @@ package me.ichun.mods.clef.common.util.abc.play;
 
 
 import me.ichun.mods.clef.common.util.abc.AbcParser;
+import me.ichun.mods.clef.common.util.abc.TrackBuilder;
 import me.ichun.mods.clef.common.util.abc.play.components.Note;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -38,7 +39,7 @@ public class TrackTracker
 
     public void addTickInfo(NotesTickInfo noteInfo)
     {
-        if (noteInfo.notes.length != AbcParser.SUB_TICKS)
+        if (noteInfo.notes.length != TrackBuilder.SUB_TICKS)
             throw new IllegalArgumentException("Invalid sized array!" + noteInfo.notes.length);
         masterSet.add(noteInfo);
     }

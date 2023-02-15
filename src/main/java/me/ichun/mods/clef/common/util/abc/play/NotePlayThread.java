@@ -2,6 +2,7 @@ package me.ichun.mods.clef.common.util.abc.play;
 
 import me.ichun.mods.clef.common.Clef;
 import me.ichun.mods.clef.common.util.abc.AbcParser;
+import me.ichun.mods.clef.common.util.abc.TrackBuilder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Util;
 import net.minecraftforge.api.distmarker.Dist;
@@ -23,7 +24,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class NotePlayThread extends Thread
 {
     public static final NotePlayThread INSTANCE = new NotePlayThread();
-    private static final int INTERVAL_NANOS = (50 * 1000 * 1000) / AbcParser.SUB_TICKS;
+    private static final int INTERVAL_NANOS = (50 * 1000 * 1000) / TrackBuilder.SUB_TICKS;
     private final Set<TrackTracker> trackerSet = Collections.newSetFromMap(new WeakHashMap<>());
     private final AtomicInteger runTick = new AtomicInteger();
     private final Lock lock = new ReentrantLock();
@@ -54,7 +55,7 @@ public class NotePlayThread extends Thread
         boolean result = acquireLock();
         if (!done)
         {
-            for (int i = runTick.get(); i < AbcParser.SUB_TICKS; i++)
+            for (int i = runTick.get(); i < TrackBuilder.SUB_TICKS; i++)
             {
                 runSubTicks();
             }
@@ -111,7 +112,7 @@ public class NotePlayThread extends Thread
     {
         Iterator<TrackTracker> iterator = trackerSet.iterator();
         int val = runTick.getAndIncrement();
-        if (val >= AbcParser.SUB_TICKS)
+        if (val >= TrackBuilder.SUB_TICKS)
         {
             return true;
         }
@@ -150,7 +151,7 @@ public class NotePlayThread extends Thread
             }
             if (!Minecraft.getInstance().isRunning()) break;
             long startTime = Util.nanoTime();
-            for (int i = runTick.get(); i < AbcParser.SUB_TICKS; i++)
+            for (int i = runTick.get(); i < TrackBuilder.SUB_TICKS; i++)
             {
                 lock.lock();
                 try
@@ -161,25 +162,29 @@ public class NotePlayThread extends Thread
                     lock.unlock();
                 }
 
-                //Calculate how much time we spend on this play and how much time we still have left to sleep
-                long now = Util.nanoTime();
-                long targetTime = startTime + (INTERVAL_NANOS * (i + 1));
-                long sleepTime = targetTime - now - 100; //sleep shorter, so we are as accurate as possible (if we wake up early, we just spin)
-                int nanos = (int) (sleepTime % 1000000);
-                long millis = (sleepTime - nanos) / 1000000;
-                if (runTick.get() >= AbcParser.SUB_TICKS)
+                if (runTick.get() >= TrackBuilder.SUB_TICKS)
                 {
                     done = true;
                     break;
                 }
-                if (millis > 1)
+
+                //Calculate how much time we spend on this play and how much time we still have left to sleep
+                long targetTime = startTime + (INTERVAL_NANOS * (i + 1));
+                long now = Util.nanoTime();
+                long sleepTime = targetTime - now - 200; //sleep shorter, so we are as accurate as possible (if we wake up early, we just spin)
+                if (sleepTime > 0)
                 {
-                    try
+                    int nanos = (int) (sleepTime % 1000000);
+                    long millis = (sleepTime - nanos) / 1000000;
+                    if (millis > 1)
                     {
-                        Thread.sleep(millis, nanos);
-                    } catch (InterruptedException e)
-                    {
-                        //ignore
+                        try
+                        {
+                            Thread.sleep(millis, nanos);
+                        } catch (InterruptedException e)
+                        {
+                            //ignore
+                        }
                     }
                 }
 

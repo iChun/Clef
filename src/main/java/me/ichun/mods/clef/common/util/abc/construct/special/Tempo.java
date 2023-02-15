@@ -7,8 +7,10 @@ public class Tempo extends Construct
     public int bpm = 60;
     public double splits = 0.25D;
 
-    public Tempo()
+    public Tempo(int bpm, int splits)
     {
+        this.bpm = bpm;
+        this.splits = splits;
     }
 
     public Tempo(String s)

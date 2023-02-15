@@ -1,8 +1,10 @@
 package me.ichun.mods.clef.common.util.abc.play.components;
 
+import me.ichun.mods.clef.common.util.abc.TrackBuilder;
 import me.ichun.mods.clef.common.util.abc.construct.Accidental;
 import me.ichun.mods.clef.common.util.abc.construct.Construct;
 import me.ichun.mods.clef.common.util.abc.construct.Octave;
+import me.ichun.mods.clef.common.util.abc.construct.RestNote;
 import me.ichun.mods.clef.common.util.abc.play.PlayedNote;
 import me.ichun.mods.clef.common.util.abc.play.Track;
 import me.ichun.mods.clef.common.util.instrument.Instrument;
@@ -18,7 +20,7 @@ public class SingleNote extends Note
     {
         if(key != Note.NOTE_REST && instrument.hasAvailableKey(key))
         {
-            PlayedNote.start(instrument, currentProg, durationInTicks, key, noteLocation instanceof Entity ? ((Entity)noteLocation).getSoundCategory() : SoundCategory.BLOCKS, noteLocation);
+            PlayedNote.start(instrument, currentProg, durationInTicks, key, noteLocation instanceof Entity ? ((Entity)noteLocation).getSoundCategory() : SoundCategory.BLOCKS, noteLocation, volume);
         }
         return durationInTicks;
     }
@@ -59,19 +61,17 @@ public class SingleNote extends Note
             }
             else if(construct.getType() == Construct.EnumConstructType.NOTE)
             {
-                char c = ((me.ichun.mods.clef.common.util.abc.construct.Note)construct).type;
-                if(c == 'Z' || c == 'X') //Multi Measure rests
+                if (construct instanceof RestNote)
                 {
                     rest = true;
-                    duration *= info[2] / info[1];
-                }
-                else if(c == 'z' || c == 'x')
-                {
-                    rest = true;
+                    if (((RestNote) construct).multiMeasureRest)
+                    {
+                        duration *= info[2] / info[1];
+                    }
                 }
                 else
                 {
-                    key += Note.NOTE_TO_KEY_MAP.get(c);
+                    key += ((me.ichun.mods.clef.common.util.abc.construct.Note) construct).key;
                 }
                 hasNote = true;
             }
@@ -89,8 +89,8 @@ public class SingleNote extends Note
             }
         }
 
-        float scaledDuration = (float) (info[0] * (info[1] / info[4]) * duration);
-        this.durationInTicks = (int) scaledDuration; //tempo * duration * (unit note length / tempo splits)
+        float scaledDuration = TrackBuilder.convertTimeToTicks(duration, info);
+        this.durationInTicks = (int) scaledDuration;
         this.durationInPartialTicks = scaledDuration - (int) scaledDuration;
         if(hasNote)
         {

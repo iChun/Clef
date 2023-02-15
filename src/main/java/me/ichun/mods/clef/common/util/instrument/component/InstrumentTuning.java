@@ -39,7 +39,7 @@ public class InstrumentTuning
         }
     }
 
-    public class TuningInt
+    public static class TuningInt
     {
         @SerializedName("f")
         public float frequency;

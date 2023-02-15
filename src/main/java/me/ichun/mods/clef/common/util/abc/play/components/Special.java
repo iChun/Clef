@@ -76,8 +76,10 @@ public class Special extends Note
             Tempo tempo = (Tempo)construct;
 
             //1200 / bpm = ticks between beats.
-            info[0] = 1200 / (double)tempo.bpm;
-            info[4] = tempo.splits;
+            if (tempo.bpm != -1)
+                info[0] = 1200 / (double)tempo.bpm;
+            if (tempo.splits != -1)
+                info[4] = tempo.splits;
         }
         else if(construct instanceof UnitNoteLength)
         {

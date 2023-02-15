@@ -38,13 +38,13 @@ public class PlayedNote
         CLEF_CACHE.clear();
     }
 
-    public static void start(Instrument instrument, int startTick, int duration, int key, SoundCategory category, Object noteLocation)
+    public static void start(Instrument instrument, int startTick, int duration, int key, SoundCategory category, Object noteLocation, float noteVolume)
     {
         InstrumentSound instrumentSound;
         InstrumentTuning.TuningInfo tuning = instrument.tuning.keyToTuningMap.get(key);
         float pitch = (float)Math.pow(2.0D, (double)tuning.keyOffset / 12.0D);
         int falloffTime = (int) Math.ceil(instrument.tuning.fadeout * 20F);
-        float volume = 0.7F * (Clef.configClient.instrumentVolume / 100F);
+        float volume = noteVolume * (Clef.configClient.instrumentVolume / 100F);
         boolean relative;
         if (noteLocation == Minecraft.getInstance().player)
         {
@@ -92,6 +92,7 @@ public class PlayedNote
             Vector3d vec3d = new Vector3d(instrumentSound.getX(), instrumentSound.getY(), instrumentSound.getZ());
             CompletableFuture<ChannelManager.Entry> completablefuture = soundManager.channelManager.requestSoundEntry(SoundSystem.Mode.STATIC);
             ChannelManager.Entry channelmanager$entry = completablefuture.join();
+            if (channelmanager$entry == null) return; // no more sound sources available
 
             //            soundManager.sndSystem.newSource(false, uniqueId, getURLForSoundResource(instrument, key - tuning.keyOffset), "clef:" + instrument.info.itemName + ":" + (key - tuning.keyOffset) + ".ogg", false, instrumentSound.getXPosF(), instrumentSound.getYPosF(), instrumentSound.getZPosF(), instrumentSound.getAttenuationType().getTypeInt(), f);
             mc.runAsync(() -> {

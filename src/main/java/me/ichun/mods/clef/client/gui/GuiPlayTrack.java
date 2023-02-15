@@ -72,7 +72,7 @@ public class GuiPlayTrack extends Screen
     public GuiPlayTrack()
     {
         super(new TranslationTextComponent("clef.gui.chooser"));
-        tracks = AbcLibrary.getTracks();
+        tracks = new ArrayList<>(AbcLibrary.getTracks());
         bandNameString = Clef.configClient.favoriteBand;
     }
 
